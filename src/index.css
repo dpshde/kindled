@@ -1,16 +1,16 @@
 :root {
-  --color-bg: #1a2f23;
-  --color-bg-elevated: rgba(247, 245, 240, 0.06);
-  --color-bg-card: rgba(247, 245, 240, 0.08);
-  --color-text: #f7f5f0;
-  --color-text-secondary: #a8b5a0;
-  --color-text-tertiary: #6b7e64;
-  --color-fire: #e8a85d;
-  --color-ember: #c44b36;
-  --color-growth: #7fb5a0;
-  --color-living: #a4c2a5;
-  --color-mature: #8fb894;
-  --color-line: rgba(168, 181, 160, 0.15);
+  --color-bg: #1b2d24;
+  --color-bg-elevated: rgba(247, 243, 235, 0.05);
+  --color-bg-card: rgba(247, 243, 235, 0.07);
+  --color-text: #f5f1e8;
+  --color-text-secondary: #a3b09a;
+  --color-text-tertiary: #667a5f;
+  --color-fire: #d4843a;
+  --color-ember: #bf5b3a;
+  --color-growth: #6ea88f;
+  --color-living: #9cbfa0;
+  --color-mature: #87ad8c;
+  --color-line: rgba(156, 175, 148, 0.14);
 
   --font-scripture: "Crimson Pro", "Georgia", "Times New Roman", serif;
   --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -80,7 +80,7 @@ button {
   padding: 0;
 }
 
-input, textarea {
+input, textarea, select {
   font-family: var(--font-ui);
   color: var(--color-text);
   background: var(--color-bg-card);
@@ -93,8 +93,21 @@ input, textarea {
   transition: border-color var(--ease-in-out);
 }
 
-input:focus, textarea:focus {
+input:focus, textarea:focus, select:focus {
   border-color: var(--color-growth);
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23667a5f'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+select option {
+  background: #1b2d24;
+  color: var(--color-text);
 }
 
 textarea {
@@ -112,7 +125,7 @@ a:hover {
 }
 
 ::selection {
-  background: rgba(232, 168, 93, 0.3);
+  background: rgba(212, 132, 58, 0.3);
   color: var(--color-text);
 }
 

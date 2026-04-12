@@ -1,22 +1,22 @@
 export const theme = {
   color: {
-    background: "#1a2f23",
+    background: "#1b2d24",
     backgroundTexture: "grain",
-    primaryText: "#f7f5f0",
-    secondaryText: "#a8b5a0",
-    accentFire: "#e8a85d",
-    accentEmber: "#c44b36",
-    accentGrowth: "#7fb5a0",
-    accentLiving: "#a4c2a5",
-    accentMature: "#8fb894",
-    cardOverlay: "rgba(247, 245, 240, 0.08)",
+    primaryText: "#f5f1e8",
+    secondaryText: "#a3b09a",
+    accentFire: "#d4843a",
+    accentEmber: "#bf5b3a",
+    accentGrowth: "#6ea88f",
+    accentLiving: "#9cbfa0",
+    accentMature: "#87ad8c",
+    cardOverlay: "rgba(247, 243, 235, 0.07)",
   },
 
   stage: {
-    seed: { color: "#7fb5a0", label: "Seed" },
-    sprout: { color: "#a4c2a5", label: "Sprout" },
-    mature: { color: "#8fb894", label: "Mature" },
-    ember: { color: "#e8a85d", label: "Ember" },
+    seed: { color: "#6ea88f", label: "Seed" },
+    sprout: { color: "#9cbfa0", label: "Sprout" },
+    mature: { color: "#87ad8c", label: "Mature" },
+    ember: { color: "#d4843a", label: "Ember" },
   },
 
   font: {

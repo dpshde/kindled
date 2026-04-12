@@ -61,7 +61,7 @@
 .resolveBtn {
   font-size: 14px;
   font-weight: 500;
-  color: #1a2f23;
+  color: #1b2d24;
   background: var(--color-fire);
   border-radius: var(--radius-md);
   padding: 12px 24px;
@@ -115,7 +115,7 @@
   margin-top: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #1a2f23;
+  color: #1b2d24;
   background: var(--color-growth);
   border-radius: var(--radius-md);
   padding: 12px 24px;
@@ -152,6 +152,104 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Structured picker */
+.builder {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.builderHint {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 2px;
+}
+
+.pickerGrid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pickerField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 80px;
+}
+
+.pickerLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-tertiary);
+}
+
+.select {
+  font-size: 14px;
+}
+
+/* Autocomplete suggestions */
+.suggestions {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.suggestionItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--color-text);
+  text-align: left;
+  transition: background var(--ease-in-out);
+}
+
+.suggestionItem:hover {
+  background: var(--color-bg-elevated);
+}
+
+.suggestionItem + .suggestionItem {
+  border-top: 1px solid var(--color-line);
+}
+
+/* Parse preview */
+.parsePreview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.parseLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-tertiary);
+}
+
+.parsePreview strong {
+  color: var(--color-text);
+}
+
+.parsePreview code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-left: auto;
 }
 
 @media (max-width: 480px) {
