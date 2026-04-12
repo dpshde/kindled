@@ -1,0 +1,123 @@
+:root {
+  --color-bg: #1a2f23;
+  --color-bg-elevated: rgba(247, 245, 240, 0.06);
+  --color-bg-card: rgba(247, 245, 240, 0.08);
+  --color-text: #f7f5f0;
+  --color-text-secondary: #a8b5a0;
+  --color-text-tertiary: #6b7e64;
+  --color-fire: #e8a85d;
+  --color-ember: #c44b36;
+  --color-growth: #7fb5a0;
+  --color-living: #a4c2a5;
+  --color-mature: #8fb894;
+  --color-line: rgba(168, 181, 160, 0.15);
+
+  --font-scripture: "Crimson Pro", "Georgia", "Times New Roman", serif;
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  --ease-out: 300ms ease-out;
+  --ease-in-out: 200ms ease-in-out;
+
+  font-family: var(--font-ui);
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font-family: var(--font-ui);
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
+input, textarea {
+  font-family: var(--font-ui);
+  color: var(--color-text);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 15px;
+  width: 100%;
+  outline: none;
+  transition: border-color var(--ease-in-out);
+}
+
+input:focus, textarea:focus {
+  border-color: var(--color-growth);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+a {
+  color: var(--color-living);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-fire);
+}
+
+::selection {
+  background: rgba(232, 168, 93, 0.3);
+  color: var(--color-text);
+}
+
+@media (max-width: 480px) {
+  :root {
+    font-size: 14px;
+  }
+}

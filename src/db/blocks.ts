@@ -1,0 +1,169 @@
+import { getDb } from "./connection";
+import type { Block, BlockType } from "./types";
+
+function generateId(): string {
+  return `blk_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function jsonField(val: unknown): string {
+  return JSON.stringify(val ?? []);
+}
+
+function parseJsonField<T>(val: string | undefined | null, fallback: T): T {
+  if (!val) return fallback;
+  try {
+    return JSON.parse(val) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+export async function createBlock(
+  block: Omit<Block, "id" | "captured_at" | "modified_at"> &
+    Partial<Pick<Block, "id">>,
+): Promise<string> {
+  const db = await getDb();
+  const id = block.id ?? generateId();
+  const now = new Date().toISOString();
+
+  await db.run(
+    `INSERT INTO blocks (id, type, content, scripture_ref, scripture_display_ref, scripture_translation, scripture_verses, entity_type, entity_id, entity_name, entity_aliases, entity_description, source, captured_at, modified_at, tags)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    id,
+    block.type,
+    block.content,
+    block.scripture_ref ?? null,
+    block.scripture_display_ref ?? null,
+    block.scripture_translation ?? null,
+    block.scripture_verses ? JSON.stringify(block.scripture_verses) : null,
+    block.entity_type ?? null,
+    block.entity_id ?? null,
+    block.entity_name ?? null,
+    block.entity_aliases ? JSON.stringify(block.entity_aliases) : null,
+    block.entity_description ?? null,
+    block.source ?? "manual",
+    now,
+    now,
+    jsonField(block.tags),
+  );
+
+  await db.run(
+    `INSERT INTO life_stages (block_id, stage, planted_at, next_watering) VALUES (?, 'seed', ?, ?)`,
+    id,
+    now,
+    now,
+  );
+
+  return id;
+}
+
+export async function getBlock(id: string): Promise<Block | null> {
+  const db = await getDb();
+  const row = await db.queryOne<Record<string, string>>(
+    `SELECT * FROM blocks WHERE id = ?`,
+  );
+  if (!row) return null;
+
+  // Use a proper parameterized approach
+  const rows = await db.query<Record<string, string>>(
+    `SELECT * FROM blocks WHERE id = '${id.replace(/'/g, "''")}'`,
+  );
+  if (rows.length === 0) return null;
+
+  const r = rows[0];
+  return {
+    id: r.id,
+    type: r.type as BlockType,
+    content: r.content,
+    scripture_ref: r.scripture_ref ?? undefined,
+    scripture_display_ref: r.scripture_display_ref ?? undefined,
+    scripture_translation: r.scripture_translation ?? undefined,
+    scripture_verses: parseJsonField<[]>(r.scripture_verses, []),
+    entity_type: (r.entity_type as Block["entity_type"]) ?? undefined,
+    entity_id: r.entity_id ?? undefined,
+    entity_name: r.entity_name ?? undefined,
+    entity_aliases: parseJsonField<string[]>(r.entity_aliases, []),
+    entity_description: r.entity_description ?? undefined,
+    source: r.source ?? undefined,
+    captured_at: r.captured_at,
+    modified_at: r.modified_at,
+    tags: parseJsonField<string[]>(r.tags, []),
+  };
+}
+
+export async function getAllBlocks(): Promise<Block[]> {
+  const db = await getDb();
+  const rows = await db.query<Record<string, string>>(
+    `SELECT * FROM blocks ORDER BY captured_at DESC`,
+  );
+
+  return rows.map((r) => ({
+    id: r.id,
+    type: r.type as BlockType,
+    content: r.content,
+    scripture_ref: r.scripture_ref ?? undefined,
+    scripture_display_ref: r.scripture_display_ref ?? undefined,
+    scripture_translation: r.scripture_translation ?? undefined,
+    scripture_verses: parseJsonField(r.scripture_verses, []),
+    entity_type: (r.entity_type as Block["entity_type"]) ?? undefined,
+    entity_id: r.entity_id ?? undefined,
+    entity_name: r.entity_name ?? undefined,
+    entity_aliases: parseJsonField<string[]>(r.entity_aliases, []),
+    entity_description: r.entity_description ?? undefined,
+    source: r.source ?? undefined,
+    captured_at: r.captured_at,
+    modified_at: r.modified_at,
+    tags: parseJsonField<string[]>(r.tags, []),
+  }));
+}
+
+export async function updateBlockContent(
+  id: string,
+  content: string,
+): Promise<void> {
+  const db = await getDb();
+  await db.run(
+    `UPDATE blocks SET content = ?, modified_at = ? WHERE id = ?`,
+    content,
+    new Date().toISOString(),
+    id,
+  );
+}
+
+export async function deleteBlock(id: string): Promise<void> {
+  const db = await getDb();
+  await db.run(`DELETE FROM life_stages WHERE block_id = ?`, id);
+  await db.run(`DELETE FROM links WHERE from_block = ? OR to_block = ?`, id, id);
+  await db.run(`DELETE FROM blocks WHERE id = ?`, id);
+}
+
+export async function searchBlocks(query: string): Promise<Block[]> {
+  const db = await getDb();
+  const safeQuery = query.replace(/'/g, "''");
+  const rows = await db.query<Record<string, string>>(
+    `SELECT * FROM blocks WHERE
+     content LIKE '%${safeQuery}%'
+     OR scripture_display_ref LIKE '%${safeQuery}%'
+     OR entity_name LIKE '%${safeQuery}%'
+     ORDER BY captured_at DESC`,
+  );
+
+  return rows.map((r) => ({
+    id: r.id,
+    type: r.type as BlockType,
+    content: r.content,
+    scripture_ref: r.scripture_ref ?? undefined,
+    scripture_display_ref: r.scripture_display_ref ?? undefined,
+    scripture_translation: r.scripture_translation ?? undefined,
+    scripture_verses: parseJsonField(r.scripture_verses, []),
+    entity_type: (r.entity_type as Block["entity_type"]) ?? undefined,
+    entity_id: r.entity_id ?? undefined,
+    entity_name: r.entity_name ?? undefined,
+    entity_aliases: parseJsonField<string[]>(r.entity_aliases, []),
+    entity_description: r.entity_description ?? undefined,
+    source: r.source ?? undefined,
+    captured_at: r.captured_at,
+    modified_at: r.modified_at,
+    tags: parseJsonField<string[]>(r.tags, []),
+  }));
+}

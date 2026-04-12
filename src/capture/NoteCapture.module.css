@@ -1,0 +1,94 @@
+.view {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn var(--ease-out);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  position: sticky;
+  top: 0;
+  background: var(--color-bg);
+  z-index: 10;
+}
+
+.backBtn {
+  color: var(--color-text-secondary);
+  padding: 4px;
+  display: flex;
+}
+
+.backBtn:hover {
+  color: var(--color-text);
+}
+
+.title {
+  font-family: var(--font-scripture);
+  font-size: 16px;
+  font-weight: 400;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.textarea {
+  min-height: 160px;
+  font-family: var(--font-scripture);
+  font-size: 17px;
+  line-height: 1.7;
+  padding: 16px;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.saveBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a2f23;
+  background: var(--color-growth);
+  border-radius: var(--radius-md);
+  padding: 12px 24px;
+  transition: opacity var(--ease-in-out);
+}
+
+.saveBtn:hover {
+  opacity: 0.9;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    max-width: 180px;
+    font-size: 14px;
+  }
+}

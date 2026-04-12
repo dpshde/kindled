@@ -1,0 +1,8 @@
+.container {
+  position: relative;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
