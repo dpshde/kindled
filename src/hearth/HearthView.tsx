@@ -15,6 +15,7 @@ import {
 import { ICON_PX } from "../ui/icon-sizes";
 import shell from "../ui/app-shell.module.css";
 import styles from "./HearthView.module.css";
+import { hapticTrigger } from "../haptics";
 
 type IconComponent = typeof IconFire;
 
@@ -75,7 +76,15 @@ export function HearthView(props: {
       <div class={shell.shell}>
         <header class={shell.header}>
           <div class={shell.headerLeading}>
-            <button type="button" class={shell.backBtn} onClick={props.onBack} aria-label="Back">
+            <button
+              type="button"
+              class={shell.backBtn}
+              onClick={() => {
+                hapticTrigger();
+                props.onBack();
+              }}
+              aria-label="Back"
+            >
               <IconArrowLeft size={ICON_PX.header} />
             </button>
           </div>
@@ -83,7 +92,15 @@ export function HearthView(props: {
             <h1 class={shell.headerTitle}>Hearth</h1>
           </div>
           <div class={shell.headerTrailing}>
-            <button type="button" class={styles.addBtn} onClick={props.onCapture} aria-label="Add passage">
+            <button
+              type="button"
+              class={styles.addBtn}
+              onClick={() => {
+                hapticTrigger();
+                props.onCapture();
+              }}
+              aria-label="Add passage"
+            >
               <IconPlus size={ICON_PX.header} />
             </button>
           </div>
@@ -122,10 +139,13 @@ export function HearthView(props: {
           const rhythm = ls ? nextReviewPresentation(ls.next_review_at) : null;
 
           return (
-            <button
+                       <button
               type="button"
               class={styles.card}
-              onClick={() => props.onSelect(block.id)}
+              onClick={() => {
+                hapticTrigger();
+                props.onSelect(block.id);
+              }}
             >
               <div class={styles.cardIcon}>
                 <TypeIcon size={ICON_PX.inline} />

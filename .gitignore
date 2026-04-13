@@ -24,3 +24,14 @@ dist-ssr
 *.sw?
 .vercel
 .env*.local
+
+# Local agent skill clone + per-agent symlinks (regenerate: npx skills add lochie/web-haptics -y)
+.agents/
+skills-lock.json
+.claude/skills/
+.crush/skills/
+.factory/skills/
+.junie/skills/
+.kiro/skills/
+.pi/skills/
+.windsurf/skills/

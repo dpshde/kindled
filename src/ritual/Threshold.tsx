@@ -13,6 +13,7 @@ import { BeginFireIcon } from "../ui/BeginFireIcon";
 import { ICON_PX } from "../ui/icon-sizes";
 
 import styles from "./Threshold.module.css";
+import { hapticTrigger } from "../haptics";
 
 export function Threshold(props: {
   onBegin: (blockIds: string[]) => void;
@@ -50,7 +51,13 @@ export function Threshold(props: {
           when={kindlingIds().length > 0}
           fallback={
             <div class={styles.empty}>
-              <button class={styles.button} onClick={props.onCapture}>
+              <button
+                class={styles.button}
+                onClick={() => {
+                  hapticTrigger();
+                  props.onCapture();
+                }}
+              >
                 <IconPlus size={ICON_PX.inline} /> Capture a Passage
               </button>
             </div>
@@ -65,7 +72,10 @@ export function Threshold(props: {
           </p>
           <button
             class={styles.primaryButton}
-            onClick={() => props.onBegin(kindlingIds())}
+            onClick={() => {
+              hapticTrigger();
+              props.onBegin(kindlingIds());
+            }}
           >
             <BeginFireIcon size={ICON_PX.actionPrimary} /> Begin
           </button>
@@ -78,10 +88,22 @@ export function Threshold(props: {
 
       <Show when={loading() || kindlingIds().length > 0}>
         <div class={styles.actions}>
-          <button class={styles.secondaryButton} onClick={props.onCapture}>
+          <button
+            class={styles.secondaryButton}
+            onClick={() => {
+              hapticTrigger();
+              props.onCapture();
+            }}
+          >
             <IconPlus size={ICON_PX.inline} /> Add
           </button>
-          <button class={styles.secondaryButton} onClick={props.onLibrary}>
+          <button
+            class={styles.secondaryButton}
+            onClick={() => {
+              hapticTrigger();
+              props.onLibrary();
+            }}
+          >
             <IconBookOpen size={ICON_PX.inline} /> Hearth
           </button>
         </div>

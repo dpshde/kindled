@@ -29,6 +29,7 @@ import { IconArrowLeft, IconCheck, IconBookOpen, IconUser, IconMapPin } from "..
 import shell from "../ui/app-shell.module.css";
 import { applyWikiLinkSuggestion } from "./wikiLinkAutocomplete";
 import styles from "./NoteCapture.module.css";
+import { hapticTrigger } from "../haptics";
 
 interface Suggestion {
   label: string;
@@ -147,6 +148,7 @@ export function NoteCapture(props: {
     const ctx = linkCtx();
     if (!ctx || !textareaRef) return;
 
+    hapticTrigger();
     const { text: newText, cursor: newCursor } = applyWikiLinkSuggestion(
       text(),
       ctx.start,
@@ -197,6 +199,7 @@ export function NoteCapture(props: {
   };
 
   const handleSave = async () => {
+    hapticTrigger();
     if (!text().trim()) {
       props.onBack();
       return;
@@ -402,7 +405,15 @@ export function NoteCapture(props: {
       <div class={shell.shell}>
         <header class={shell.header}>
           <div class={shell.headerLeading}>
-            <button type="button" class={shell.backBtn} onClick={props.onBack} aria-label="Back">
+            <button
+              type="button"
+              class={shell.backBtn}
+              onClick={() => {
+                hapticTrigger();
+                props.onBack();
+              }}
+              aria-label="Back"
+            >
               <IconArrowLeft size={ICON_PX.header} />
             </button>
           </div>

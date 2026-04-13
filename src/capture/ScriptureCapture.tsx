@@ -35,6 +35,7 @@ import { ICON_PX } from "../ui/icon-sizes";
 import { pickerLabelForOsisBook } from "../scripture/book-picker-labels";
 import shell from "../ui/app-shell.module.css";
 import styles from "./ScriptureCapture.module.css";
+import { hapticTrigger } from "../haptics";
 
 interface StructuredDraft {
   book: OsisBookCode | "";
@@ -287,6 +288,7 @@ export function ScriptureCapture(props: {
     const val = input().trim();
     if (!val) return;
 
+    hapticTrigger();
     const parsed = parseInputToPassage(val);
     if (!parsed) {
       setStatus("error");
@@ -319,6 +321,7 @@ export function ScriptureCapture(props: {
     const parsed = parseInputToPassage(val);
     if (!parsed || !preview()) return;
 
+    hapticTrigger();
     setStatus("saving");
     try {
       const passage = await resolvePassage(parsed.canonical);
@@ -347,24 +350,37 @@ export function ScriptureCapture(props: {
   };
 
   const applyTopicRef = (ref: string) => {
+    hapticTrigger();
     const human = topRefToInput(ref);
     syncDraftFromInput(human, true);
   };
 
   const selectTopic = (t: CanonicalTopic) => {
+    hapticTrigger();
     setTopicQuery(t.label);
     setActiveTopic(t);
     setTopicListCollapsed(true);
   };
 
-  const showTopicMatchList = () => setTopicListCollapsed(false);
+  const showTopicMatchList = () => {
+    hapticTrigger();
+    setTopicListCollapsed(false);
+  };
 
   return (
     <div class={shell.view}>
       <div class={shell.shell}>
         <header class={shell.header}>
           <div class={shell.headerLeading}>
-            <button type="button" class={shell.backBtn} onClick={props.onBack} aria-label="Back">
+            <button
+              type="button"
+              class={shell.backBtn}
+              onClick={() => {
+                hapticTrigger();
+                props.onBack();
+              }}
+              aria-label="Back"
+            >
               <IconArrowLeft size={ICON_PX.header} />
             </button>
           </div>
@@ -495,7 +511,10 @@ export function ScriptureCapture(props: {
                 <button
                   type="button"
                   class={styles.suggestionItem}
-                  onClick={() => syncDraftFromInput(s.insertText, true)}
+                  onClick={() => {
+                    hapticTrigger();
+                    syncDraftFromInput(s.insertText, true);
+                  }}
                 >
                   <span>{s.label}</span>
                 </button>

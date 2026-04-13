@@ -36,6 +36,7 @@ import { IconArrowsClockwise } from "../ui/arrows-clockwise-icon";
 import { ICON_PX } from "../ui/icon-sizes";
 import shell from "../ui/app-shell.module.css";
 import styles from "./PassageView.module.css";
+import { hapticTrigger } from "../haptics";
 
 const STAGE_LABEL: Record<LifeStage, string> = {
   spark: "Spark",
@@ -155,12 +156,14 @@ export function PassageView(props: {
   };
 
   const handleDeleteReflection = async (reflectionId: string) => {
+    hapticTrigger();
     if (!confirm("Delete this reflection?")) return;
     await deleteReflection(reflectionId);
     await refreshReflections();
   };
 
   const handleDelete = async () => {
+    hapticTrigger();
     await deleteBlock(props.passageId);
     props.onDeleted();
   };
@@ -172,6 +175,7 @@ export function PassageView(props: {
   };
 
   const handleSnooze = async (days: number) => {
+    hapticTrigger();
     const lingerSec = (Date.now() - startTs()) / 1000;
     await recordLinger(props.passageId, lingerSec);
     const until = new Date();
@@ -183,6 +187,7 @@ export function PassageView(props: {
   };
 
   const handleSnoozeDate = async () => {
+    hapticTrigger();
     const d = snoozeDate();
     if (!d) return;
     const lingerSec = (Date.now() - startTs()) / 1000;
@@ -194,6 +199,7 @@ export function PassageView(props: {
   };
 
   const handleAction = async (action: "stoke" | "deepen") => {
+    hapticTrigger();
     const lingerSec = (Date.now() - startTs()) / 1000;
     try {
       await recordLinger(props.passageId, lingerSec);
@@ -214,7 +220,10 @@ export function PassageView(props: {
             <button
               type="button"
               class={shell.backBtn}
-              onClick={props.onBack}
+              onClick={() => {
+                hapticTrigger();
+                props.onBack();
+              }}
               aria-label="Back"
             >
               <IconArrowLeft size={ICON_PX.header} />
@@ -257,7 +266,10 @@ export function PassageView(props: {
               type="button"
               class={styles.infoBtn}
               disabled={loading() || !block()}
-              onClick={() => setShowReviewDetails(true)}
+              onClick={() => {
+                hapticTrigger();
+                setShowReviewDetails(true);
+              }}
               aria-label="Review details"
               title="Review details"
             >
@@ -266,7 +278,10 @@ export function PassageView(props: {
             <button
               type="button"
               class={styles.deleteBtn}
-              onClick={() => setConfirmDelete(true)}
+              onClick={() => {
+                hapticTrigger();
+                setConfirmDelete(true);
+              }}
               aria-label="Delete"
             >
               <IconTrash size={ICON_PX.header} />
@@ -358,7 +373,10 @@ export function PassageView(props: {
                           <button
                             type="button"
                             class={styles.connectionChip}
-                            onClick={() => props.onNavigate(link.to_block)}
+                            onClick={() => {
+                              hapticTrigger();
+                              props.onNavigate(link.to_block);
+                            }}
                           >
                             {linkedBlockTitle(link, "to")}
                           </button>
@@ -377,7 +395,10 @@ export function PassageView(props: {
                           <button
                             type="button"
                             class={styles.connectionChip}
-                            onClick={() => props.onNavigate(link.from_block)}
+                            onClick={() => {
+                              hapticTrigger();
+                              props.onNavigate(link.from_block);
+                            }}
                           >
                             {linkedBlockTitle(link, "from")}
                           </button>
@@ -394,12 +415,13 @@ export function PassageView(props: {
                         <button
                           type="button"
                           class={styles.tertiaryBtn}
-                          onClick={() =>
+                          onClick={() => {
+                            hapticTrigger();
                             props.onNote({
                               passageId: b().id,
                               displayRef: b().scripture_display_ref ?? "",
-                            })
-                          }
+                            });
+                          }}
                         >
                           <IconNotePencil size={ICON_PX.decisionPanel} />
                           <span class={styles.tertiaryBtnLabel}>Add reflection</span>
@@ -417,13 +439,14 @@ export function PassageView(props: {
                                   <button
                                     type="button"
                                     class={styles.reflectionActionBtn}
-                                    onClick={() =>
+                                    onClick={() => {
+                                      hapticTrigger();
                                       props.onNote({
                                         passageId: b().id,
                                         displayRef: b().scripture_display_ref ?? "",
                                         reflectionId: ref.id,
-                                      })
-                                    }
+                                      });
+                                    }}
                                   >
                                     Edit
                                   </button>
@@ -449,7 +472,10 @@ export function PassageView(props: {
                       <button
                         type="button"
                         class={styles.tertiaryBtn}
-                        onClick={() => setShowSnooze(!showSnooze())}
+                        onClick={() => {
+                          hapticTrigger();
+                          setShowSnooze(!showSnooze());
+                        }}
                         aria-expanded={showSnooze()}
                       >
                         <IconClock size={ICON_PX.decisionPanel} />
@@ -516,7 +542,14 @@ export function PassageView(props: {
                 <Show when={confirmDelete()}>
                   <div class={styles.confirmRow}>
                     <span class={styles.confirmText}>Delete this block?</span>
-                    <button type="button" class={styles.confirmNo} onClick={() => setConfirmDelete(false)}>
+                    <button
+                      type="button"
+                      class={styles.confirmNo}
+                      onClick={() => {
+                        hapticTrigger();
+                        setConfirmDelete(false);
+                      }}
+                    >
                       Cancel
                     </button>
                     <button type="button" class={styles.confirmYes} onClick={handleDelete}>
@@ -537,7 +570,10 @@ export function PassageView(props: {
           <div
             class={styles.reviewDetailsRoot}
             role="presentation"
-            onClick={() => setShowReviewDetails(false)}
+            onClick={() => {
+              hapticTrigger();
+              setShowReviewDetails(false);
+            }}
           >
             <div
               class={styles.reviewDetailsPanel}
@@ -553,7 +589,10 @@ export function PassageView(props: {
                 <button
                   type="button"
                   class={styles.reviewDetailsClose}
-                  onClick={() => setShowReviewDetails(false)}
+                  onClick={() => {
+                    hapticTrigger();
+                    setShowReviewDetails(false);
+                  }}
                   aria-label="Close"
                 >
                   <IconX size={ICON_PX.header} />
