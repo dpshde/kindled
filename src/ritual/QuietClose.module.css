@@ -7,21 +7,23 @@
   min-height: 100dvh;
   padding: 48px 24px;
   text-align: center;
-  animation: fadeIn 600ms ease-out;
+  animation: fadeUp 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .icon {
   color: var(--color-mature);
   margin-bottom: 24px;
+  opacity: 0.8;
 }
 
 .title {
   font-family: var(--font-scripture);
-  font-size: 24px;
-  font-weight: 400;
+  font-size: 22px;
+  font-weight: 500;
   color: var(--color-text);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   max-width: 360px;
+  line-height: 1.4;
 }
 
 .sub {
@@ -29,6 +31,7 @@
   color: var(--color-text-secondary);
   margin-bottom: 32px;
   max-width: 320px;
+  line-height: 1.5;
 }
 
 .button {
@@ -36,22 +39,23 @@
   align-items: center;
   gap: 8px;
   font-size: 14px;
+  font-weight: 500;
   color: var(--color-text-secondary);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
-  padding: 10px 20px;
-  transition: border-color var(--ease-in-out);
+  padding: 10px 22px;
+  transition: border-color var(--ease-in-out), color var(--ease-in-out);
 }
 
 .button:hover {
-  border-color: var(--color-living);
+  border-color: var(--color-line-active);
   color: var(--color-text);
 }
 
-@keyframes fadeIn {
+@keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;

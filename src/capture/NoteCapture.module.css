@@ -15,22 +15,26 @@
   top: 0;
   background: var(--color-bg);
   z-index: 10;
+  border-bottom: 1px solid var(--color-line);
 }
 
 .backBtn {
-  color: var(--color-text-secondary);
-  padding: 4px;
+  color: var(--color-text-tertiary);
+  padding: 6px;
   display: flex;
+  border-radius: var(--radius-sm);
+  transition: color var(--ease-in-out), background var(--ease-in-out);
 }
 
 .backBtn:hover {
   color: var(--color-text);
+  background: var(--color-bg-elevated);
 }
 
 .title {
   font-family: var(--font-scripture);
   font-size: 16px;
-  font-weight: 400;
+  font-weight: 500;
   max-width: 240px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -38,41 +42,54 @@
 }
 
 .body {
-  padding: 24px;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  max-width: 540px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .textarea {
-  min-height: 160px;
+  min-height: 180px;
   font-family: var(--font-scripture);
   font-size: 17px;
-  line-height: 1.7;
-  padding: 16px;
+  line-height: 1.75;
+  padding: 18px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-line);
+}
+
+.textarea:focus {
+  border-color: var(--color-fire-dim);
 }
 
 .hint {
   font-size: 12px;
   color: var(--color-text-tertiary);
+  padding-left: 4px;
 }
 
 .saveBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 14px;
-  font-weight: 500;
-  color: #344532;
+  font-weight: 600;
+  color: #1a1714;
   background: var(--color-growth);
   border-radius: var(--radius-md);
-  padding: 12px 24px;
-  transition: opacity var(--ease-in-out);
+  padding: 13px 24px;
+  transition: opacity var(--ease-in-out), transform var(--ease-in-out);
+  box-shadow: 0 2px 12px rgba(122, 173, 110, 0.2);
 }
 
 .saveBtn:hover {
-  opacity: 0.9;
+  opacity: 0.92;
+  transform: translateY(-1px);
 }
 
 @keyframes fadeIn {

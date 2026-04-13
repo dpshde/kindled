@@ -1,10 +1,11 @@
-import { createSignal, Suspense } from "solid-js";
+import { createSignal, Suspense, onMount } from "solid-js";
 import { Threshold } from "./ritual/Threshold";
 import { GardenView } from "./garden/GardenView";
 import { PassageView } from "./ritual/PassageView";
 import { QuietClose } from "./ritual/QuietClose";
 import { ScriptureCapture } from "./capture/ScriptureCapture";
 import { NoteCapture } from "./capture/NoteCapture";
+import { loadBibleData } from "./scripture/BibleLoader";
 
 type Screen =
   | { kind: "threshold" }
@@ -16,6 +17,10 @@ type Screen =
 
 export default function App() {
   const [screen, setScreen] = createSignal<Screen>({ kind: "threshold" });
+
+  onMount(() => {
+    loadBibleData().catch(() => {});
+  });
 
   const navigate = (s: Screen) => setScreen(s);
 

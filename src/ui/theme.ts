@@ -1,27 +1,30 @@
 export const theme = {
   color: {
-    background: "#344532",
-    backgroundTexture: "grain",
-    primaryText: "#f5f1e8",
-    secondaryText: "#9aaa92",
-    accentFire: "#ff4d00",
-    accentEmber: "#cc3d00",
-    accentGrowth: "#5a9e78",
-    accentLiving: "#8abf96",
-    accentMature: "#7aaa82",
-    cardOverlay: "rgba(247, 243, 235, 0.06)",
+    background: "#1a1714",
+    backgroundWarm: "#1f1b16",
+    primaryText: "#f0e6d6",
+    secondaryText: "#a89b8a",
+    tertiaryText: "#6b5f52",
+    accentFire: "#e8922f",
+    accentFireDim: "#c47a24",
+    accentEmber: "#b5622a",
+    accentGrowth: "#7aad6e",
+    accentGrowthDim: "#5a8a4e",
+    accentLiving: "#a3cf96",
+    accentMature: "#8fb884",
+    cardOverlay: "rgba(255, 240, 220, 0.04)",
   },
 
   stage: {
-    seed: { color: "#5a9e78", label: "Seed" },
-    sprout: { color: "#8abf96", label: "Sprout" },
-    mature: { color: "#7aaa82", label: "Mature" },
-    ember: { color: "#ff4d00", label: "Ember" },
+    seed: { color: "#7aad6e", label: "Seed" },
+    sprout: { color: "#a3cf96", label: "Sprout" },
+    mature: { color: "#8fb884", label: "Mature" },
+    ember: { color: "#e8922f", label: "Ember" },
   },
 
   font: {
-    scripture: "'Crimson Pro', 'Georgia', serif",
-    ui: "Inter, system-ui, -apple-system, sans-serif",
+    scripture: "'Lora', 'Georgia', serif",
+    ui: "'DM Sans', system-ui, sans-serif",
     mono: "'JetBrains Mono', 'SF Mono', monospace",
   },
 
@@ -34,9 +37,9 @@ export const theme = {
   },
 
   radius: {
-    card: "12px",
-    button: "8px",
-    input: "6px",
+    card: "14px",
+    button: "10px",
+    input: "8px",
   },
 
   spacing: {
@@ -49,7 +52,7 @@ export const theme = {
   },
 
   animation: {
-    entrance: "300ms ease-out",
+    entrance: "400ms cubic-bezier(0.16, 1, 0.3, 1)",
     transition: "200ms ease-in-out",
     spark: "150ms ease-out",
   },

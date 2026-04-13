@@ -3,7 +3,7 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  animation: fadeIn var(--ease-out);
+  animation: slideIn var(--ease-out);
 }
 
 .header {
@@ -15,23 +15,27 @@
   top: 0;
   background: var(--color-bg);
   z-index: 10;
+  border-bottom: 1px solid var(--color-line);
 }
 
 .closeBtn {
-  color: var(--color-text-secondary);
-  padding: 4px;
+  color: var(--color-text-tertiary);
+  padding: 6px;
   display: flex;
-  transition: color var(--ease-in-out);
+  border-radius: var(--radius-sm);
+  transition: color var(--ease-in-out), background var(--ease-in-out);
 }
 
 .closeBtn:hover {
   color: var(--color-text);
+  background: var(--color-bg-elevated);
 }
 
 .progress {
   font-size: 12px;
+  font-weight: 500;
   color: var(--color-text-tertiary);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 
 .loading {
@@ -51,37 +55,44 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24px;
+  padding: 32px 24px 48px;
   text-align: center;
 }
 
 .stage {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 16px;
+  letter-spacing: 0.12em;
+  margin-bottom: 20px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-line);
 }
 
 .ref {
   font-family: var(--font-scripture);
-  font-size: 28px;
-  font-weight: 400;
+  font-size: 26px;
+  font-weight: 500;
   color: var(--color-text);
   margin-bottom: 4px;
+  letter-spacing: -0.01em;
 }
 
 .translation {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--color-text-tertiary);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 
 .textBlock {
-  margin: 32px 0;
+  margin: 28px 0;
   max-width: 520px;
   width: 100%;
 }
@@ -89,26 +100,28 @@
 .text {
   font-family: var(--font-scripture);
   font-size: 20px;
-  line-height: 1.7;
+  line-height: 1.75;
   color: var(--color-text);
   white-space: pre-wrap;
 }
 
 .verse {
   font-family: var(--font-scripture);
-  font-size: 22px;
-  line-height: 1.8;
+  font-size: 21px;
+  line-height: 1.85;
   color: var(--color-text);
-  margin: 0 0 4px 0;
+  margin: 0 0 6px 0;
   text-align: left;
 }
 
 .verseNum {
-  color: var(--color-text-tertiary);
-  font-size: 13px;
+  color: var(--color-fire);
+  font-size: 11px;
+  font-weight: 600;
   font-family: var(--font-ui);
   vertical-align: super;
-  margin-right: 2px;
+  margin-right: 3px;
+  opacity: 0.8;
 }
 
 .verseText {
@@ -117,70 +130,77 @@
 
 .actions {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   margin-top: auto;
-  padding-top: 24px;
+  padding-top: 28px;
 }
 
 .actionBtn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 16px 24px;
+  gap: 8px;
+  padding: 18px 28px;
   border-radius: var(--radius-lg);
   background: var(--color-bg-card);
   color: var(--action-color);
-  font-size: 12px;
-  transition: background var(--ease-in-out), transform 150ms ease;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--color-line);
+  transition: background var(--ease-in-out), border-color var(--ease-in-out), transform 150ms ease;
 }
 
 .actionBtn:hover {
-  background: var(--color-bg-elevated);
+  background: var(--color-bg-card-hover);
+  border-color: var(--color-line-active);
 }
 
 .actionBtn:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }
 
 .noteBtn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   margin-top: 16px;
   font-size: 13px;
-  color: var(--color-text-secondary);
+  font-weight: 500;
+  color: var(--color-text-tertiary);
   padding: 8px 16px;
   border-radius: var(--radius-sm);
-  transition: color var(--ease-in-out);
+  transition: color var(--ease-in-out), background var(--ease-in-out);
 }
 
 .noteBtn:hover {
   color: var(--color-living);
+  background: var(--color-bg-elevated);
 }
 
-@keyframes fadeIn {
+@keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateX(20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
 }
 
 @media (max-width: 480px) {
   .actions {
-    gap: 10px;
+    gap: 8px;
   }
   .actionBtn {
-    padding: 14px 18px;
+    padding: 14px 20px;
   }
   .verse {
-    font-size: 19px;
+    font-size: 18px;
   }
   .ref {
-    font-size: 24px;
+    font-size: 22px;
   }
 }

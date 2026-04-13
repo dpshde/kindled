@@ -59,14 +59,9 @@ export async function createBlock(
 
 export async function getBlock(id: string): Promise<Block | null> {
   const db = await getDb();
-  const row = await db.queryOne<Record<string, string>>(
-    `SELECT * FROM blocks WHERE id = ?`,
-  );
-  if (!row) return null;
-
-  // Use a proper parameterized approach
+  const safeId = id.replace(/'/g, "''");
   const rows = await db.query<Record<string, string>>(
-    `SELECT * FROM blocks WHERE id = '${id.replace(/'/g, "''")}'`,
+    `SELECT * FROM blocks WHERE id = '${safeId}'`,
   );
   if (rows.length === 0) return null;
 
