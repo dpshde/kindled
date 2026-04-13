@@ -10,12 +10,6 @@ import IconXRaw from "phosphor-icons-solid/IconXRegular";
 // @ts-ignore
 import IconCheckRaw from "phosphor-icons-solid/IconCheckRegular";
 // @ts-ignore
-import IconPlantRaw from "phosphor-icons-solid/IconPlantRegular";
-// @ts-ignore
-import IconTreeRaw from "phosphor-icons-solid/IconTreeRegular";
-// @ts-ignore
-import IconLeafRaw from "phosphor-icons-solid/IconLeafRegular";
-// @ts-ignore
 import IconFireRaw from "phosphor-icons-solid/IconFireRegular";
 // @ts-ignore
 import IconSparkleRaw from "phosphor-icons-solid/IconSparkleRegular";
@@ -64,7 +58,18 @@ function wrapIcon(
   return (props: IconProps) => {
     const size = props.size ?? 20;
     const className = props.class ?? "";
-    return <span style={{ display: "inline-flex", width: `${size}px`, height: `${size}px`, color: props.color }}><IconComponent class={className} /></span>;
+    return (
+      <span
+        class="phosphor-icon-wrap"
+        style={{
+          width: `${size}px`,
+          height: `${size}px`,
+          color: props.color,
+        }}
+      >
+        <IconComponent class={className} />
+      </span>
+    );
   };
 }
 
@@ -72,10 +77,6 @@ function wrapIcon(
 export const IconArrowLeft = wrapIcon(IconArrowLeftRaw);
 export const IconX = wrapIcon(IconXRaw);
 export const IconCheck = wrapIcon(IconCheckRaw);
-export const IconSeedling = wrapIcon(IconPlantRaw);
-export const IconPlant = wrapIcon(IconPlantRaw);
-export const IconTree = wrapIcon(IconTreeRaw);
-export const IconLeaf = wrapIcon(IconLeafRaw);
 export const IconFire = wrapIcon(IconFireRaw);
 export const IconSparkle = wrapIcon(IconSparkleRaw);
 export const IconDrop = wrapIcon(IconDropRaw);

@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 3;
 
 export const MIGRATIONS: Record<number, string[]> = {
   1: [
@@ -59,11 +59,11 @@ CREATE TABLE IF NOT EXISTS links (
     `
 CREATE TABLE IF NOT EXISTS life_stages (
   block_id TEXT PRIMARY KEY,
-  stage TEXT NOT NULL DEFAULT 'seed' CHECK(stage IN ('seed', 'sprout', 'mature', 'ember')),
-  planted_at TEXT NOT NULL DEFAULT (datetime('now')),
-  last_watered TEXT,
-  next_watering TEXT NOT NULL DEFAULT (datetime('now')),
-  watering_count INTEGER NOT NULL DEFAULT 0,
+  stage TEXT NOT NULL DEFAULT 'spark' CHECK(stage IN ('spark', 'flame', 'steady', 'ember')),
+  kindled_at TEXT NOT NULL DEFAULT (datetime('now')),
+  last_reviewed TEXT,
+  next_review_at TEXT NOT NULL DEFAULT (datetime('now')),
+  review_count INTEGER NOT NULL DEFAULT 0,
   settledness INTEGER NOT NULL DEFAULT 0,
   linger_seconds REAL NOT NULL DEFAULT 0,
   notes_added INTEGER NOT NULL DEFAULT 0,
@@ -84,8 +84,26 @@ CREATE TABLE IF NOT EXISTS schema_meta (
     `CREATE INDEX IF NOT EXISTS idx_links_from ON links(from_block);`,
     `CREATE INDEX IF NOT EXISTS idx_links_to ON links(to_block);`,
     `CREATE INDEX IF NOT EXISTS idx_life_stages_stage ON life_stages(stage);`,
-    `CREATE INDEX IF NOT EXISTS idx_life_stages_next_watering ON life_stages(next_watering);`,
+    `CREATE INDEX IF NOT EXISTS idx_life_stages_next_review_at ON life_stages(next_review_at);`,
   ],
+
+  2: [
+    `
+CREATE TABLE IF NOT EXISTS reflections (
+  id TEXT PRIMARY KEY,
+  block_id TEXT NOT NULL,
+  body TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  modified_at TEXT NOT NULL,
+  FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE CASCADE
+);`,
+    `CREATE INDEX IF NOT EXISTS idx_reflections_block ON reflections(block_id);`,
+    `CREATE INDEX IF NOT EXISTS idx_reflections_modified ON reflections(modified_at DESC);`,
+    `ALTER TABLE links ADD COLUMN reflection_id TEXT;`,
+  ],
+
+  /** Bump only — life_stages shape is defined in migration 1 (fresh DBs). Use a new SQLite file name to reset local data. */
+  3: [],
 };
 
 export function allMigrations(): string[] {

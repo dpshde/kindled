@@ -159,6 +159,22 @@ a:hover {
   color: var(--color-fire);
 }
 
+/* Phosphor SVGs default to inline-block + 1em; fill the px-sized wrapper for stable flex alignment. */
+.phosphor-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 0;
+  vertical-align: middle;
+}
+
+.phosphor-icon-wrap svg {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
 ::selection {
   background: rgba(232, 146, 47, 0.25);
   color: var(--color-text);

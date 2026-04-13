@@ -1,11 +1,14 @@
 import { getDb } from "./connection";
 import type { LifeStage, LifeStageRecord } from "./types";
 
-const STAGE_SCHEDULE: Record<LifeStage, { waterDays: number; transplantDays: number }> = {
-  seed: { waterDays: 3, transplantDays: 7 },
-  sprout: { waterDays: 7, transplantDays: 7 },
-  mature: { waterDays: 30, transplantDays: 90 },
-  ember: { waterDays: 365, transplantDays: 365 },
+const STAGE_SCHEDULE: Record<
+  LifeStage,
+  { reviewIntervalDays: number; nudgeIntervalDays: number }
+> = {
+  spark: { reviewIntervalDays: 3, nudgeIntervalDays: 7 },
+  flame: { reviewIntervalDays: 7, nudgeIntervalDays: 7 },
+  steady: { reviewIntervalDays: 30, nudgeIntervalDays: 90 },
+  ember: { reviewIntervalDays: 365, nudgeIntervalDays: 365 },
 };
 
 function addDays(date: Date, days: number): string {
@@ -26,10 +29,10 @@ export async function getLifeStage(blockId: string): Promise<LifeStageRecord | n
   return {
     block_id: r.block_id,
     stage: r.stage as LifeStage,
-    planted_at: r.planted_at,
-    last_watered: r.last_watered ?? undefined,
-    next_watering: r.next_watering,
-    watering_count: parseInt(r.watering_count, 10),
+    kindled_at: r.kindled_at,
+    last_reviewed: r.last_reviewed ?? undefined,
+    next_review_at: r.next_review_at,
+    review_count: parseInt(r.review_count, 10),
     settledness: parseInt(r.settledness, 10),
     linger_seconds: parseFloat(r.linger_seconds),
     notes_added: parseInt(r.notes_added, 10),
@@ -45,7 +48,7 @@ export async function ensureLifeStage(blockId: string): Promise<LifeStageRecord>
   const db = await getDb();
   const now = new Date().toISOString();
   await db.run(
-    `INSERT INTO life_stages (block_id, stage, planted_at, next_watering) VALUES (?, 'seed', ?, ?)`,
+    `INSERT INTO life_stages (block_id, stage, kindled_at, next_review_at) VALUES (?, 'spark', ?, ?)`,
     blockId,
     now,
     now,
@@ -55,67 +58,67 @@ export async function ensureLifeStage(blockId: string): Promise<LifeStageRecord>
   return created;
 }
 
-export async function waterBlock(blockId: string): Promise<LifeStage> {
+/** Record a review (“Review later”) — advances rhythm and may promote spark → flame → steady. */
+export async function stokeBlock(blockId: string): Promise<LifeStage> {
   const stage = await getLifeStage(blockId);
   if (!stage) throw new Error(`No life stage for block ${blockId}`);
 
   const now = new Date();
 
-  // Transition logic: seed → sprout after first watering
   let newStage: LifeStage = stage.stage;
-  if (stage.stage === "seed") {
-    newStage = "sprout";
-  } else if (stage.stage === "sprout" && stage.watering_count >= 3) {
-    newStage = "mature";
+  if (stage.stage === "spark") {
+    newStage = "flame";
+  } else if (stage.stage === "flame" && stage.review_count >= 3) {
+    newStage = "steady";
   }
 
   const newSchedule = STAGE_SCHEDULE[newStage];
-  const nextWatering = addDays(now, newSchedule.waterDays);
+  const nextReviewAt = addDays(now, newSchedule.reviewIntervalDays);
 
   const db = await getDb();
   await db.run(
-    `UPDATE life_stages SET stage = ?, last_watered = ?, next_watering = ?, watering_count = watering_count + 1, settledness = MIN(100, settledness + 5) WHERE block_id = ?`,
+    `UPDATE life_stages SET stage = ?, last_reviewed = ?, next_review_at = ?, review_count = review_count + 1, settledness = MIN(100, settledness + 5) WHERE block_id = ?`,
     newStage,
     now.toISOString(),
-    nextWatering,
+    nextReviewAt,
     blockId,
   );
 
   return newStage;
 }
 
-export async function transplantBlock(blockId: string): Promise<void> {
+/** Bring a passage back sooner (same ritual as a full review for scheduling). */
+export async function nudgeBlock(blockId: string): Promise<void> {
   const stage = await getLifeStage(blockId);
   if (!stage) throw new Error(`No life stage for block ${blockId}`);
 
   const now = new Date();
   const schedule = STAGE_SCHEDULE[stage.stage];
 
-  // Transplant keeps the stage but brings it back sooner
   let newStage: LifeStage = stage.stage;
-  if (stage.stage === "seed") {
-    newStage = "sprout";
+  if (stage.stage === "spark") {
+    newStage = "flame";
   }
 
-  const nextWatering = addDays(now, schedule.transplantDays);
+  const nextReviewAt = addDays(now, schedule.nudgeIntervalDays);
 
   const db = await getDb();
   await db.run(
-    `UPDATE life_stages SET stage = ?, last_watered = ?, next_watering = ?, watering_count = watering_count + 1 WHERE block_id = ?`,
+    `UPDATE life_stages SET stage = ?, last_reviewed = ?, next_review_at = ?, review_count = review_count + 1 WHERE block_id = ?`,
     newStage,
     now.toISOString(),
-    nextWatering,
+    nextReviewAt,
     blockId,
   );
 }
 
-export async function harvestBlock(blockId: string): Promise<void> {
+/** “Mastered” — settle into a steady flame with a long next review. */
+export async function deepenBlock(blockId: string): Promise<void> {
   const db = await getDb();
   const now = new Date();
 
-  // Harvest moves to mature with a long next_watering
   await db.run(
-    `UPDATE life_stages SET stage = 'mature', last_watered = ?, next_watering = ?, watering_count = watering_count + 1, settledness = MIN(100, settledness + 20) WHERE block_id = ?`,
+    `UPDATE life_stages SET stage = 'steady', last_reviewed = ?, next_review_at = ?, review_count = review_count + 1, settledness = MIN(100, settledness + 20) WHERE block_id = ?`,
     now.toISOString(),
     addDays(now, 90),
     blockId,
@@ -125,7 +128,7 @@ export async function harvestBlock(blockId: string): Promise<void> {
 export async function emberBlock(blockId: string): Promise<void> {
   const db = await getDb();
   await db.run(
-    `UPDATE life_stages SET stage = 'ember', next_watering = ? WHERE block_id = ?`,
+    `UPDATE life_stages SET stage = 'ember', next_review_at = ? WHERE block_id = ?`,
     addDays(new Date(), 365),
     blockId,
   );
@@ -154,7 +157,7 @@ export async function incrementNotes(blockId: string): Promise<void> {
 export async function snoozeBlock(blockId: string, untilDate: Date): Promise<void> {
   const db = await getDb();
   await db.run(
-    `UPDATE life_stages SET next_watering = ? WHERE block_id = ?`,
+    `UPDATE life_stages SET next_review_at = ? WHERE block_id = ?`,
     untilDate.toISOString(),
     blockId,
   );
@@ -165,13 +168,13 @@ export async function prioritizeBlockForReview(blockId: string): Promise<void> {
   const db = await getDb();
   const now = new Date().toISOString();
   await db.run(
-    `UPDATE life_stages SET next_watering = ?, stage = CASE WHEN stage = 'ember' THEN 'seed' ELSE stage END WHERE block_id = ?`,
+    `UPDATE life_stages SET next_review_at = ?, stage = CASE WHEN stage = 'ember' THEN 'spark' ELSE stage END WHERE block_id = ?`,
     now,
     blockId,
   );
 }
 
-/** Session cache for home-screen kindling IDs (invalidated when the garden changes). */
+/** Session cache for home-screen kindling IDs (invalidated when saved passages change). */
 let clientKindlingIdsCache: string[] | null = null;
 
 export function peekClientKindlingIdsCache(): string[] | null {
@@ -190,23 +193,22 @@ export async function getDailyKindling(limit = 5): Promise<string[]> {
   const db = await getDb();
   const now = new Date().toISOString();
 
-  // Priority: seeds needing water → connected to recently watered → low familiarity → random
   const rows = await db.query<Record<string, string>>(
     `SELECT b.id,
        ls.stage,
-       ls.watering_count,
+       ls.review_count,
        ls.settledness,
        ls.connections_made,
        (SELECT COUNT(*) FROM links l WHERE l.from_block = b.id) as link_count
      FROM blocks b
      JOIN life_stages ls ON b.id = ls.block_id
      WHERE ls.stage != 'ember'
-       AND ls.next_watering <= '${now}'
+       AND ls.next_review_at <= '${now}'
      ORDER BY
        CASE ls.stage
-         WHEN 'seed' THEN 1
-         WHEN 'sprout' THEN 2
-         WHEN 'mature' THEN 3
+         WHEN 'spark' THEN 1
+         WHEN 'flame' THEN 2
+         WHEN 'steady' THEN 3
          ELSE 4
        END,
        ls.settledness ASC,

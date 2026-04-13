@@ -12,7 +12,7 @@ export type BlockType =
 
 export type EntityType = "person" | "place" | "theme" | "event";
 
-export type LifeStage = "seed" | "sprout" | "mature" | "ember";
+export type LifeStage = "spark" | "flame" | "steady" | "ember";
 
 export interface Verse {
   number: number;
@@ -41,10 +41,10 @@ export interface Block {
 export interface LifeStageRecord {
   block_id: string;
   stage: LifeStage;
-  planted_at: string;
-  last_watered?: string;
-  next_watering: string;
-  watering_count: number;
+  kindled_at: string;
+  last_reviewed?: string;
+  next_review_at: string;
+  review_count: number;
   settledness: number;
   linger_seconds: number;
   notes_added: number;
@@ -59,6 +59,16 @@ export interface Link {
   context: string;
   created_at: string;
   is_entity_link: boolean;
+  /** When set, link was created from this reflection (passage block is still `from_block`). */
+  reflection_id?: string | null;
+}
+
+export interface Reflection {
+  id: string;
+  block_id: string;
+  body: string;
+  created_at: string;
+  modified_at: string;
 }
 
 export interface Entity {

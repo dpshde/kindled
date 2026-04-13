@@ -327,6 +327,26 @@
   gap: 0;
 }
 
+.decisionPanel > .tertiaryRow:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* No rule between Add reflection and Snooze (stacked tertiary buttons). */
+.decisionPanel > .reflectionAddRow + .tertiaryRow,
+.decisionPanel > .reflectionList + .tertiaryRow {
+  margin-top: 0.75rem;
+  padding-top: 0;
+  border-top: none;
+}
+
+.decisionPanelActions {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-line) 80%, transparent);
+}
+
 .actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -334,7 +354,7 @@
   width: 100%;
 }
 
-/* Custom arrows glyph reads larger than Phosphor at the same box — scale to match. */
+/* Keeps refresh icon centered in the same box as other Phosphor wraps. */
 .decisionArrowsOptical {
   display: inline-flex;
   align-items: center;
@@ -342,18 +362,13 @@
   line-height: 0;
 }
 
-.decisionArrowsOptical > span {
-  transform: scale(0.88);
-  transform-origin: center;
-}
-
 .actionBtn {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  padding: 0.85rem 0.5rem;
+  gap: 0.35rem;
+  padding: 0.55rem 0.5rem 0.65rem;
   border-radius: 3px;
   font-size: 12px;
   font-weight: 600;
@@ -365,7 +380,11 @@
     border-color var(--ease-ui),
     color var(--ease-ui),
     opacity var(--ease-ui);
-  min-height: 4.5rem;
+  min-height: 4.75rem;
+}
+
+.actionBtn > span:not(.decisionArrowsOptical) {
+  display: block;
 }
 
 .actionBtn:focus-visible {
@@ -406,23 +425,37 @@
 .tertiaryRow {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 0;
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid color-mix(in srgb, var(--color-line) 80%, transparent);
 }
 
+.tertiaryRowSnoozeOpen .tertiaryBtn {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+}
+
+.tertiaryRowSnoozeOpen .snoozePanel {
+  border-top: none;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
 .tertiaryBtn {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
+  width: 100%;
   min-height: 44px;
   padding: 10px 12px;
   font-size: 13px;
   font-weight: 600;
   font-family: var(--font-ui);
   letter-spacing: 0.02em;
+  line-height: 1.2;
   color: var(--color-text);
   border: 1px solid var(--color-line);
   border-radius: 3px;
@@ -434,6 +467,12 @@
     border-color var(--ease-ui),
     color var(--ease-ui),
     opacity var(--ease-ui);
+}
+
+.tertiaryBtnLabel {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.2;
 }
 
 .tertiaryBtn:hover {
@@ -497,13 +536,73 @@
   outline-offset: 2px;
 }
 
+.reflectionAddRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin-top: 0;
+}
+
+.reflectionList {
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reflectionCard {
+  padding: 12px 14px;
+  border: 1px solid var(--color-line);
+  border-radius: 3px;
+  background: var(--color-bg-warm);
+}
+
+.reflectionMeta {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  margin: 0 0 8px;
+}
+
+.reflectionActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.reflectionActionBtn,
+.reflectionActionBtnDanger {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  color: var(--color-text);
+  transition: background var(--ease-ui), border-color var(--ease-ui);
+}
+
+.reflectionActionBtn:hover {
+  border-color: var(--color-line-active);
+}
+
+.reflectionActionBtnDanger {
+  color: var(--color-ember, #a33);
+  border-color: color-mix(in srgb, var(--color-ember, #a33) 35%, var(--color-line));
+}
+
+.reflectionActionBtnDanger:hover {
+  background: color-mix(in srgb, var(--color-ember, #a33) 8%, var(--color-bg));
+}
+
 .snoozePanel {
   background: color-mix(in srgb, var(--color-bg-warm) 30%, var(--color-bg));
   border: 1px solid var(--color-line);
   border-radius: 3px;
   padding: 12px;
   width: 100%;
-  margin-top: 0.85rem;
+  margin-top: 0;
 }
 
 .snoozePresets {

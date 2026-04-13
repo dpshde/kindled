@@ -9,6 +9,8 @@ export const ICON_PX = {
   actionPrimary: 20,
   /** Decision panel: primary + tertiary row (one optical size) */
   decisionPanel: 22,
+  /** Mastered / Review later stacked pair (larger than tertiary row) */
+  decisionStack: 30,
   /** Inline controls: tertiary rows, inputs, list rows, small buttons */
   inline: 16,
   /** Dense lists: autocomplete rows, meta chips */

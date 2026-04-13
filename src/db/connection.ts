@@ -41,7 +41,7 @@ export class Database {
         const module = await SQLiteESMFactory();
         const sqlite3 = SQLite.Factory(module);
 
-        const db = await sqlite3.open_v2("kindled");
+        const db = await sqlite3.open_v2("kindled_fire");
         const instance = new Database(sqlite3, db);
         await instance.runMigrations();
         dbInstance = instance;

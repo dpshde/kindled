@@ -11,12 +11,13 @@ export async function createLink(link: {
   link_text: string;
   context?: string;
   is_entity_link?: boolean;
+  reflection_id?: string | null;
 }): Promise<string> {
   const db = await getDb();
   const id = generateId();
 
   await db.run(
-    `INSERT INTO links (id, from_block, to_block, link_text, context, created_at, is_entity_link) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO links (id, from_block, to_block, link_text, context, created_at, is_entity_link, reflection_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     id,
     link.from_block,
     link.to_block,
@@ -24,6 +25,7 @@ export async function createLink(link: {
     link.context ?? "",
     new Date().toISOString(),
     link.is_entity_link ? 1 : 0,
+    link.reflection_id ?? null,
   );
 
   // Update connections_made on the source block's life stage
@@ -50,6 +52,7 @@ export async function getOutgoingLinks(blockId: string): Promise<Link[]> {
     context: r.context,
     created_at: r.created_at,
     is_entity_link: r.is_entity_link === "1",
+    reflection_id: r.reflection_id ?? null,
   }));
 }
 
@@ -68,7 +71,29 @@ export async function getBacklinks(blockId: string): Promise<Link[]> {
     context: r.context,
     created_at: r.created_at,
     is_entity_link: r.is_entity_link === "1",
+    reflection_id: r.reflection_id ?? null,
   }));
+}
+
+/** Remove links created from one reflection; adjusts connections_made on the passage. */
+export async function deleteLinksForReflection(reflectionId: string): Promise<void> {
+  const db = await getDb();
+  const safe = reflectionId.replace(/'/g, "''");
+  const rows = await db.query<{ from_block: string }>(
+    `SELECT from_block FROM links WHERE reflection_id = '${safe}'`,
+  );
+  const byBlock = new Map<string, number>();
+  for (const r of rows) {
+    byBlock.set(r.from_block, (byBlock.get(r.from_block) ?? 0) + 1);
+  }
+  await db.run(`DELETE FROM links WHERE reflection_id = ?`, reflectionId);
+  for (const [blockId, n] of byBlock) {
+    await db.run(
+      `UPDATE life_stages SET connections_made = MAX(0, connections_made - ?) WHERE block_id = ?`,
+      n,
+      blockId,
+    );
+  }
 }
 
 export async function deleteLinksFrom(blockId: string): Promise<void> {

@@ -21,12 +21,16 @@ import {
   IconWarning,
 } from "../ui/Icons";
 import {
+  getTopicPassagePicksForBook,
   loadCanonicalTopics,
   searchCanonicalTopics,
   topRefToInput,
   type CanonicalTopic,
 } from "../scripture/canonicalTopics";
-import { filterRedundantBookSuggestions } from "../scripture/passageAutocomplete";
+import {
+  filterRedundantBookSuggestions,
+  topicPassageQueryFilter,
+} from "../scripture/passageAutocomplete";
 import { ICON_PX } from "../ui/icon-sizes";
 import { pickerLabelForOsisBook } from "../scripture/book-picker-labels";
 import shell from "../ui/app-shell.module.css";
@@ -87,7 +91,7 @@ function parseInputToPassage(val: string): ParsedPassage | null {
 }
 
 export function ScriptureCapture(props: {
-  /** From URL deep link (`?ref=…`) — seed input and resolve preview when possible */
+  /** From URL deep link (`?ref=…`) — prefill input and resolve preview when possible */
   initialRef?: string;
   onBack: () => void;
   onSaved: () => void;
@@ -119,9 +123,9 @@ export function ScriptureCapture(props: {
   let passageInputRef: HTMLInputElement | undefined;
 
   onMount(() => {
-    const seed = props.initialRef?.trim();
-    if (seed) {
-      syncDraftFromInput(seed, true);
+    const refFromUrl = props.initialRef?.trim();
+    if (refFromUrl) {
+      syncDraftFromInput(refFromUrl, true);
     } else {
       queueMicrotask(() => passageInputRef?.focus());
     }
@@ -165,6 +169,16 @@ export function ScriptureCapture(props: {
   const suggestions = createMemo(() => {
     const q = input().trim();
     if (!q || status() !== "idle") return [];
+    const tf = topicPassageQueryFilter(q);
+    if (tf) {
+      const { book, chapter, versePrefix } = tf;
+      return getTopicPassagePicksForBook(book, 6, { chapter, versePrefix }).map((pick) => ({
+        label: pick.label,
+        insertText: pick.insertText,
+        canonical: pick.refOsis,
+        kind: "verse" as const,
+      }));
+    }
     return filterRedundantBookSuggestions(q, autocompletePassage(q, { limit: 6 }));
   });
 
@@ -605,19 +619,19 @@ export function ScriptureCapture(props: {
               {preview()!.text.length > 300 ? "..." : ""}
             </p>
             <button class={styles.saveBtn} onClick={handleSave}>
-              <IconCheck size={ICON_PX.inline} /> Plant Seed
+              <IconCheck size={ICON_PX.inline} /> Kindle
             </button>
           </div>
         )}
 
         {status() === "saving" && (
-          <p class={styles.status}>Planting...</p>
+          <p class={styles.status}>Saving...</p>
         )}
 
         {status() === "saved" && (
           <div class={styles.saved}>
             <IconCheck size={ICON_PX.emphasis} />
-            <p>Seed planted in your garden.</p>
+            <p>Kindled—your flame has something new to grow on.</p>
           </div>
         )}
 

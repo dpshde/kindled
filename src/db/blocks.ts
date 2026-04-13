@@ -70,7 +70,7 @@ export async function createBlock(
   );
 
   await db.run(
-    `INSERT INTO life_stages (block_id, stage, planted_at, next_watering) VALUES (?, 'seed', ?, ?)`,
+    `INSERT INTO life_stages (block_id, stage, kindled_at, next_review_at) VALUES (?, 'spark', ?, ?)`,
     id,
     now,
     now,
@@ -169,7 +169,7 @@ export async function getAllBlocks(): Promise<Block[]> {
   const rows = await db.query<Record<string, string>>(
     `SELECT b.* FROM blocks b
      INNER JOIN life_stages ls ON b.id = ls.block_id
-     ORDER BY ls.next_watering ASC, b.captured_at DESC`,
+     ORDER BY ls.next_review_at ASC, b.captured_at DESC`,
   );
 
   return rows.map((r) => blockFromRow(r));
@@ -205,7 +205,7 @@ export async function searchBlocks(query: string): Promise<Block[]> {
      b.content LIKE '%${safeQuery}%'
      OR b.scripture_display_ref LIKE '%${safeQuery}%'
      OR b.entity_name LIKE '%${safeQuery}%'
-     ORDER BY ls.next_watering ASC, b.captured_at DESC`,
+     ORDER BY ls.next_review_at ASC, b.captured_at DESC`,
   );
 
   return rows.map((r) => blockFromRow(r));

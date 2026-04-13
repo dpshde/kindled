@@ -5,7 +5,7 @@ import {
   setClientKindlingIdsCache,
 } from "../db";
 import {
-  IconSeedling,
+  IconFire,
   IconBookOpen,
   IconPlus,
 } from "../ui/Icons";
@@ -42,10 +42,10 @@ export function Threshold(props: {
       <h1 class={styles.title}>Kindled</h1>
       <div class={styles.divider} aria-hidden />
       <p class={styles.tagline}>
-        Kindle Scripture a few minutes at a time, and tend what grows.
+        Kindle Scripture a few minutes at a time, and grow the fire inside.
       </p>
 
-      <Show when={!loading()} fallback={<p class={styles.sub}>Preparing your garden...</p>}>
+      <Show when={!loading()} fallback={<p class={styles.sub}>Stoking your hearth...</p>}>
         <Show
           when={kindlingIds().length > 0}
           fallback={
@@ -58,10 +58,10 @@ export function Threshold(props: {
         >
           <p class={styles.count}>
             <span class={styles.countIcon}>
-              <IconSeedling size={ICON_PX.inline} />
+              <IconFire size={ICON_PX.inline} />
             </span>
             {kindlingIds().length}{" "}
-            {kindlingIds().length === 1 ? "seed" : "seeds"} to tend today
+            {kindlingIds().length === 1 ? "spark" : "sparks"} to tend today
           </p>
           <button
             class={styles.primaryButton}
@@ -82,7 +82,7 @@ export function Threshold(props: {
             <IconPlus size={ICON_PX.inline} /> Add
           </button>
           <button class={styles.secondaryButton} onClick={props.onLibrary}>
-            <IconBookOpen size={ICON_PX.inline} /> Garden
+            <IconBookOpen size={ICON_PX.inline} /> Hearth
           </button>
         </div>
       </Show>

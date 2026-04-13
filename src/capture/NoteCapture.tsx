@@ -1,9 +1,11 @@
 import { createSignal, createMemo, onMount, Show, For } from "solid-js";
 import {
-  updateBlockContent,
-  incrementNotes,
   getBlock,
+  getReflection,
+  createReflection,
+  updateReflection,
   createLink,
+  deleteLinksForReflection,
   createBlock,
   getAllEntities,
   type Entity,
@@ -16,11 +18,16 @@ import {
   OSIS_BOOK_NAMES,
   type OsisBookCode,
 } from "grab-bcv";
-import { filterRedundantBookSuggestions } from "../scripture/passageAutocomplete";
+import { getTopicPassagePicksForBook, loadCanonicalTopics } from "../scripture/canonicalTopics";
+import {
+  filterRedundantBookSuggestions,
+  topicPassageQueryFilter,
+} from "../scripture/passageAutocomplete";
 import { resolvePassage } from "../scripture/RouteBibleClient";
 import { ICON_PX } from "../ui/icon-sizes";
 import { IconArrowLeft, IconCheck, IconBookOpen, IconUser, IconMapPin } from "../ui/Icons";
 import shell from "../ui/app-shell.module.css";
+import { applyWikiLinkSuggestion } from "./wikiLinkAutocomplete";
 import styles from "./NoteCapture.module.css";
 
 interface Suggestion {
@@ -49,6 +56,8 @@ function getWikiLinkContext(
 export function NoteCapture(props: {
   passageId: string;
   displayRef: string;
+  /** When set, save updates this reflection instead of creating a new one. */
+  reflectionId?: string;
   onBack: () => void;
   onSaved: () => void;
 }) {
@@ -60,8 +69,13 @@ export function NoteCapture(props: {
   let textareaRef: HTMLTextAreaElement | undefined;
 
   onMount(async () => {
-    const all = await getAllEntities();
+    const [all, , existing] = await Promise.all([
+      getAllEntities(),
+      loadCanonicalTopics(),
+      props.reflectionId ? getReflection(props.reflectionId) : Promise.resolve(null),
+    ]);
     setEntities(all);
+    if (existing) setText(existing.body);
   });
 
   const linkCtx = createMemo(() => {
@@ -77,16 +91,29 @@ export function NoteCapture(props: {
     const q = ctx.query.trim();
     const results: Suggestion[] = [];
 
-    // Bible passage suggestions via grab-bcv
+    // Bible passage suggestions: topic picks once a book is fixed; else grab-bcv
     if (q.length >= 1) {
-      const passages = filterRedundantBookSuggestions(q, autocompletePassage(q, { limit: 4 }));
-      for (const p of passages) {
-        results.push({
-          label: p.label,
-          insertText: p.insertText,
-          type: "passage",
-          icon: IconBookOpen,
-        });
+      const tf = topicPassageQueryFilter(q);
+      if (tf) {
+        const { book, chapter, versePrefix } = tf;
+        for (const pick of getTopicPassagePicksForBook(book, 6, { chapter, versePrefix })) {
+          results.push({
+            label: pick.label,
+            insertText: pick.insertText,
+            type: "passage",
+            icon: IconBookOpen,
+          });
+        }
+      } else {
+        const passages = filterRedundantBookSuggestions(q, autocompletePassage(q, { limit: 4 }));
+        for (const p of passages) {
+          results.push({
+            label: p.label,
+            insertText: p.insertText,
+            type: "passage",
+            icon: IconBookOpen,
+          });
+        }
       }
     }
 
@@ -120,13 +147,15 @@ export function NoteCapture(props: {
     const ctx = linkCtx();
     if (!ctx || !textareaRef) return;
 
-    const before = text().slice(0, ctx.start);
-    const after = text().slice(ctx.end);
-    const newText = `${before}[[${s.insertText}]]${after}`;
+    const { text: newText, cursor: newCursor } = applyWikiLinkSuggestion(
+      text(),
+      ctx.start,
+      ctx.end,
+      s.insertText,
+    );
     setText(newText);
 
-    /* After `[[` + insertText, before `]]` — keeps typing inside the wiki link */
-    const newCursor = ctx.start + 2 + s.insertText.length;
+    /* Cursor after insertText, before any existing `]]` — keeps typing inside the link */
     requestAnimationFrame(() => {
       textareaRef!.selectionStart = newCursor;
       textareaRef!.selectionEnd = newCursor;
@@ -175,25 +204,28 @@ export function NoteCapture(props: {
     setSaving(true);
     try {
       const block = await getBlock(props.passageId);
-      if (block) {
-        const noteText = text().trim();
-        const existing = block.content;
-        const note = `\n\n[${new Date().toLocaleDateString()}] ${noteText}`;
-        await updateBlockContent(block.id, existing + note);
-        await incrementNotes(block.id);
-
-        // 1. Process explicit [[wiki links]]
-        const parsed = parseWikiLinks(noteText);
-        for (const link of parsed) {
-          await processLink(block.id, link.text, noteText);
-        }
-
-        // 2. Auto-scan for bare Bible references
-        await autoLinkPassages(block.id, noteText);
-
-        // 3. Auto-scan for entity name mentions
-        await autoLinkEntities(block.id, noteText);
+      if (!block) {
+        setSaving(false);
+        return;
       }
+      const noteText = text().trim();
+      let reflectionId = props.reflectionId;
+
+      if (reflectionId) {
+        await deleteLinksForReflection(reflectionId);
+        await updateReflection(reflectionId, noteText);
+      } else {
+        reflectionId = await createReflection(block.id, noteText);
+      }
+
+      const parsed = parseWikiLinks(noteText);
+      for (const link of parsed) {
+        await processLink(block.id, reflectionId, link.text, noteText);
+      }
+
+      await autoLinkPassages(block.id, reflectionId, noteText);
+      await autoLinkEntities(block.id, reflectionId, noteText);
+
       props.onSaved();
     } catch {
       setSaving(false);
@@ -202,6 +234,7 @@ export function NoteCapture(props: {
 
   const processLink = async (
     blockId: string,
+    reflectionId: string,
     linkText: string,
     fullText: string,
   ) => {
@@ -229,6 +262,7 @@ export function NoteCapture(props: {
         link_text: linkText,
         context,
         is_entity_link: false,
+        reflection_id: reflectionId,
       });
       return;
     }
@@ -264,10 +298,15 @@ export function NoteCapture(props: {
       link_text: linkText,
       context,
       is_entity_link: true,
+      reflection_id: reflectionId,
     });
   };
 
-  const autoLinkPassages = async (blockId: string, fullText: string) => {
+  const autoLinkPassages = async (
+    blockId: string,
+    reflectionId: string,
+    fullText: string,
+  ) => {
     const bracketRanges = getBracketRanges(fullText);
     const isInBracket = (idx: number) =>
       bracketRanges.some(([s, e]) => idx >= s && idx < e);
@@ -321,6 +360,7 @@ export function NoteCapture(props: {
           link_text: foundText,
           context: getSurroundingContext(fullText, foundText),
           is_entity_link: false,
+          reflection_id: reflectionId,
         });
       }
     } catch {
@@ -328,7 +368,11 @@ export function NoteCapture(props: {
     }
   };
 
-  const autoLinkEntities = async (blockId: string, fullText: string) => {
+  const autoLinkEntities = async (
+    blockId: string,
+    reflectionId: string,
+    fullText: string,
+  ) => {
     const bracketRanges = getBracketRanges(fullText);
     const isInBracket = (idx: number) =>
       bracketRanges.some(([s, e]) => idx >= s && idx < e);
@@ -346,7 +390,7 @@ export function NoteCapture(props: {
 
           if (isInBracket(idx)) continue;
 
-          await processLink(blockId, name, fullText);
+          await processLink(blockId, reflectionId, name, fullText);
           break;
         }
       }
@@ -364,7 +408,7 @@ export function NoteCapture(props: {
           </div>
           <div class={shell.headerCenter}>
             <h1 class={`${shell.headerTitle} ${shell.headerTitleEllipsis}`}>
-              Reflection on {props.displayRef}
+              {props.reflectionId ? "Edit reflection" : `Reflection on ${props.displayRef}`}
             </h1>
           </div>
           <div class={shell.headerTrailing} aria-hidden="true" />

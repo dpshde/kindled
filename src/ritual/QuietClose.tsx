@@ -8,8 +8,8 @@ export function QuietClose(props: { onClose: () => void }) {
       <div class={styles.icon}>
         <IconCheck size={ICON_PX.celebration} />
       </div>
-      <h1 class={styles.title}>Your garden is watered for today.</h1>
-      <p class={styles.sub}>Rest well. The seeds you tend will grow.</p>
+      <h1 class={styles.title}>You've fed the flame for today.</h1>
+      <p class={styles.sub}>Rest well. What you return to burns brighter.</p>
       <button class={styles.button} onClick={props.onClose}>
         <IconHome size={ICON_PX.inline} /> Back home
       </button>

@@ -5,8 +5,8 @@ import {
   IconArrowLeft,
   IconMagnifyingGlass,
   IconPlus,
-  IconSeedling,
-  IconLeaf,
+  IconFire,
+  IconSparkle,
   IconBookOpen,
   IconUser,
   IconMapPin,
@@ -14,19 +14,19 @@ import {
 } from "../ui/Icons";
 import { ICON_PX } from "../ui/icon-sizes";
 import shell from "../ui/app-shell.module.css";
-import styles from "./GardenView.module.css";
+import styles from "./HearthView.module.css";
 
-type IconComponent = typeof IconSeedling;
+type IconComponent = typeof IconFire;
 
 const TYPE_ICON: Record<string, IconComponent> = {
   scripture: IconBookOpen,
   person: IconUser,
   place: IconMapPin,
-  theme: IconLeaf,
+  theme: IconSparkle,
   note: IconNotePencil,
 };
 
-export function GardenView(props: {
+export function HearthView(props: {
   onBack: () => void;
   onCapture: () => void;
   onSelect: (blockId: string) => void;
@@ -80,7 +80,7 @@ export function GardenView(props: {
             </button>
           </div>
           <div class={shell.headerCenter}>
-            <h1 class={shell.headerTitle}>Garden</h1>
+            <h1 class={shell.headerTitle}>Hearth</h1>
           </div>
           <div class={shell.headerTrailing}>
             <button type="button" class={styles.addBtn} onClick={props.onCapture} aria-label="Add passage">
@@ -97,7 +97,7 @@ export function GardenView(props: {
           </span>
           <input
             type="text"
-            placeholder="Search your garden..."
+            placeholder="Search what you've kindled..."
             value={query()}
             onInput={(e) => handleSearch(e.currentTarget.value)}
             class={styles.searchInput}
@@ -105,21 +105,21 @@ export function GardenView(props: {
         </div>
 
         <div class={styles.list}>
-        {loading() && <p class={styles.empty}>Loading garden...</p>}
+        {loading() && <p class={styles.empty}>Loading...</p>}
 
         {!loading() && blocks().length === 0 && (
           <div class={styles.empty}>
             <span class={styles.emptyIcon}>
-              <IconSeedling size={ICON_PX.hero} />
+              <IconFire size={ICON_PX.hero} />
             </span>
-            <p>{query() ? "No results found." : "Your garden is empty."}</p>
+            <p>{query() ? "No results found." : "Your hearth is empty—capture a passage to kindle a flame."}</p>
           </div>
         )}
 
         {blocks().map((block) => {
           const ls = stages().get(block.id);
           const TypeIcon = TYPE_ICON[block.type] ?? IconBookOpen;
-          const rhythm = ls ? nextReviewPresentation(ls.next_watering) : null;
+          const rhythm = ls ? nextReviewPresentation(ls.next_review_at) : null;
 
           return (
             <button

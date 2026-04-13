@@ -11,13 +11,20 @@ export {
   saveScripturePassageFromCapture,
 } from "./blocks";
 export { createEntity, getEntity, getAllEntities, findEntityByName, addBlockMention, updateEntityFamiliarity } from "./entities";
-export { createLink, getOutgoingLinks, getBacklinks, deleteLinksFrom, getConnectedBlockIds } from "./links";
+export {
+  createLink,
+  getOutgoingLinks,
+  getBacklinks,
+  deleteLinksFrom,
+  deleteLinksForReflection,
+  getConnectedBlockIds,
+} from "./links";
 export {
   getLifeStage,
   ensureLifeStage,
-  waterBlock,
-  transplantBlock,
-  harvestBlock,
+  stokeBlock,
+  nudgeBlock,
+  deepenBlock,
   emberBlock,
   snoozeBlock,
   recordLinger,
@@ -28,4 +35,13 @@ export {
   setClientKindlingIdsCache,
   invalidateClientKindlingIdsCache,
 } from "./ritual";
-export type { Block, BlockType, Entity, EntityType, LifeStage, LifeStageRecord, Link, Verse } from "./types";
+export {
+  getReflectionsForBlock,
+  getReflection,
+  createReflection,
+  updateReflection,
+  deleteReflection,
+  ensureLegacyReflectionsMigrated,
+} from "./reflections";
+export { splitLegacyReflectionBodiesFromContent } from "./reflections";
+export type { Block, BlockType, Entity, EntityType, LifeStage, LifeStageRecord, Link, Verse, Reflection } from "./types";

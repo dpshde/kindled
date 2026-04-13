@@ -34,12 +34,12 @@ function parseRhythmInstant(value: string | undefined | null): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** Human-readable copy for `life_stages.next_watering` (gentle rhythm, not a deadline). */
+/** Human-readable copy for `life_stages.next_review_at` (gentle rhythm, not a deadline). */
 export function nextReviewPresentation(
-  nextWateringIso: string,
+  nextReviewAtIso: string,
   now: Date = new Date(),
 ): NextReviewPresentation {
-  const suggested = parseRhythmInstant(nextWateringIso);
+  const suggested = parseRhythmInstant(nextReviewAtIso);
   if (!suggested) {
     return {
       heading: "Opens again",

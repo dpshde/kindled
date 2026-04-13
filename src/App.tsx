@@ -1,7 +1,7 @@
 import { createSignal, onMount, Show } from "solid-js";
 import { Threshold } from "./ritual/Threshold";
-import { GardenView } from "./garden/GardenView";
-import { PassageView } from "./garden/PassageView";
+import { HearthView } from "./hearth/HearthView";
+import { PassageView } from "./hearth/PassageView";
 import { QuietClose } from "./ritual/QuietClose";
 import { ScriptureCapture } from "./capture/ScriptureCapture";
 import { NoteCapture } from "./capture/NoteCapture";
@@ -18,6 +18,7 @@ type Screen =
       passageId: string;
       displayRef: string;
       returnToPassageId?: string;
+      reflectionId?: string;
     }
   | {
       kind: "passage";
@@ -34,6 +35,7 @@ function initialScreen(): Screen {
 
 export default function App() {
   const [screen, setScreen] = createSignal<Screen>(initialScreen());
+  const [passageReloadTick, setPassageReloadTick] = createSignal(0);
 
   onMount(() => {
     loadBibleData().catch(() => {});
@@ -95,6 +97,7 @@ export default function App() {
                 {(id) => (
                   <PassageView
                     passageId={id}
+                    reloadTick={passageReloadTick()}
                     kindlingProgress={
                       s.kindling
                         ? {
@@ -117,15 +120,21 @@ export default function App() {
                     onDeleted={() =>
                       navigate(inKindling ? { kind: "threshold" } : { kind: "library" })
                     }
-                    onNote={(passageId, displayRef) =>
+                    onNote={(opts) =>
                       navigate(
                         inKindling
-                          ? { kind: "note", passageId, displayRef }
+                          ? {
+                              kind: "note",
+                              passageId: opts.passageId,
+                              displayRef: opts.displayRef,
+                              reflectionId: opts.reflectionId,
+                            }
                           : {
                               kind: "note",
-                              passageId,
-                              displayRef,
-                              returnToPassageId: passageId,
+                              passageId: opts.passageId,
+                              displayRef: opts.displayRef,
+                              reflectionId: opts.reflectionId,
+                              returnToPassageId: opts.passageId,
                             },
                       )
                     }
@@ -140,7 +149,7 @@ export default function App() {
 
           case "library":
             return (
-              <GardenView
+              <HearthView
                 onBack={() => navigate({ kind: "threshold" })}
                 onCapture={() => navigate({ kind: "capture" })}
                 onSelect={(passageId) => navigate({ kind: "passage", passageId })}
@@ -159,16 +168,19 @@ export default function App() {
           case "note": {
             const noteBack =
               s.returnToPassageId !== undefined
-                ? () =>
+                ? () => {
+                    setPassageReloadTick((n) => n + 1);
                     navigate({
                       kind: "passage",
                       passageId: s.returnToPassageId!,
-                    })
+                    });
+                  }
                 : () => navigate({ kind: "threshold" });
             return (
               <NoteCapture
                 passageId={s.passageId}
                 displayRef={s.displayRef}
+                reflectionId={s.reflectionId}
                 onBack={noteBack}
                 onSaved={noteBack}
               />
