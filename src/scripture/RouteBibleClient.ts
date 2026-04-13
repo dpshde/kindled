@@ -1,6 +1,6 @@
 import type { Verse } from "../db";
-import { parseRef } from "./RefNormalizer";
-import { getChapterVerses, getBook } from "./BibleLoader";
+import { tryParsePassage, OSIS_BOOK_NAMES, type OsisBookCode } from "grab-bcv";
+import { getChapterVerses } from "./BibleLoader";
 
 export interface ResolvedPassage {
   ref: string;
@@ -10,82 +10,86 @@ export interface ResolvedPassage {
   routeUrl: string;
 }
 
-// Map lowercase book codes from RefNormalizer to BSB.jsonl ref prefix format
-const BSB_CODE_MAP: Record<string, string> = {
-  gen: "Gen", exo: "Exod", lev: "Lev", num: "Num", deu: "Deut",
-  jos: "Josh", jdg: "Judg", rut: "Rut", "1sa": "1Sam", "2sa": "2Sam",
-  "1ki": "1Kgs", "2ki": "2Kgs", "1ch": "1Chr", "2ch": "2Chr", ezr: "Ezra",
-  neh: "Neh", est: "Esth", job: "Job", psa: "Ps", pro: "Prov",
-  ecc: "Eccl", sng: "Song", isa: "Isa", jer: "Jer", lam: "Lam",
-  ezk: "Ezek", dan: "Dan", hos: "Hos", jol: "Joel", amo: "Amos",
-  oba: "Obad", jon: "Jonah", mic: "Mic", nah: "Nah", hab: "Hab",
-  zep: "Zeph", hag: "Hag", zec: "Zech", mal: "Mal", mat: "Matt",
-  mrk: "Mark", luk: "Luke", jhn: "John", act: "Acts", rom: "Rom",
-  "1co": "1Cor", "2co": "2Cor", gal: "Gal", eph: "Eph", php: "Phil",
-  col: "Col", "1th": "1Thess", "2th": "2Thess", "1ti": "1Tim", "2ti": "2Tim",
-  tit: "Titus", phm: "Phlm", heb: "Heb", jas: "Jas", "1pe": "1Pet",
-  "2pe": "2Pet", "1jn": "1John", "2jn": "2John", "3jn": "3John", jud: "Jude", rev: "Rev",
+// Map OSIS book codes (grab-bcv) to BSB.jsonl ref prefixes
+const OSIS_TO_BSB: Record<string, string> = {
+  GEN: "Gen", EXO: "Exod", LEV: "Lev", NUM: "Num", DEU: "Deut",
+  JOS: "Josh", JDG: "Judg", RUT: "Rut", "1SA": "1Sam", "2SA": "2Sam",
+  "1KI": "1Kgs", "2KI": "2Kgs", "1CH": "1Chr", "2CH": "2Chr", EZR: "Ezra",
+  NEH: "Neh", EST: "Esth", JOB: "Job", PSA: "Ps", PRO: "Prov",
+  ECC: "Eccl", SNG: "Song", ISA: "Isa", JER: "Jer", LAM: "Lam",
+  EZK: "Ezek", DAN: "Dan", HOS: "Hos", JOL: "Joel", AMO: "Amos",
+  OBA: "Obad", JON: "Jonah", MIC: "Mic", NAM: "Nah", HAB: "Hab",
+  ZEP: "Zeph", HAG: "Hag", ZEC: "Zech", MAL: "Mal", MAT: "Matt",
+  MRK: "Mark", LUK: "Luke", JHN: "John", ACT: "Acts", ROM: "Rom",
+  "1CO": "1Cor", "2CO": "2Cor", GAL: "Gal", EPH: "Eph", PHP: "Phil",
+  COL: "Col", "1TH": "1Thess", "2TH": "2Thess", "1TI": "1Tim", "2TI": "2Tim",
+  TIT: "Titus", PHM: "Phlm", HEB: "Heb", JAS: "Jas", "1PE": "1Pet",
+  "2PE": "2Pet", "1JN": "1John", "2JN": "2John", "3JN": "3John", JUD: "Jude", REV: "Rev",
 };
 
-function normalizeBookCode(code: string): string {
-  return BSB_CODE_MAP[code.toLowerCase()] ?? code;
+function osisToBsb(osis: string): string {
+  return OSIS_TO_BSB[osis] ?? osis;
 }
 
 export async function resolvePassage(
   input: string,
   translation = "BSB",
 ): Promise<ResolvedPassage | null> {
-  const parsed = parseRef(input);
-  if (!parsed) return null;
+  const result = tryParsePassage(input);
+  if (!result.ok) return null;
 
-  const routeUrl = `https://route.bible/${parsed.canonical}`;
+  const passage = result.value;
+  const osisBook = passage.start.book as OsisBookCode;
+  const bsbBook = osisToBsb(osisBook);
+  const chapter = passage.start.chapter;
+  const verseStart = passage.start.verse;
+  const verseEnd = passage.end.verse;
+
+  const routeUrl = `https://route.bible/${passage.canonical}`;
 
   try {
-    const bookCode = normalizeBookCode(parsed.book);
-    const chapter = parsed.chapter;
-
     let verses: Verse[] = [];
 
-    if (parsed.verseStart != null) {
-      const endVerse = parsed.verseEnd ?? parsed.verseStart;
-      const chapterVerses = await getChapterVerses(bookCode, chapter);
+    const chapterVerses = await getChapterVerses(bsbBook, chapter);
+
+    if (verseStart != null) {
+      const endVerse = verseEnd ?? verseStart;
       verses = chapterVerses
         .filter((v) => {
           const vn = parseInt(v.verseNum, 10);
-          return vn >= parsed.verseStart! && vn <= endVerse;
+          return vn >= verseStart && vn <= endVerse;
         })
         .map((v) => ({ number: parseInt(v.verseNum, 10), text: v.text }));
     } else {
-      const chapterVerses = await getChapterVerses(bookCode, chapter);
       verses = chapterVerses.map((v) => ({
         number: parseInt(v.verseNum, 10),
         text: v.text,
       }));
     }
 
-    // Build a proper display ref
-    const book = await getBook(bookCode);
-    const bookName = book?.name ?? parsed.book;
+    // Build display ref
+    const bookName = OSIS_BOOK_NAMES[osisBook] ?? osisBook;
     let displayRef: string;
-    if (parsed.verseStart != null && parsed.verseEnd != null) {
-      displayRef = `${bookName} ${chapter}:${parsed.verseStart}-${parsed.verseEnd}`;
-    } else if (parsed.verseStart != null) {
-      displayRef = `${bookName} ${chapter}:${parsed.verseStart}`;
+    if (verseStart != null && verseEnd != null && verseStart !== verseEnd) {
+      displayRef = `${bookName} ${chapter}:${verseStart}-${verseEnd}`;
+    } else if (verseStart != null) {
+      displayRef = `${bookName} ${chapter}:${verseStart}`;
     } else {
       displayRef = `${bookName} ${chapter}`;
     }
 
     return {
-      ref: parsed.canonical,
+      ref: passage.canonical,
       displayRef,
       translation,
       verses,
       routeUrl,
     };
   } catch {
+    const bookName = OSIS_BOOK_NAMES[osisBook] ?? osisBook;
     return {
-      ref: parsed.canonical,
-      displayRef: parsed.display,
+      ref: passage.canonical,
+      displayRef: `${bookName} ${chapter}`,
       translation,
       verses: [],
       routeUrl,

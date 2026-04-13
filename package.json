@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "grab-bcv": "^0.1.5",
     "phosphor-icons-solid": "^1.0.0",
     "solid-js": "^1.9.12",
     "wa-sqlite": "^1.0.0"

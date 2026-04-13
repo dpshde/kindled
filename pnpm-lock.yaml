@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      grab-bcv:
+        specifier: ^0.1.5
+        version: 0.1.5
       phosphor-icons-solid:
         specifier: ^1.0.0
         version: 1.0.0(solid-js@1.9.12)
@@ -408,6 +411,10 @@ packages:
   gensync@1.0.0-beta.2:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
     engines: {node: '>=6.9.0'}
+
+  grab-bcv@0.1.5:
+    resolution: {integrity: sha512-VNT6MWZEw1TEOYa7wVeS5Ct18OdBMx1Yy1rjvOuYyPLU8IHR8daADU4nRDb5O/vi7fFhI++CgvIgDjfNT3b7ww==}
+    engines: {node: '>=18.0.0'}
 
   html-entities@2.3.3:
     resolution: {integrity: sha512-DV5Ln36z34NNTDgnz0EWGBLZENelNAtkiFA4kyNOG2tDI6Mz1uSWiq1wAKdyjnJwyDiDO7Fa2SO1CTxPXL8VxA==}
@@ -1092,6 +1099,8 @@ snapshots:
     optional: true
 
   gensync@1.0.0-beta.2: {}
+
+  grab-bcv@0.1.5: {}
 
   html-entities@2.3.3: {}
 

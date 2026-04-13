@@ -1,22 +1,28 @@
 import { createSignal, createMemo } from "solid-js";
 import { createBlock } from "../db";
 import { resolvePassage } from "../scripture/RouteBibleClient";
-import { parseRef } from "../scripture/RefNormalizer";
 import {
-  isBookCode,
-  BOOK_CODES,
-  BOOK_NAMES,
-  getChapterCount,
-  getVerseCount,
-  buildNumericOptions,
-  buildRefString,
-  parseStructured,
-  autocompleteBooks,
-  type BookCode,
-  type StructuredDraft,
-} from "../scripture/BibleData";
+  tryParsePassage,
+  autocompletePassage,
+  OSIS_BOOK_CODES,
+  OSIS_BOOK_NAMES,
+  BOOK_CHAPTER_COUNTS,
+  BOOK_VERSE_COUNTS,
+  type OsisBookCode,
+} from "grab-bcv";
 import { IconArrowLeft, IconBookOpen, IconCheck, IconWarning } from "../ui/Icons";
 import styles from "./ScriptureCapture.module.css";
+
+interface StructuredDraft {
+  book: OsisBookCode | "";
+  chapter: string;
+  startVerse: string;
+  endVerse: string;
+}
+
+function buildNumericOptions(max: number, start = 1): string[] {
+  return Array.from({ length: Math.max(max - start + 1, 0) }, (_, i) => String(i + start));
+}
 
 export function ScriptureCapture(props: {
   onBack: () => void;
@@ -39,12 +45,13 @@ export function ScriptureCapture(props: {
   } | null>(null);
   const [errorMsg, setErrorMsg] = createSignal("");
 
-  // Derived state from draft
   const book = createMemo(() => {
     const b = draft().book;
-    return isBookCode(b) ? b : null;
+    return b || null;
   });
-  const chapterCount = createMemo(() => (book() ? getChapterCount(book()!) : 0));
+  const chapterCount = createMemo(() =>
+    book() ? BOOK_CHAPTER_COUNTS[book()!] : 0,
+  );
   const chapterOptions = createMemo(() =>
     book() ? buildNumericOptions(chapterCount()) : [],
   );
@@ -53,45 +60,55 @@ export function ScriptureCapture(props: {
     const max = chapterCount();
     return ch > 0 && max > 0 ? String(Math.min(ch, max)) : "";
   });
-  const verseCount = createMemo(() =>
-    book() && boundedChapter()
-      ? (getVerseCount(book()!, parseInt(boundedChapter(), 10)) ?? 0)
-      : 0,
-  );
+  const verseCount = createMemo(() => {
+    if (!book() || !boundedChapter()) return 0;
+    return BOOK_VERSE_COUNTS[book()!]?.[parseInt(boundedChapter(), 10)] ?? 0;
+  });
   const verseOptions = createMemo(() =>
     verseCount() > 0 ? buildNumericOptions(verseCount()) : [],
   );
   const endVerseOptions = createMemo(() => {
     const sv = parseInt(draft().startVerse, 10);
-    return sv > 0 && verseCount() > 0
-      ? buildNumericOptions(verseCount(), sv)
-      : [];
+    return sv > 0 && verseCount() > 0 ? buildNumericOptions(verseCount(), sv) : [];
   });
 
-  // Autocomplete suggestions from text input
   const suggestions = createMemo(() => {
     const q = input().trim();
     if (!q || status() !== "idle") return [];
-    return autocompleteBooks(q, 6);
+    return autocompletePassage(q, { limit: 6 });
   });
 
   const parsedPreview = createMemo(() => {
     const val = input().trim();
     if (!val) return null;
-    const parsed = parseRef(val);
-    if (!parsed) return null;
-    return { display: parsed.display, canonical: parsed.canonical };
+    const result = tryParsePassage(val);
+    if (!result.ok) return null;
+    const p = result.value;
+    const bookName = OSIS_BOOK_NAMES[p.start.book] ?? p.start.book;
+    const hasVerse = p.start.verse != null;
+    const display = hasVerse && p.end.verse != null && p.start.verse !== p.end.verse
+      ? `${bookName} ${p.start.chapter}:${p.start.verse}-${p.end.verse}`
+      : hasVerse
+        ? `${bookName} ${p.start.chapter}:${p.start.verse}`
+        : `${bookName} ${p.start.chapter}`;
+    return { display, canonical: p.canonical };
   });
 
-  // Sync: text input -> structured draft
+  const buildRefString = (d: StructuredDraft): string => {
+    if (!d.book) return "";
+    const name = OSIS_BOOK_NAMES[d.book];
+    if (!d.chapter) return name;
+    if (!d.startVerse) return `${name} ${d.chapter}`;
+    return d.endVerse
+      ? `${name} ${d.chapter}:${d.startVerse}-${d.endVerse}`
+      : `${name} ${d.chapter}:${d.startVerse}`;
+  };
+
   const syncDraftFromInput = (val: string) => {
     setInput(val);
     if (status() === "error") setStatus("idle");
-    const d = parseStructured(val);
-    if (d.book) setDraft(d);
   };
 
-  // Sync: structured draft -> text input
   const syncInputFromDraft = (d: StructuredDraft) => {
     setDraft(d);
     const ref = buildRefString(d);
@@ -102,8 +119,8 @@ export function ScriptureCapture(props: {
     const val = input().trim();
     if (!val) return;
 
-    const parsed = parseRef(val);
-    if (!parsed) {
+    const result = tryParsePassage(val);
+    if (!result.ok) {
       setStatus("error");
       setErrorMsg(`Could not parse "${val}" as a Bible reference.`);
       return;
@@ -131,8 +148,8 @@ export function ScriptureCapture(props: {
 
   const handleSave = async () => {
     const val = input().trim();
-    const parsed = parseRef(val);
-    if (!parsed || !preview()) return;
+    const result = tryParsePassage(val);
+    if (!result.ok || !preview()) return;
 
     setStatus("saving");
     try {
@@ -140,7 +157,7 @@ export function ScriptureCapture(props: {
       await createBlock({
         type: "scripture",
         content: preview()!.text,
-        scripture_ref: parsed.canonical,
+        scripture_ref: result.value.canonical,
         scripture_display_ref: preview()!.displayRef,
         scripture_translation: preview()!.translation,
         scripture_verses: passage?.verses ?? [],
@@ -172,7 +189,6 @@ export function ScriptureCapture(props: {
       </div>
 
       <div class={styles.body}>
-        {/* Structured picker */}
         <div class={styles.builder}>
           <p class={styles.builderHint}>
             Pick a book, then chapter and verses as needed.
@@ -184,7 +200,7 @@ export function ScriptureCapture(props: {
                 value={draft().book}
                 onChange={(e) =>
                   syncInputFromDraft({
-                    book: (e.target as HTMLSelectElement).value as BookCode | "",
+                    book: (e.target as HTMLSelectElement).value as OsisBookCode | "",
                     chapter: "",
                     startVerse: "",
                     endVerse: "",
@@ -193,8 +209,8 @@ export function ScriptureCapture(props: {
                 class={styles.select}
               >
                 <option value="">Choose a book</option>
-                {BOOK_CODES.map((code) => (
-                  <option value={code}>{BOOK_NAMES[code]}</option>
+                {OSIS_BOOK_CODES.map((code) => (
+                  <option value={code}>{OSIS_BOOK_NAMES[code]}</option>
                 ))}
               </select>
             </label>
@@ -267,7 +283,6 @@ export function ScriptureCapture(props: {
           </div>
         </div>
 
-        {/* Text input synced to picks */}
         <div class={styles.inputGroup}>
           <span class={styles.inputIcon}>
             <IconBookOpen size={16} />
@@ -283,25 +298,20 @@ export function ScriptureCapture(props: {
           />
         </div>
 
-        {/* Autocomplete suggestions */}
         {suggestions().length > 0 && status() === "idle" && (
           <div class={styles.suggestions}>
             {suggestions().map((s) => (
               <button
                 type="button"
                 class={styles.suggestionItem}
-                onClick={() => {
-                  setInput(s.name);
-                  setDraft({ book: s.code, chapter: "", startVerse: "", endVerse: "" });
-                }}
+                onClick={() => setInput(s.insertText)}
               >
-                <span>{s.name}</span>
+                <span>{s.label}</span>
               </button>
             ))}
           </div>
         )}
 
-        {/* Parse preview */}
         {parsedPreview() && status() === "idle" && (
           <div class={styles.parsePreview}>
             <span class={styles.parseLabel}>parsed</span>
