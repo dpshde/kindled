@@ -1,6 +1,7 @@
 import { createSignal, Suspense, onMount } from "solid-js";
 import { Threshold } from "./ritual/Threshold";
 import { GardenView } from "./garden/GardenView";
+import { BlockDetail } from "./garden/BlockDetail";
 import { PassageView } from "./ritual/PassageView";
 import { QuietClose } from "./ritual/QuietClose";
 import { ScriptureCapture } from "./capture/ScriptureCapture";
@@ -13,7 +14,8 @@ type Screen =
   | { kind: "quietClose" }
   | { kind: "library" }
   | { kind: "capture" }
-  | { kind: "note"; blockId: string; displayRef: string };
+  | { kind: "note"; blockId: string; displayRef: string }
+  | { kind: "blockDetail"; blockId: string };
 
 export default function App() {
   const [screen, setScreen] = createSignal<Screen>({ kind: "threshold" });
@@ -88,6 +90,17 @@ export default function App() {
               <GardenView
                 onBack={() => navigate({ kind: "threshold" })}
                 onCapture={() => navigate({ kind: "capture" })}
+                onSelect={(blockId) => navigate({ kind: "blockDetail", blockId })}
+              />
+            );
+
+          case "blockDetail":
+            return (
+              <BlockDetail
+                blockId={s.blockId}
+                onBack={() => navigate({ kind: "library" })}
+                onNavigate={(blockId) => navigate({ kind: "blockDetail", blockId })}
+                onDeleted={() => navigate({ kind: "library" })}
               />
             );
 

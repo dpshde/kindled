@@ -1,5 +1,5 @@
 import { createSignal, onMount } from "solid-js";
-import { getAllBlocks, getLifeStage, type Block, type LifeStageRecord, type LifeStage } from "../db";
+import { getAllBlocks, searchBlocks, getLifeStage, type Block, type LifeStageRecord, type LifeStage } from "../db";
 import { stageColor } from "../ui/helpers";
 import {
   IconArrowLeft,
@@ -36,37 +36,45 @@ const TYPE_ICON: Record<string, IconComponent> = {
 export function GardenView(props: {
   onBack: () => void;
   onCapture: () => void;
+  onSelect: (blockId: string) => void;
 }) {
-  const [blocks, setBlocks] = createSignal<(Block & { stage?: LifeStage })[]>([]);
+  const [blocks, setBlocks] = createSignal<Block[]>([]);
   const [stages, setStages] = createSignal<Map<string, LifeStageRecord>>(new Map());
   const [query, setQuery] = createSignal("");
   const [loading, setLoading] = createSignal(true);
 
+  const loadStageMap = async (bs: Block[]) => {
+    const stageMap = new Map<string, LifeStageRecord>();
+    for (const b of bs) {
+      const ls = await getLifeStage(b.id);
+      if (ls) stageMap.set(b.id, ls);
+    }
+    setStages(stageMap);
+  };
+
   onMount(async () => {
     try {
       const all = await getAllBlocks();
-      const stageMap = new Map<string, LifeStageRecord>();
-      for (const b of all) {
-        const ls = await getLifeStage(b.id);
-        if (ls) stageMap.set(b.id, ls);
-      }
       setBlocks(all);
-      setStages(stageMap);
+      await loadStageMap(all);
     } finally {
       setLoading(false);
     }
   });
 
-  const filtered = () => {
-    const q = query().toLowerCase();
-    if (!q) return blocks();
-    return blocks().filter(
-      (b) =>
-        b.content.toLowerCase().includes(q) ||
-        b.scripture_display_ref?.toLowerCase().includes(q) ||
-        b.entity_name?.toLowerCase().includes(q) ||
-        b.tags.some((t) => t.toLowerCase().includes(q)),
-    );
+  let searchTimer: ReturnType<typeof setTimeout> | undefined;
+  const handleSearch = (val: string) => {
+    setQuery(val);
+    clearTimeout(searchTimer);
+    if (!val.trim()) {
+      getAllBlocks().then(async (all) => { setBlocks(all); await loadStageMap(all); });
+      return;
+    }
+    searchTimer = setTimeout(async () => {
+      const results = await searchBlocks(val.trim());
+      setBlocks(results);
+      await loadStageMap(results);
+    }, 200);
   };
 
   return (
@@ -89,7 +97,7 @@ export function GardenView(props: {
           type="text"
           placeholder="Search your garden..."
           value={query()}
-          onInput={(e) => setQuery(e.currentTarget.value)}
+          onInput={(e) => handleSearch(e.currentTarget.value)}
           class={styles.searchInput}
         />
       </div>
@@ -97,7 +105,7 @@ export function GardenView(props: {
       <div class={styles.list}>
         {loading() && <p class={styles.empty}>Loading garden...</p>}
 
-        {!loading() && filtered().length === 0 && (
+        {!loading() && blocks().length === 0 && (
           <div class={styles.empty}>
             <span class={styles.emptyIcon}>
               <IconSeedling size={32} />
@@ -106,14 +114,18 @@ export function GardenView(props: {
           </div>
         )}
 
-        {filtered().map((block) => {
+        {blocks().map((block) => {
           const ls = stages().get(block.id);
           const stage = ls?.stage ?? "seed";
           const StageIcon = STAGE_ICON[stage];
           const TypeIcon = TYPE_ICON[block.type] ?? IconBookOpen;
 
           return (
-            <div class={styles.card} style={{ "--stage-color": stageColor(stage) }}>
+            <button
+              class={styles.card}
+              style={{ "--stage-color": stageColor(stage) }}
+              onClick={() => props.onSelect(block.id)}
+            >
               <div class={styles.cardIcon}>
                 <TypeIcon size={16} />
               </div>
@@ -129,7 +141,7 @@ export function GardenView(props: {
               <div class={styles.cardStage}>
                 <StageIcon size={14} />
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
