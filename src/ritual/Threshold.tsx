@@ -10,6 +10,7 @@ import {
   IconPlus,
 } from "../ui/Icons";
 import { BeginFireIcon } from "../ui/BeginFireIcon";
+import { ICON_PX } from "../ui/icon-sizes";
 
 import styles from "./Threshold.module.css";
 
@@ -50,14 +51,14 @@ export function Threshold(props: {
           fallback={
             <div class={styles.empty}>
               <button class={styles.button} onClick={props.onCapture}>
-                <IconPlus size={16} /> Capture a Passage
+                <IconPlus size={ICON_PX.inline} /> Capture a Passage
               </button>
             </div>
           }
         >
           <p class={styles.count}>
             <span class={styles.countIcon}>
-              <IconSeedling size={14} />
+              <IconSeedling size={ICON_PX.inline} />
             </span>
             {kindlingIds().length}{" "}
             {kindlingIds().length === 1 ? "seed" : "seeds"} to tend today
@@ -66,7 +67,7 @@ export function Threshold(props: {
             class={styles.primaryButton}
             onClick={() => props.onBegin(kindlingIds())}
           >
-            <BeginFireIcon size={18} /> Begin
+            <BeginFireIcon size={ICON_PX.actionPrimary} /> Begin
           </button>
         </Show>
       </Show>
@@ -78,10 +79,10 @@ export function Threshold(props: {
       <Show when={loading() || kindlingIds().length > 0}>
         <div class={styles.actions}>
           <button class={styles.secondaryButton} onClick={props.onCapture}>
-            <IconPlus size={14} /> Add
+            <IconPlus size={ICON_PX.inline} /> Add
           </button>
           <button class={styles.secondaryButton} onClick={props.onLibrary}>
-            <IconBookOpen size={14} /> Garden
+            <IconBookOpen size={ICON_PX.inline} /> Garden
           </button>
         </div>
       </Show>

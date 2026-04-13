@@ -12,6 +12,8 @@ import {
   IconMapPin,
   IconNotePencil,
 } from "../ui/Icons";
+import { ICON_PX } from "../ui/icon-sizes";
+import shell from "../ui/app-shell.module.css";
 import styles from "./GardenView.module.css";
 
 type IconComponent = typeof IconSeedling;
@@ -69,21 +71,29 @@ export function GardenView(props: {
   };
 
   return (
-    <div class={styles.view}>
-      <div class={styles.shell}>
-        <div class={styles.header}>
-          <button class={styles.backBtn} onClick={props.onBack}>
-            <IconArrowLeft size={20} />
-          </button>
-          <h1 class={styles.title}>Garden</h1>
-          <button class={styles.addBtn} onClick={props.onCapture}>
-            <IconPlus size={20} />
-          </button>
-        </div>
+    <div class={shell.view}>
+      <div class={shell.shell}>
+        <header class={shell.header}>
+          <div class={shell.headerLeading}>
+            <button type="button" class={shell.backBtn} onClick={props.onBack} aria-label="Back">
+              <IconArrowLeft size={ICON_PX.header} />
+            </button>
+          </div>
+          <div class={shell.headerCenter}>
+            <h1 class={shell.headerTitle}>Garden</h1>
+          </div>
+          <div class={shell.headerTrailing}>
+            <button type="button" class={styles.addBtn} onClick={props.onCapture} aria-label="Add passage">
+              <IconPlus size={ICON_PX.header} />
+            </button>
+          </div>
+        </header>
 
+        <div class={shell.main}>
+        <div class={shell.shellContent}>
         <div class={styles.search}>
           <span class={styles.searchIcon}>
-            <IconMagnifyingGlass size={16} />
+            <IconMagnifyingGlass size={ICON_PX.inline} />
           </span>
           <input
             type="text"
@@ -100,7 +110,7 @@ export function GardenView(props: {
         {!loading() && blocks().length === 0 && (
           <div class={styles.empty}>
             <span class={styles.emptyIcon}>
-              <IconSeedling size={32} />
+              <IconSeedling size={ICON_PX.hero} />
             </span>
             <p>{query() ? "No results found." : "Your garden is empty."}</p>
           </div>
@@ -118,7 +128,7 @@ export function GardenView(props: {
               onClick={() => props.onSelect(block.id)}
             >
               <div class={styles.cardIcon}>
-                <TypeIcon size={16} />
+                <TypeIcon size={ICON_PX.inline} />
               </div>
               <div class={styles.cardContent}>
                 <span class={styles.cardTitle}>
@@ -137,6 +147,8 @@ export function GardenView(props: {
             </button>
           );
         })}
+        </div>
+        </div>
         </div>
       </div>
     </div>

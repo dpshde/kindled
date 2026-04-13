@@ -24,7 +24,7 @@ import IconDropRaw from "phosphor-icons-solid/IconDropRegular";
 // @ts-ignore
 import IconArrowUpRaw from "phosphor-icons-solid/IconArrowUpRegular";
 // @ts-ignore
-import IconCheckCircleRaw from "phosphor-icons-solid/IconCheckCircleRegular";
+import IconCheckCircleRaw from "phosphor-icons-solid/IconCheckCircleBold";
 // @ts-ignore
 import IconPencilSimpleRaw from "phosphor-icons-solid/IconPencilSimpleRegular";
 // @ts-ignore
@@ -49,6 +49,8 @@ import IconClockRaw from "phosphor-icons-solid/IconClockRegular";
 import IconLinkRaw from "phosphor-icons-solid/IconLinkRegular";
 // @ts-ignore
 import IconCaretDownThinRaw from "phosphor-icons-solid/IconCaretDownThin";
+// @ts-ignore
+import IconInfoRaw from "phosphor-icons-solid/IconInfoRegular";
 
 interface IconProps {
   size?: number;
@@ -92,3 +94,4 @@ export const IconClock = wrapIcon(IconClockRaw);
 export const IconLink = wrapIcon(IconLinkRaw);
 /** Small expand affordance (e.g. reveal collapsed lists). */
 export const IconCaretDown = wrapIcon(IconCaretDownThinRaw);
+export const IconInfo = wrapIcon(IconInfoRaw);

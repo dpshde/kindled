@@ -5,26 +5,55 @@ import { SCHEMA_VERSION, allMigrations } from "./schema";
 type Sqlite3 = ReturnType<typeof SQLite.Factory>;
 
 let dbInstance: Database | null = null;
+/** Ensures only one DB init runs; parallel getDb() must not open SQLite twice. */
+let initPromise: Promise<Database> | null = null;
 
 export class Database {
   private sqlite3: Sqlite3;
   private db: number;
+  private isClosed = false;
+  /** wa-sqlite-async is not safe for concurrent interleaved calls on one connection. */
+  private mutexChain: Promise<void> = Promise.resolve();
+
   private constructor(sqlite3: Sqlite3, db: number) {
     this.sqlite3 = sqlite3;
     this.db = db;
   }
 
+  private async withMutex<T>(fn: () => Promise<T>): Promise<T> {
+    const prev = this.mutexChain;
+    let release!: () => void;
+    this.mutexChain = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await prev;
+    try {
+      return await fn();
+    } finally {
+      release();
+    }
+  }
+
   static async init(): Promise<Database> {
     if (dbInstance) return dbInstance;
+    if (!initPromise) {
+      initPromise = (async () => {
+        const module = await SQLiteESMFactory();
+        const sqlite3 = SQLite.Factory(module);
 
-    const module = await SQLiteESMFactory();
-    const sqlite3 = SQLite.Factory(module);
-
-    const db = await sqlite3.open_v2("kindled");
-    const instance = new Database(sqlite3, db);
-    await instance.runMigrations();
-    dbInstance = instance;
-    return instance;
+        const db = await sqlite3.open_v2("kindled");
+        const instance = new Database(sqlite3, db);
+        await instance.runMigrations();
+        dbInstance = instance;
+        return instance;
+      })();
+    }
+    try {
+      return await initPromise;
+    } catch (err) {
+      initPromise = null;
+      throw err;
+    }
   }
 
   private async runMigrations(): Promise<void> {
@@ -68,21 +97,27 @@ export class Database {
   }
 
   async exec(sql: string): Promise<void> {
-    await this.sqlite3.exec(this.db, sql);
+    if (this.isClosed) return;
+    return this.withMutex(async () => {
+      await this.sqlite3.exec(this.db, sql);
+    });
   }
 
   async query<T = Record<string, string>>(sql: string): Promise<T[]> {
-    const rows: T[] = [];
+    if (this.isClosed) return [];
+    return this.withMutex(async () => {
+      const rows: T[] = [];
 
-    await this.sqlite3.exec(this.db, sql, (row, cols) => {
-      const obj: Record<string, string> = {};
-      cols.forEach((col, i) => {
-        obj[col] = String(row[i] ?? "");
+      await this.sqlite3.exec(this.db, sql, (row, cols) => {
+        const obj: Record<string, string> = {};
+        cols.forEach((col, i) => {
+          obj[col] = String(row[i] ?? "");
+        });
+        rows.push(obj as T);
       });
-      rows.push(obj as T);
-    });
 
-    return rows;
+      return rows;
+    });
   }
 
   async queryOne<T = Record<string, string>>(sql: string): Promise<T | null> {
@@ -91,14 +126,20 @@ export class Database {
   }
 
   async run(sql: string, ...params: unknown[]): Promise<void> {
-    await this.sqlite3.run(this.db, sql, params as (string | number | null)[]);
+    if (this.isClosed) return;
+    return this.withMutex(async () => {
+      await this.sqlite3.run(this.db, sql, params as (string | number | null)[]);
+    });
   }
 
   async close(): Promise<void> {
-    if (this.db) {
+    return this.withMutex(async () => {
+      if (this.isClosed) return;
+      this.isClosed = true;
       await this.sqlite3.close(this.db);
       dbInstance = null;
-    }
+      initPromise = null;
+    });
   }
 }
 

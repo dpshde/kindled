@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatLingerSeconds, nextReviewPresentation } from "./helpers";
+import { formatLingerSeconds, formatTimestampMedium, nextReviewPresentation } from "./helpers";
 
 describe("nextReviewPresentation", () => {
   it("uses soft copy for a future rhythm date", () => {
@@ -33,6 +33,23 @@ describe("nextReviewPresentation", () => {
   it("uses em dash when the stored value is empty or unparseable", () => {
     expect(nextReviewPresentation("", new Date()).dateMedium).toBe("—");
     expect(nextReviewPresentation("not-a-date", new Date()).dateMedium).toBe("—");
+  });
+});
+
+describe("formatTimestampMedium", () => {
+  it("returns em dash for empty or invalid input", () => {
+    expect(formatTimestampMedium("")).toBe("—");
+    expect(formatTimestampMedium(null)).toBe("—");
+    expect(formatTimestampMedium("nope")).toBe("—");
+  });
+
+  it("formats ISO and SQLite datetime strings", () => {
+    const iso = formatTimestampMedium("2026-04-13T14:30:00.000Z");
+    expect(iso).not.toBe("—");
+    expect(iso).toMatch(/2026/);
+    const sql = formatTimestampMedium("2026-04-13 09:15:00");
+    expect(sql).not.toBe("—");
+    expect(sql).toMatch(/2026/);
   });
 });
 

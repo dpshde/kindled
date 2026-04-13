@@ -16,8 +16,11 @@ import {
   OSIS_BOOK_NAMES,
   type OsisBookCode,
 } from "grab-bcv";
+import { filterRedundantBookSuggestions } from "../scripture/passageAutocomplete";
 import { resolvePassage } from "../scripture/RouteBibleClient";
+import { ICON_PX } from "../ui/icon-sizes";
 import { IconArrowLeft, IconCheck, IconBookOpen, IconUser, IconMapPin } from "../ui/Icons";
+import shell from "../ui/app-shell.module.css";
 import styles from "./NoteCapture.module.css";
 
 interface Suggestion {
@@ -44,7 +47,7 @@ function getWikiLinkContext(
 }
 
 export function NoteCapture(props: {
-  blockId: string;
+  passageId: string;
   displayRef: string;
   onBack: () => void;
   onSaved: () => void;
@@ -76,7 +79,7 @@ export function NoteCapture(props: {
 
     // Bible passage suggestions via grab-bcv
     if (q.length >= 1) {
-      const passages = autocompletePassage(q, { limit: 4 });
+      const passages = filterRedundantBookSuggestions(q, autocompletePassage(q, { limit: 4 }));
       for (const p of passages) {
         results.push({
           label: p.label,
@@ -171,7 +174,7 @@ export function NoteCapture(props: {
     }
     setSaving(true);
     try {
-      const block = await getBlock(props.blockId);
+      const block = await getBlock(props.passageId);
       if (block) {
         const noteText = text().trim();
         const existing = block.content;
@@ -351,17 +354,24 @@ export function NoteCapture(props: {
   };
 
   return (
-    <div class={styles.view}>
-      <div class={styles.shell}>
-        <div class={styles.header}>
-          <button class={styles.backBtn} onClick={props.onBack}>
-            <IconArrowLeft size={20} />
-          </button>
-          <h1 class={styles.title}>Reflection on {props.displayRef}</h1>
-          <div style={{ width: "20px" }} />
-        </div>
+    <div class={shell.view}>
+      <div class={shell.shell}>
+        <header class={shell.header}>
+          <div class={shell.headerLeading}>
+            <button type="button" class={shell.backBtn} onClick={props.onBack} aria-label="Back">
+              <IconArrowLeft size={ICON_PX.header} />
+            </button>
+          </div>
+          <div class={shell.headerCenter}>
+            <h1 class={`${shell.headerTitle} ${shell.headerTitleEllipsis}`}>
+              Reflection on {props.displayRef}
+            </h1>
+          </div>
+          <div class={shell.headerTrailing} aria-hidden="true" />
+        </header>
 
-        <div class={styles.body}>
+        <div class={shell.main}>
+        <div class={shell.shellContent}>
           <div class={styles.editorWrap}>
             <textarea
               ref={textareaRef}
@@ -392,7 +402,7 @@ export function NoteCapture(props: {
                       onClick={() => applySuggestion(s)}
                     >
                       <span class={styles.suggestionIcon}>
-                        <s.icon size={14} />
+                        <s.icon size={ICON_PX.compact} />
                       </span>
                       <span class={styles.suggestionLabel}>{s.label}</span>
                       <span class={styles.suggestionType}>
@@ -413,9 +423,10 @@ export function NoteCapture(props: {
             onClick={handleSave}
             disabled={saving()}
           >
-            <IconCheck size={16} />{" "}
+            <IconCheck size={ICON_PX.inline} />{" "}
             {saving() ? "Saving..." : "Save Reflection"}
           </button>
+        </div>
         </div>
       </div>
     </div>

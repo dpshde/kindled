@@ -56,6 +56,13 @@ export function nextReviewPresentation(
   };
 }
 
+/** Human-readable local date/time for block and rhythm timestamps. */
+export function formatTimestampMedium(value: string | undefined | null): string {
+  const d = parseRhythmInstant(value);
+  if (!d) return "—";
+  return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
 /** Total ritual dwell time from `life_stages.linger_seconds`. */
 export function formatLingerSeconds(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds <= 0) return "—";

@@ -26,6 +26,10 @@ import {
   topRefToInput,
   type CanonicalTopic,
 } from "../scripture/canonicalTopics";
+import { filterRedundantBookSuggestions } from "../scripture/passageAutocomplete";
+import { ICON_PX } from "../ui/icon-sizes";
+import { pickerLabelForOsisBook } from "../scripture/book-picker-labels";
+import shell from "../ui/app-shell.module.css";
 import styles from "./ScriptureCapture.module.css";
 
 interface StructuredDraft {
@@ -83,6 +87,8 @@ function parseInputToPassage(val: string): ParsedPassage | null {
 }
 
 export function ScriptureCapture(props: {
+  /** From URL deep link (`?ref=…`) — seed input and resolve preview when possible */
+  initialRef?: string;
   onBack: () => void;
   onSaved: () => void;
 }) {
@@ -110,8 +116,16 @@ export function ScriptureCapture(props: {
   const [topicListCollapsed, setTopicListCollapsed] = createSignal(false);
 
   let autoResolveDebounce: ReturnType<typeof setTimeout> | undefined;
+  let passageInputRef: HTMLInputElement | undefined;
 
   onMount(() => {
+    const seed = props.initialRef?.trim();
+    if (seed) {
+      syncDraftFromInput(seed, true);
+    } else {
+      queueMicrotask(() => passageInputRef?.focus());
+    }
+
     void loadCanonicalTopics()
       .then(setCanonicalTopics)
       .catch(() =>
@@ -151,7 +165,7 @@ export function ScriptureCapture(props: {
   const suggestions = createMemo(() => {
     const q = input().trim();
     if (!q || status() !== "idle") return [];
-    return autocompletePassage(q, { limit: 6 });
+    return filterRedundantBookSuggestions(q, autocompletePassage(q, { limit: 6 }));
   });
 
   const topicMatches = createMemo(() =>
@@ -332,17 +346,22 @@ export function ScriptureCapture(props: {
   const showTopicMatchList = () => setTopicListCollapsed(false);
 
   return (
-    <div class={styles.view}>
-      <div class={styles.shell}>
-        <div class={styles.header}>
-          <button class={styles.backBtn} onClick={props.onBack}>
-            <IconArrowLeft size={20} />
-          </button>
-          <h1 class={styles.title}>Passage</h1>
-          <div style={{ width: "20px" }} />
-        </div>
+    <div class={shell.view}>
+      <div class={shell.shell}>
+        <header class={shell.header}>
+          <div class={shell.headerLeading}>
+            <button type="button" class={shell.backBtn} onClick={props.onBack} aria-label="Back">
+              <IconArrowLeft size={ICON_PX.header} />
+            </button>
+          </div>
+          <div class={shell.headerCenter}>
+            <h1 class={shell.headerTitle}>Passage</h1>
+          </div>
+          <div class={shell.headerTrailing} aria-hidden="true" />
+        </header>
 
-        <div class={styles.body}>
+        <div class={shell.main}>
+        <div class={shell.shellContent}>
         <div class={styles.passageEditor}>
           <p class={styles.builderHint}>
             Choose a book below, or type the reference however you usually write it.
@@ -364,7 +383,9 @@ export function ScriptureCapture(props: {
               >
                 <option value="">Choose a book</option>
                 {OSIS_BOOK_CODES.map((code) => (
-                  <option value={code}>{OSIS_BOOK_NAMES[code]}</option>
+                  <option value={code} title={OSIS_BOOK_NAMES[code]}>
+                    {pickerLabelForOsisBook(code)}
+                  </option>
                 ))}
               </select>
             </label>
@@ -438,16 +459,19 @@ export function ScriptureCapture(props: {
 
           <div class={styles.inputGroup}>
             <span class={styles.inputIcon}>
-              <IconBookOpen size={16} />
+              <IconBookOpen size={ICON_PX.inline} />
             </span>
             <input
+              ref={(el) => {
+                passageInputRef = el;
+              }}
               type="text"
               placeholder="e.g. John 3:16 · Rev 12 · Ps 23:1–6"
               value={input()}
               onInput={(e) => syncDraftFromInput(e.currentTarget.value)}
               onKeyDown={handleKeyDown}
               class={styles.input}
-              disabled={status() === "resolving" || status() === "saving"}
+              disabled={status() === "saving"}
             />
           </div>
 
@@ -528,7 +552,7 @@ export function ScriptureCapture(props: {
                   aria-label="Show topic suggestions"
                   title="Show topic suggestions"
                 >
-                  <IconCaretDown size={17} color="currentColor" />
+                  <IconCaretDown size={ICON_PX.inline} color="currentColor" />
                 </button>
               </div>
             </Show>
@@ -581,7 +605,7 @@ export function ScriptureCapture(props: {
               {preview()!.text.length > 300 ? "..." : ""}
             </p>
             <button class={styles.saveBtn} onClick={handleSave}>
-              <IconCheck size={16} /> Plant Seed
+              <IconCheck size={ICON_PX.inline} /> Plant Seed
             </button>
           </div>
         )}
@@ -592,17 +616,18 @@ export function ScriptureCapture(props: {
 
         {status() === "saved" && (
           <div class={styles.saved}>
-            <IconCheck size={24} />
+            <IconCheck size={ICON_PX.emphasis} />
             <p>Seed planted in your garden.</p>
           </div>
         )}
 
         {status() === "error" && (
           <div class={styles.error}>
-            <IconWarning size={16} />
+            <IconWarning size={ICON_PX.inline} />
             <p>{errorMsg()}</p>
           </div>
         )}
+        </div>
         </div>
       </div>
     </div>
