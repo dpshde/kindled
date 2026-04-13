@@ -3,17 +3,31 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  animation: fadeIn var(--ease-out);
+}
+
+.shell {
+  width: 100%;
+  max-width: var(--page-shell-max);
+  margin: 0 auto;
+  padding-inline: max(var(--space-lg), env(safe-area-inset-left))
+    max(var(--space-lg), env(safe-area-inset-right));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 16px 0;
   position: sticky;
   top: 0;
-  background: var(--color-bg);
+  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 10;
   border-bottom: 1px solid var(--color-line);
 }
@@ -22,8 +36,8 @@
   color: var(--color-text-tertiary);
   padding: 6px;
   display: flex;
-  border-radius: var(--radius-sm);
-  transition: color var(--ease-in-out), background var(--ease-in-out);
+  border-radius: var(--radius-field);
+  transition: color var(--ease-ui), background var(--ease-ui);
 }
 
 .backBtn:hover {
@@ -33,16 +47,17 @@
 
 .title {
   font-family: var(--font-scripture);
-  font-size: 18px;
+  font-size: 1.25rem;
   font-weight: 500;
+  letter-spacing: -0.02em;
 }
 
 .addBtn {
   color: var(--color-growth);
   padding: 6px;
   display: flex;
-  border-radius: var(--radius-sm);
-  transition: color var(--ease-in-out), background var(--ease-in-out);
+  border-radius: var(--radius-field);
+  transition: color var(--ease-ui), background var(--ease-ui);
 }
 
 .addBtn:hover {
@@ -52,14 +67,14 @@
 
 .search {
   position: relative;
-  padding: 16px 20px 8px;
+  padding: 8px 0 8px;
   display: flex;
   align-items: center;
 }
 
 .searchIcon {
   position: absolute;
-  left: 34px;
+  left: 14px;
   color: var(--color-text-tertiary);
   pointer-events: none;
 }
@@ -67,16 +82,17 @@
 .searchInput {
   padding-left: 38px;
   font-size: 14px;
-  background: var(--color-bg-card);
-  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border-radius: 3px;
 }
 
 .list {
-  padding: 8px 20px 24px;
+  padding: 8px 0 24px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   flex: 1;
+  width: 100%;
 }
 
 .empty {
@@ -85,13 +101,15 @@
   align-items: center;
   gap: 10px;
   padding: 56px 0;
-  color: var(--color-text-tertiary);
-  font-size: 14px;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+  line-height: 1.5;
+  width: 100%;
 }
 
 .emptyIcon {
   color: var(--color-growth);
-  opacity: 0.4;
+  opacity: 0.45;
 }
 
 .card {
@@ -99,25 +117,25 @@
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
-  background: var(--color-bg-card);
-  border-radius: var(--radius-md);
-  border: 1px solid transparent;
+  background: var(--color-bg);
+  border-radius: 3px;
+  border: 1px solid var(--color-line);
   cursor: pointer;
   text-align: left;
   width: 100%;
-  transition: background var(--ease-in-out), border-color var(--ease-in-out);
+  transition: background var(--ease-ui), border-color var(--ease-ui);
 }
 
 .card:hover {
-  background: var(--color-bg-card-hover);
-  border-color: var(--color-line);
+  background: color-mix(in srgb, var(--color-bg-warm) 40%, var(--color-bg));
+  border-color: var(--color-line-active);
 }
 
 .cardIcon {
   color: var(--color-text-tertiary);
   display: flex;
   flex-shrink: 0;
-  opacity: 0.6;
+  opacity: 0.65;
 }
 
 .cardContent {
@@ -125,12 +143,12 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .cardTitle {
   font-family: var(--font-scripture);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--color-text);
   white-space: nowrap;
@@ -138,35 +156,25 @@
   text-overflow: ellipsis;
 }
 
-.cardSub {
+.cardRhythm {
+  font-family: var(--font-ui);
   font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   color: var(--color-text-tertiary);
+}
+
+.cardSub {
+  font-size: 13px;
+  color: var(--color-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.4;
 }
 
-.cardStage {
-  color: var(--stage-color);
-  display: flex;
-  flex-shrink: 0;
-  opacity: 0.7;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @media (max-width: 480px) {
   .searchInput {
-    font-size: 16px; /* prevents iOS zoom */
+    font-size: 16px;
   }
 }

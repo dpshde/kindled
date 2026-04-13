@@ -1,4 +1,4 @@
-import { createSignal, Suspense, onMount } from "solid-js";
+import { createSignal, onMount, Show } from "solid-js";
 import { Threshold } from "./ritual/Threshold";
 import { GardenView } from "./garden/GardenView";
 import { BlockDetail } from "./garden/BlockDetail";
@@ -14,7 +14,7 @@ type Screen =
   | { kind: "quietClose" }
   | { kind: "library" }
   | { kind: "capture" }
-  | { kind: "note"; blockId: string; displayRef: string }
+  | { kind: "note"; blockId: string; displayRef: string; returnToBlockDetail?: string }
   | { kind: "blockDetail"; blockId: string };
 
 export default function App() {
@@ -49,7 +49,7 @@ export default function App() {
   };
 
   return (
-    <Suspense fallback={<LoadingScreen />}>
+    <>
       {(() => {
         const s = screen();
         switch (s.kind) {
@@ -69,16 +69,20 @@ export default function App() {
               return null;
             }
             return (
-              <PassageView
-                blockId={currentId}
-                index={s.index}
-                total={s.blockIds.length}
-                onAction={handleRitualAction}
-                onNote={(blockId, displayRef) =>
-                  navigate({ kind: "note", blockId, displayRef })
-                }
-                onBack={() => navigate({ kind: "threshold" })}
-              />
+              <Show when={currentId} keyed>
+                {(id) => (
+                  <PassageView
+                    blockId={id}
+                    index={s.index}
+                    total={s.blockIds.length}
+                    onAction={handleRitualAction}
+                    onNote={(blockId, displayRef) =>
+                      navigate({ kind: "note", blockId, displayRef })
+                    }
+                    onBack={() => navigate({ kind: "threshold" })}
+                  />
+                )}
+              </Show>
             );
           }
 
@@ -101,6 +105,14 @@ export default function App() {
                 onBack={() => navigate({ kind: "library" })}
                 onNavigate={(blockId) => navigate({ kind: "blockDetail", blockId })}
                 onDeleted={() => navigate({ kind: "library" })}
+                onNote={(blockId, displayRef) =>
+                  navigate({
+                    kind: "note",
+                    blockId,
+                    displayRef,
+                    returnToBlockDetail: blockId,
+                  })
+                }
               />
             );
 
@@ -112,34 +124,26 @@ export default function App() {
               />
             );
 
-          case "note":
+          case "note": {
+            const noteBack =
+              s.returnToBlockDetail !== undefined
+                ? () =>
+                    navigate({
+                      kind: "blockDetail",
+                      blockId: s.returnToBlockDetail!,
+                    })
+                : () => navigate({ kind: "threshold" });
             return (
               <NoteCapture
                 blockId={s.blockId}
                 displayRef={s.displayRef}
-                onBack={() => navigate({ kind: "threshold" })}
-                onSaved={() => navigate({ kind: "threshold" })}
+                onBack={noteBack}
+                onSaved={noteBack}
               />
             );
+          }
         }
       })()}
-    </Suspense>
-  );
-}
-
-function LoadingScreen() {
-  return (
-    <div
-      style={{
-        display: "flex",
-        "align-items": "center",
-        "justify-content": "center",
-        "min-height": "100vh",
-        color: "var(--color-text-secondary)",
-        "font-family": "var(--font-ui)",
-      }}
-    >
-      Kindling...
-    </div>
+    </>
   );
 }

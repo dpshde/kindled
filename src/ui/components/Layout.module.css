@@ -1,6 +1,6 @@
 .container {
   position: relative;
-  max-width: 640px;
+  max-width: var(--page-shell-max);
   margin: 0 auto;
   padding: 24px;
   min-height: 100vh;

@@ -1,4 +1,9 @@
 :root {
+  /* Shared motion + layout (matches Threshold / editorial shell) */
+  --ease-ui: 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  --page-shell-max: 34rem;
+  --radius-field: 2px;
+
   /* Paper/Light palette — warm paper base, charcoal text, amber accents */
   --color-bg: #fdfcf8;
   --color-bg-warm: #f5f2eb;
@@ -65,8 +70,25 @@ body {
   padding: 0;
   min-height: 100vh;
   min-height: 100dvh;
+  position: relative;
   background-color: var(--color-bg);
   color: var(--color-text);
+}
+
+/* Same warm paper wash as home — all routes share one atmosphere */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--color-bg-warm) 55%, var(--color-bg)) 0%,
+    var(--color-bg) 42%,
+    var(--color-bg) 100%
+  );
+  opacity: 0.85;
 }
 
 #root {
@@ -97,7 +119,7 @@ input, textarea, select {
   color: var(--color-text);
   background: var(--color-bg-card);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-field);
   padding: 10px 14px;
   font-size: 15px;
   width: 100%;

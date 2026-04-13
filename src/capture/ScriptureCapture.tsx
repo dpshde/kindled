@@ -1,16 +1,31 @@
-import { createSignal, createMemo } from "solid-js";
-import { createBlock } from "../db";
+import { createSignal, createMemo, onMount, onCleanup, Show, For } from "solid-js";
+import { invalidateClientKindlingIdsCache, saveScripturePassageFromCapture } from "../db";
 import { resolvePassage } from "../scripture/RouteBibleClient";
 import {
   tryParsePassage,
+  findAnyPassage,
+  resolveBookAlias,
   autocompletePassage,
   OSIS_BOOK_CODES,
   OSIS_BOOK_NAMES,
   BOOK_CHAPTER_COUNTS,
   BOOK_VERSE_COUNTS,
   type OsisBookCode,
+  type ParsedPassage,
 } from "grab-bcv";
-import { IconArrowLeft, IconBookOpen, IconCheck, IconWarning } from "../ui/Icons";
+import {
+  IconArrowLeft,
+  IconBookOpen,
+  IconCaretDown,
+  IconCheck,
+  IconWarning,
+} from "../ui/Icons";
+import {
+  loadCanonicalTopics,
+  searchCanonicalTopics,
+  topRefToInput,
+  type CanonicalTopic,
+} from "../scripture/canonicalTopics";
 import styles from "./ScriptureCapture.module.css";
 
 interface StructuredDraft {
@@ -22,6 +37,49 @@ interface StructuredDraft {
 
 function buildNumericOptions(max: number, start = 1): string[] {
   return Array.from({ length: Math.max(max - start + 1, 0) }, (_, i) => String(i + start));
+}
+
+function draftFromParsed(p: ParsedPassage): StructuredDraft {
+  const start = p.start;
+  const end = p.end;
+  const startVerse = start.verse != null ? String(start.verse) : "";
+  let endVerse = "";
+  if (
+    start.verse != null &&
+    end.verse != null &&
+    end.book === start.book &&
+    end.chapter === start.chapter &&
+    end.verse !== start.verse
+  ) {
+    endVerse = String(end.verse);
+  }
+  return {
+    book: start.book,
+    chapter: String(start.chapter),
+    startVerse,
+    endVerse,
+  };
+}
+
+function displayFromParsed(p: ParsedPassage): { display: string; canonical: string } {
+  const bookName = OSIS_BOOK_NAMES[p.start.book] ?? p.start.book;
+  const hasVerse = p.start.verse != null;
+  const display =
+    hasVerse && p.end.verse != null && p.start.verse !== p.end.verse
+      ? `${bookName} ${p.start.chapter}:${p.start.verse}-${p.end.verse}`
+      : hasVerse
+        ? `${bookName} ${p.start.chapter}:${p.start.verse}`
+        : `${bookName} ${p.start.chapter}`;
+  return { display, canonical: p.canonical };
+}
+
+/** Strict parse first, then passage embedded in larger text (`findAnyPassage`). */
+function parseInputToPassage(val: string): ParsedPassage | null {
+  const trimmed = val.trim();
+  if (!trimmed) return null;
+  const strict = tryParsePassage(trimmed);
+  if (strict.ok) return strict.value;
+  return findAnyPassage(trimmed);
 }
 
 export function ScriptureCapture(props: {
@@ -44,6 +102,24 @@ export function ScriptureCapture(props: {
     text: string;
   } | null>(null);
   const [errorMsg, setErrorMsg] = createSignal("");
+  const [canonicalTopics, setCanonicalTopics] = createSignal<CanonicalTopic[]>([]);
+  const [topicsLoadError, setTopicsLoadError] = createSignal<string | null>(null);
+  const [topicQuery, setTopicQuery] = createSignal("");
+  const [activeTopic, setActiveTopic] = createSignal<CanonicalTopic | null>(null);
+  /** After picking a topic, hide the match list until user expands or edits the query. */
+  const [topicListCollapsed, setTopicListCollapsed] = createSignal(false);
+
+  let autoResolveDebounce: ReturnType<typeof setTimeout> | undefined;
+
+  onMount(() => {
+    void loadCanonicalTopics()
+      .then(setCanonicalTopics)
+      .catch(() =>
+        setTopicsLoadError("Topic suggestions unavailable (could not load list)."),
+      );
+  });
+
+  onCleanup(() => clearTimeout(autoResolveDebounce));
 
   const book = createMemo(() => {
     const b = draft().book;
@@ -78,20 +154,16 @@ export function ScriptureCapture(props: {
     return autocompletePassage(q, { limit: 6 });
   });
 
+  const topicMatches = createMemo(() =>
+    searchCanonicalTopics(canonicalTopics(), topicQuery(), 8),
+  );
+
   const parsedPreview = createMemo(() => {
     const val = input().trim();
     if (!val) return null;
-    const result = tryParsePassage(val);
-    if (!result.ok) return null;
-    const p = result.value;
-    const bookName = OSIS_BOOK_NAMES[p.start.book] ?? p.start.book;
-    const hasVerse = p.start.verse != null;
-    const display = hasVerse && p.end.verse != null && p.start.verse !== p.end.verse
-      ? `${bookName} ${p.start.chapter}:${p.start.verse}-${p.end.verse}`
-      : hasVerse
-        ? `${bookName} ${p.start.chapter}:${p.start.verse}`
-        : `${bookName} ${p.start.chapter}`;
-    return { display, canonical: p.canonical };
+    const p = parseInputToPassage(val);
+    if (!p) return null;
+    return displayFromParsed(p);
   });
 
   const buildRefString = (d: StructuredDraft): string => {
@@ -104,23 +176,91 @@ export function ScriptureCapture(props: {
       : `${name} ${d.chapter}:${d.startVerse}`;
   };
 
-  const syncDraftFromInput = (val: string) => {
+  const queueAutoResolveFromInput = () => {
+    clearTimeout(autoResolveDebounce);
+    autoResolveDebounce = setTimeout(() => {
+      autoResolveDebounce = undefined;
+      void tryAutoResolve();
+    }, 320);
+  };
+
+  const scheduleResolveAfterDraftSync = (instantResolve: boolean) => {
+    if (instantResolve) {
+      clearTimeout(autoResolveDebounce);
+      void tryAutoResolve();
+    } else {
+      queueAutoResolveFromInput();
+    }
+  };
+
+  const syncDraftFromInput = (val: string, instantResolve = false) => {
     setInput(val);
     if (status() === "error") setStatus("idle");
+
+    const trimmed = val.trim();
+    if (!trimmed) {
+      clearTimeout(autoResolveDebounce);
+      setDraft({ book: "", chapter: "", startVerse: "", endVerse: "" });
+      return;
+    }
+
+    const strict = tryParsePassage(trimmed);
+    if (strict.ok) {
+      setDraft(draftFromParsed(strict.value));
+      scheduleResolveAfterDraftSync(instantResolve);
+      return;
+    }
+
+    const found = findAnyPassage(trimmed);
+    if (found) {
+      setDraft(draftFromParsed(found));
+      scheduleResolveAfterDraftSync(instantResolve);
+      return;
+    }
+
+    const alias = resolveBookAlias(trimmed);
+    if (alias) {
+      setDraft({
+        book: alias,
+        chapter: "",
+        startVerse: "",
+        endVerse: "",
+      });
+      scheduleResolveAfterDraftSync(instantResolve);
+      return;
+    }
+
+    setDraft({ book: "", chapter: "", startVerse: "", endVerse: "" });
+    scheduleResolveAfterDraftSync(instantResolve);
   };
 
   const syncInputFromDraft = (d: StructuredDraft) => {
+    clearTimeout(autoResolveDebounce);
     setDraft(d);
     const ref = buildRefString(d);
     if (ref) setInput(ref);
+    void tryAutoResolve();
+  };
+
+  const tryAutoResolve = () => {
+    const s = status();
+    if (s === "resolving" || s === "saving" || s === "saved") return;
+
+    const val = input().trim();
+    if (!val) return;
+
+    const parsed = parseInputToPassage(val);
+    if (!parsed || parsed.start.verse == null) return;
+
+    void handleResolve();
   };
 
   const handleResolve = async () => {
     const val = input().trim();
     if (!val) return;
 
-    const result = tryParsePassage(val);
-    if (!result.ok) {
+    const parsed = parseInputToPassage(val);
+    if (!parsed) {
       setStatus("error");
       setErrorMsg(`Could not parse "${val}" as a Bible reference.`);
       return;
@@ -128,7 +268,7 @@ export function ScriptureCapture(props: {
 
     setStatus("resolving");
     try {
-      const passage = await resolvePassage(val);
+      const passage = await resolvePassage(parsed.canonical);
       if (!passage) {
         setStatus("error");
         setErrorMsg("Could not resolve that passage.");
@@ -148,22 +288,22 @@ export function ScriptureCapture(props: {
 
   const handleSave = async () => {
     const val = input().trim();
-    const result = tryParsePassage(val);
-    if (!result.ok || !preview()) return;
+    const parsed = parseInputToPassage(val);
+    if (!parsed || !preview()) return;
 
     setStatus("saving");
     try {
-      const passage = await resolvePassage(val);
-      await createBlock({
-        type: "scripture",
+      const passage = await resolvePassage(parsed.canonical);
+      await saveScripturePassageFromCapture({
         content: preview()!.text,
-        scripture_ref: result.value.canonical,
+        scripture_ref: parsed.canonical,
         scripture_display_ref: preview()!.displayRef,
         scripture_translation: preview()!.translation,
         scripture_verses: passage?.verses ?? [],
         source: "manual",
         tags: [],
       });
+      invalidateClientKindlingIdsCache();
       setStatus("saved");
       setTimeout(() => props.onSaved(), 800);
     } catch (e) {
@@ -178,20 +318,34 @@ export function ScriptureCapture(props: {
     }
   };
 
+  const applyTopicRef = (ref: string) => {
+    const human = topRefToInput(ref);
+    syncDraftFromInput(human, true);
+  };
+
+  const selectTopic = (t: CanonicalTopic) => {
+    setTopicQuery(t.label);
+    setActiveTopic(t);
+    setTopicListCollapsed(true);
+  };
+
+  const showTopicMatchList = () => setTopicListCollapsed(false);
+
   return (
     <div class={styles.view}>
-      <div class={styles.header}>
-        <button class={styles.backBtn} onClick={props.onBack}>
-          <IconArrowLeft size={20} />
-        </button>
-        <h1 class={styles.title}>Capture Passage</h1>
-        <div style={{ width: "20px" }} />
-      </div>
+      <div class={styles.shell}>
+        <div class={styles.header}>
+          <button class={styles.backBtn} onClick={props.onBack}>
+            <IconArrowLeft size={20} />
+          </button>
+          <h1 class={styles.title}>Passage</h1>
+          <div style={{ width: "20px" }} />
+        </div>
 
-      <div class={styles.body}>
-        <div class={styles.builder}>
+        <div class={styles.body}>
+        <div class={styles.passageEditor}>
           <p class={styles.builderHint}>
-            Pick a book, then chapter and verses as needed.
+            Choose a book below, or type the reference however you usually write it.
           </p>
           <div class={styles.pickerGrid}>
             <label class={styles.pickerField}>
@@ -281,40 +435,128 @@ export function ScriptureCapture(props: {
               </label>
             )}
           </div>
-        </div>
 
-        <div class={styles.inputGroup}>
-          <span class={styles.inputIcon}>
-            <IconBookOpen size={16} />
-          </span>
-          <input
-            type="text"
-            placeholder="John 3:16, Psalm 23:1-6..."
-            value={input()}
-            onInput={(e) => syncDraftFromInput(e.currentTarget.value)}
-            onKeyDown={handleKeyDown}
-            class={styles.input}
-            disabled={status() === "resolving" || status() === "saving"}
-          />
-        </div>
-
-        {suggestions().length > 0 && status() === "idle" && (
-          <div class={styles.suggestions}>
-            {suggestions().map((s) => (
-              <button
-                type="button"
-                class={styles.suggestionItem}
-                onClick={() => setInput(s.insertText)}
-              >
-                <span>{s.label}</span>
-              </button>
-            ))}
+          <div class={styles.inputGroup}>
+            <span class={styles.inputIcon}>
+              <IconBookOpen size={16} />
+            </span>
+            <input
+              type="text"
+              placeholder="e.g. John 3:16 · Rev 12 · Ps 23:1–6"
+              value={input()}
+              onInput={(e) => syncDraftFromInput(e.currentTarget.value)}
+              onKeyDown={handleKeyDown}
+              class={styles.input}
+              disabled={status() === "resolving" || status() === "saving"}
+            />
           </div>
-        )}
+
+          {suggestions().length > 0 && status() === "idle" && (
+            <div class={styles.suggestions}>
+              {suggestions().map((s) => (
+                <button
+                  type="button"
+                  class={styles.suggestionItem}
+                  onClick={() => syncDraftFromInput(s.insertText, true)}
+                >
+                  <span>{s.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div class={styles.topicSection}>
+          <label class={styles.topicLabel} for="topic-search">
+            Topic
+          </label>
+          <p class={styles.topicHint}>
+            Search a theme; pick a passage suggestion to fill the reference above.
+          </p>
+          <Show when={topicsLoadError()}>
+            <p class={styles.topicError}>{topicsLoadError()}</p>
+          </Show>
+          <div class={styles.topicField}>
+            <input
+              id="topic-search"
+              type="text"
+              class={styles.topicInput}
+              placeholder="e.g. anxiety, marriage, forgiveness"
+              value={topicQuery()}
+              onInput={(e) => {
+                setTopicQuery(e.currentTarget.value);
+                setActiveTopic(null);
+                setTopicListCollapsed(false);
+              }}
+              disabled={!!topicsLoadError() || canonicalTopics().length === 0}
+              autocomplete="off"
+            />
+            <Show
+              when={
+                topicQuery().trim() &&
+                topicMatches().length > 0 &&
+                !topicListCollapsed()
+              }
+            >
+              <div class={styles.topicMatches} role="listbox">
+                <For each={topicMatches()}>
+                  {(t) => (
+                    <button
+                      type="button"
+                      role="option"
+                      class={styles.topicMatchBtn}
+                      onClick={() => selectTopic(t)}
+                    >
+                      {t.label}
+                    </button>
+                  )}
+                </For>
+              </div>
+            </Show>
+            <Show
+              when={
+                topicListCollapsed() &&
+                topicQuery().trim() &&
+                topicMatches().length > 0
+              }
+            >
+              <div class={styles.topicExpandRow}>
+                <button
+                  type="button"
+                  class={styles.topicExpandBtn}
+                  onClick={showTopicMatchList}
+                  aria-label="Show topic suggestions"
+                  title="Show topic suggestions"
+                >
+                  <IconCaretDown size={17} color="currentColor" />
+                </button>
+              </div>
+            </Show>
+            <Show when={activeTopic()}>
+              {(topic) => (
+                <div class={styles.topicRefs}>
+                  <span class={styles.topicRefsLabel}>Suggested passages</span>
+                  <div class={styles.topicRefChips}>
+                    <For each={topic().topRefs.slice(0, 8)}>
+                      {(ref) => (
+                        <button
+                          type="button"
+                          class={styles.topicRefChip}
+                          onClick={() => applyTopicRef(ref)}
+                        >
+                          {topRefToInput(ref)}
+                        </button>
+                      )}
+                    </For>
+                  </div>
+                </div>
+              )}
+            </Show>
+          </div>
+        </div>
 
         {parsedPreview() && status() === "idle" && (
-          <div class={styles.parsePreview}>
-            <span class={styles.parseLabel}>parsed</span>
+          <div class={styles.parsePreview} role="status">
             <strong>{parsedPreview()!.display}</strong>
             <code>{parsedPreview()!.canonical}</code>
           </div>
@@ -322,7 +564,7 @@ export function ScriptureCapture(props: {
 
         {status() === "idle" && (
           <button class={styles.resolveBtn} onClick={handleResolve}>
-            Resolve Passage
+            Look up
           </button>
         )}
 
@@ -361,6 +603,7 @@ export function ScriptureCapture(props: {
             <p>{errorMsg()}</p>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

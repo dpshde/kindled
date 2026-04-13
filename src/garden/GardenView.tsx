@@ -1,14 +1,12 @@
 import { createSignal, onMount } from "solid-js";
-import { getAllBlocks, searchBlocks, getLifeStage, type Block, type LifeStageRecord, type LifeStage } from "../db";
-import { stageColor } from "../ui/helpers";
+import { getAllBlocks, searchBlocks, getLifeStage, type Block, type LifeStageRecord } from "../db";
+import { nextReviewPresentation } from "../ui/helpers";
 import {
   IconArrowLeft,
   IconMagnifyingGlass,
   IconPlus,
   IconSeedling,
-  IconTree,
   IconLeaf,
-  IconFire,
   IconBookOpen,
   IconUser,
   IconMapPin,
@@ -17,13 +15,6 @@ import {
 import styles from "./GardenView.module.css";
 
 type IconComponent = typeof IconSeedling;
-
-const STAGE_ICON: Record<LifeStage, IconComponent> = {
-  seed: IconSeedling,
-  sprout: IconTree,
-  mature: IconLeaf,
-  ember: IconFire,
-};
 
 const TYPE_ICON: Record<string, IconComponent> = {
   scripture: IconBookOpen,
@@ -79,30 +70,31 @@ export function GardenView(props: {
 
   return (
     <div class={styles.view}>
-      <div class={styles.header}>
-        <button class={styles.backBtn} onClick={props.onBack}>
-          <IconArrowLeft size={20} />
-        </button>
-        <h1 class={styles.title}>Garden</h1>
-        <button class={styles.addBtn} onClick={props.onCapture}>
-          <IconPlus size={20} />
-        </button>
-      </div>
+      <div class={styles.shell}>
+        <div class={styles.header}>
+          <button class={styles.backBtn} onClick={props.onBack}>
+            <IconArrowLeft size={20} />
+          </button>
+          <h1 class={styles.title}>Garden</h1>
+          <button class={styles.addBtn} onClick={props.onCapture}>
+            <IconPlus size={20} />
+          </button>
+        </div>
 
-      <div class={styles.search}>
-        <span class={styles.searchIcon}>
-          <IconMagnifyingGlass size={16} />
-        </span>
-        <input
-          type="text"
-          placeholder="Search your garden..."
-          value={query()}
-          onInput={(e) => handleSearch(e.currentTarget.value)}
-          class={styles.searchInput}
-        />
-      </div>
+        <div class={styles.search}>
+          <span class={styles.searchIcon}>
+            <IconMagnifyingGlass size={16} />
+          </span>
+          <input
+            type="text"
+            placeholder="Search your garden..."
+            value={query()}
+            onInput={(e) => handleSearch(e.currentTarget.value)}
+            class={styles.searchInput}
+          />
+        </div>
 
-      <div class={styles.list}>
+        <div class={styles.list}>
         {loading() && <p class={styles.empty}>Loading garden...</p>}
 
         {!loading() && blocks().length === 0 && (
@@ -116,14 +108,13 @@ export function GardenView(props: {
 
         {blocks().map((block) => {
           const ls = stages().get(block.id);
-          const stage = ls?.stage ?? "seed";
-          const StageIcon = STAGE_ICON[stage];
           const TypeIcon = TYPE_ICON[block.type] ?? IconBookOpen;
+          const rhythm = ls ? nextReviewPresentation(ls.next_watering) : null;
 
           return (
             <button
+              type="button"
               class={styles.card}
-              style={{ "--stage-color": stageColor(stage) }}
               onClick={() => props.onSelect(block.id)}
             >
               <div class={styles.cardIcon}>
@@ -133,17 +124,20 @@ export function GardenView(props: {
                 <span class={styles.cardTitle}>
                   {block.scripture_display_ref ?? block.entity_name ?? "Note"}
                 </span>
+                {rhythm && (
+                  <span class={styles.cardRhythm}>
+                    {rhythm.heading} · {rhythm.dateMedium}
+                  </span>
+                )}
                 <span class={styles.cardSub}>
                   {block.content.slice(0, 80)}
                   {block.content.length > 80 ? "..." : ""}
                 </span>
               </div>
-              <div class={styles.cardStage}>
-                <StageIcon size={14} />
-              </div>
             </button>
           );
         })}
+        </div>
       </div>
     </div>
   );

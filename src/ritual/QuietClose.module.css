@@ -1,37 +1,41 @@
 .view {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 48px 24px;
-  text-align: center;
-  animation: fadeUp 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 36rem;
+  margin: 0 auto;
+  padding: clamp(var(--space-xl), 8vh, 5.5rem) var(--space-lg);
+  padding-inline: max(var(--space-lg), env(safe-area-inset-left))
+    max(var(--space-lg), env(safe-area-inset-right));
+  text-align: left;
 }
 
 .icon {
   color: var(--color-mature);
-  margin-bottom: 24px;
-  opacity: 0.8;
+  margin-bottom: var(--space-lg);
+  opacity: 0.75;
 }
 
 .title {
   font-family: var(--font-scripture);
-  font-size: 22px;
+  font-size: clamp(1.35rem, 4vw, 1.65rem);
   font-weight: 500;
   color: var(--color-text);
   margin-bottom: 10px;
-  max-width: 360px;
-  line-height: 1.4;
+  max-width: 22ch;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
 }
 
 .sub {
-  font-size: 15px;
+  font-size: 1.05rem;
   color: var(--color-text-secondary);
-  margin-bottom: 32px;
-  max-width: 320px;
-  line-height: 1.5;
+  margin-bottom: var(--space-xl);
+  max-width: 32ch;
+  line-height: 1.55;
 }
 
 .button {
@@ -39,26 +43,38 @@
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  padding: 10px 22px;
-  transition: border-color var(--ease-in-out), color var(--ease-in-out);
+  font-weight: 600;
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid var(--color-text);
+  border-radius: var(--radius-field);
+  padding: 11px 20px;
+  transition: background var(--ease-ui), color var(--ease-ui), opacity var(--ease-ui);
 }
 
 .button:hover {
-  border-color: var(--color-line-active);
-  color: var(--color-text);
+  background: var(--color-text);
+  color: var(--color-bg);
 }
 
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
+.button:active {
+  opacity: 0.9;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-fire);
+  outline-offset: 3px;
+}
+
+@media (max-width: 520px) {
+  .view {
+    align-items: center;
+    text-align: center;
+    max-width: none;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .title,
+  .sub {
+    margin-inline: auto;
   }
 }

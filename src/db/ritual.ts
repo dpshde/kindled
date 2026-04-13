@@ -37,6 +37,24 @@ export async function getLifeStage(blockId: string): Promise<LifeStageRecord | n
   };
 }
 
+/** Ensures a `life_stages` row exists (e.g. older blocks created without rhythm data). */
+export async function ensureLifeStage(blockId: string): Promise<LifeStageRecord> {
+  const existing = await getLifeStage(blockId);
+  if (existing) return existing;
+
+  const db = await getDb();
+  const now = new Date().toISOString();
+  await db.run(
+    `INSERT INTO life_stages (block_id, stage, planted_at, next_watering) VALUES (?, 'seed', ?, ?)`,
+    blockId,
+    now,
+    now,
+  );
+  const created = await getLifeStage(blockId);
+  if (!created) throw new Error(`Failed to create life stage for ${blockId}`);
+  return created;
+}
+
 export async function waterBlock(blockId: string): Promise<LifeStage> {
   const stage = await getLifeStage(blockId);
   if (!stage) throw new Error(`No life stage for block ${blockId}`);
@@ -140,6 +158,32 @@ export async function snoozeBlock(blockId: string, untilDate: Date): Promise<voi
     untilDate.toISOString(),
     blockId,
   );
+}
+
+/** Move block to the front of the review queue (e.g. same passage added again). */
+export async function prioritizeBlockForReview(blockId: string): Promise<void> {
+  const db = await getDb();
+  const now = new Date().toISOString();
+  await db.run(
+    `UPDATE life_stages SET next_watering = ?, stage = CASE WHEN stage = 'ember' THEN 'seed' ELSE stage END WHERE block_id = ?`,
+    now,
+    blockId,
+  );
+}
+
+/** Session cache for home-screen kindling IDs (invalidated when the garden changes). */
+let clientKindlingIdsCache: string[] | null = null;
+
+export function peekClientKindlingIdsCache(): string[] | null {
+  return clientKindlingIdsCache;
+}
+
+export function setClientKindlingIdsCache(ids: string[]): void {
+  clientKindlingIdsCache = ids;
+}
+
+export function invalidateClientKindlingIdsCache(): void {
+  clientKindlingIdsCache = null;
 }
 
 export async function getDailyKindling(limit = 5): Promise<string[]> {

@@ -122,7 +122,8 @@ export function NoteCapture(props: {
     const newText = `${before}[[${s.insertText}]]${after}`;
     setText(newText);
 
-    const newCursor = ctx.start + s.insertText.length + 4;
+    /* After `[[` + insertText, before `]]` — keeps typing inside the wiki link */
+    const newCursor = ctx.start + 2 + s.insertText.length;
     requestAnimationFrame(() => {
       textareaRef!.selectionStart = newCursor;
       textareaRef!.selectionEnd = newCursor;
@@ -351,69 +352,71 @@ export function NoteCapture(props: {
 
   return (
     <div class={styles.view}>
-      <div class={styles.header}>
-        <button class={styles.backBtn} onClick={props.onBack}>
-          <IconArrowLeft size={20} />
-        </button>
-        <h1 class={styles.title}>Reflection on {props.displayRef}</h1>
-        <div style={{ width: "20px" }} />
-      </div>
-
-      <div class={styles.body}>
-        <div class={styles.editorWrap}>
-          <textarea
-            ref={textareaRef}
-            placeholder="What is the Lord showing you in this passage?"
-            value={text()}
-            onInput={handleInput}
-            onKeyUp={(e) =>
-              setCursorPos(
-                (e.currentTarget as HTMLTextAreaElement).selectionStart,
-              )
-            }
-            onClick={(e) =>
-              setCursorPos(
-                (e.currentTarget as HTMLTextAreaElement).selectionStart,
-              )
-            }
-            onKeyDown={handleKey}
-            class={styles.textarea}
-            rows={6}
-          />
-          <Show when={suggestions().length > 0}>
-            <div class={styles.autocomplete}>
-              <For each={suggestions()}>
-                {(s, i) => (
-                  <button
-                    class={styles.suggestionItem}
-                    data-active={i() === selectedIdx() ? "true" : undefined}
-                    onClick={() => applySuggestion(s)}
-                  >
-                    <span class={styles.suggestionIcon}>
-                      <s.icon size={14} />
-                    </span>
-                    <span class={styles.suggestionLabel}>{s.label}</span>
-                    <span class={styles.suggestionType}>
-                      {s.type === "passage" ? "passage" : "topic"}
-                    </span>
-                  </button>
-                )}
-              </For>
-            </div>
-          </Show>
+      <div class={styles.shell}>
+        <div class={styles.header}>
+          <button class={styles.backBtn} onClick={props.onBack}>
+            <IconArrowLeft size={20} />
+          </button>
+          <h1 class={styles.title}>Reflection on {props.displayRef}</h1>
+          <div style={{ width: "20px" }} />
         </div>
-        <p class={styles.hint}>
-          Type [[ to reference a passage or topic. Bible references and known
-          topics are auto-linked.
-        </p>
-        <button
-          class={styles.saveBtn}
-          onClick={handleSave}
-          disabled={saving()}
-        >
-          <IconCheck size={16} />{" "}
-          {saving() ? "Saving..." : "Save Reflection"}
-        </button>
+
+        <div class={styles.body}>
+          <div class={styles.editorWrap}>
+            <textarea
+              ref={textareaRef}
+              placeholder="What is the Lord showing you in this passage?"
+              value={text()}
+              onInput={handleInput}
+              onKeyUp={(e) =>
+                setCursorPos(
+                  (e.currentTarget as HTMLTextAreaElement).selectionStart,
+                )
+              }
+              onClick={(e) =>
+                setCursorPos(
+                  (e.currentTarget as HTMLTextAreaElement).selectionStart,
+                )
+              }
+              onKeyDown={handleKey}
+              class={styles.textarea}
+              rows={6}
+            />
+            <Show when={suggestions().length > 0}>
+              <div class={styles.autocomplete}>
+                <For each={suggestions()}>
+                  {(s, i) => (
+                    <button
+                      class={styles.suggestionItem}
+                      data-active={i() === selectedIdx() ? "true" : undefined}
+                      onClick={() => applySuggestion(s)}
+                    >
+                      <span class={styles.suggestionIcon}>
+                        <s.icon size={14} />
+                      </span>
+                      <span class={styles.suggestionLabel}>{s.label}</span>
+                      <span class={styles.suggestionType}>
+                        {s.type === "passage" ? "passage" : "topic"}
+                      </span>
+                    </button>
+                  )}
+                </For>
+              </div>
+            </Show>
+          </div>
+          <p class={styles.hint}>
+            Type [[ to reference a passage or topic. Bible references and known
+            topics are auto-linked.
+          </p>
+          <button
+            class={styles.saveBtn}
+            onClick={handleSave}
+            disabled={saving()}
+          >
+            <IconCheck size={16} />{" "}
+            {saving() ? "Saving..." : "Save Reflection"}
+          </button>
+        </div>
       </div>
     </div>
   );
