@@ -133,6 +133,15 @@ export async function incrementNotes(blockId: string): Promise<void> {
   );
 }
 
+export async function snoozeBlock(blockId: string, untilDate: Date): Promise<void> {
+  const db = await getDb();
+  await db.run(
+    `UPDATE life_stages SET next_watering = ? WHERE block_id = ?`,
+    untilDate.toISOString(),
+    blockId,
+  );
+}
+
 export async function getDailyKindling(limit = 5): Promise<string[]> {
   const db = await getDb();
   const now = new Date().toISOString();

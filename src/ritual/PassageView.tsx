@@ -1,4 +1,4 @@
-import { createSignal, onMount, Show } from "solid-js";
+import { createSignal, onMount, Show, For } from "solid-js";
 import {
   getBlock,
   getLifeStage,
@@ -6,10 +6,14 @@ import {
   transplantBlock,
   harvestBlock,
   emberBlock,
+  snoozeBlock,
   recordLinger,
+  getOutgoingLinks,
+  getBacklinks,
   type Block,
   type LifeStageRecord,
   type LifeStage,
+  type Link,
 } from "../db";
 import { stageColor } from "../ui/helpers";
 import {
@@ -22,6 +26,8 @@ import {
   IconTree,
   IconLeaf,
   IconFire,
+  IconClock,
+  IconLink,
 } from "../ui/Icons";
 import styles from "./PassageView.module.css";
 
@@ -44,19 +50,64 @@ export function PassageView(props: {
   const [lifeStage, setLifeStage] = createSignal<LifeStageRecord | null>(null);
   const [loading, setLoading] = createSignal(true);
   const [startTs] = createSignal(Date.now());
+  const [showSnooze, setShowSnooze] = createSignal(false);
+  const [snoozeDate, setSnoozeDate] = createSignal("");
+  const [outgoing, setOutgoing] = createSignal<Link[]>([]);
+  const [backlinks, setBacklinks] = createSignal<Link[]>([]);
+  const [linkedBlocks, setLinkedBlocks] = createSignal<Map<string, Block>>(new Map());
 
   onMount(async () => {
     try {
       const b = await getBlock(props.blockId);
       setBlock(b);
       if (b) {
-        const ls = await getLifeStage(b.id);
+        const [ls, out, back] = await Promise.all([
+          getLifeStage(b.id),
+          getOutgoingLinks(b.id),
+          getBacklinks(b.id),
+        ]);
         setLifeStage(ls);
+        setOutgoing(out);
+        setBacklinks(back);
+
+        const blockMap = new Map<string, Block>();
+        const ids = new Set<string>();
+        for (const l of [...out, ...back]) { ids.add(l.from_block); ids.add(l.to_block); }
+        ids.delete(b.id);
+        for (const id of ids) {
+          const linked = await getBlock(id);
+          if (linked) blockMap.set(id, linked);
+        }
+        setLinkedBlocks(blockMap);
       }
     } finally {
       setLoading(false);
     }
   });
+
+  const handleSnooze = async (days: number) => {
+    const lingerSec = (Date.now() - startTs()) / 1000;
+    await recordLinger(props.blockId, lingerSec);
+    const until = new Date();
+    until.setDate(until.getDate() + days);
+    await snoozeBlock(props.blockId, until);
+    props.onAction(props.blockId, "water");
+  };
+
+  const handleSnoozeDate = async () => {
+    const d = snoozeDate();
+    if (!d) return;
+    const lingerSec = (Date.now() - startTs()) / 1000;
+    await recordLinger(props.blockId, lingerSec);
+    await snoozeBlock(props.blockId, new Date(d + "T00:00:00"));
+    props.onAction(props.blockId, "water");
+  };
+
+  const linkedBlockTitle = (link: Link, direction: "from" | "to") => {
+    const id = direction === "from" ? link.from_block : link.to_block;
+    const b = linkedBlocks().get(id);
+    return b?.scripture_display_ref ?? b?.entity_name ?? b?.content.slice(0, 40) ?? id;
+  };
 
   const handleAction = async (action: "water" | "transplant" | "harvest" | "ember") => {
     const lingerSec = (Date.now() - startTs()) / 1000;
@@ -134,6 +185,30 @@ export function PassageView(props: {
                   </Show>
                 </div>
 
+                <Show when={outgoing().length > 0 || backlinks().length > 0}>
+                  <div class={styles.connections}>
+                    <p class={styles.connectionsTitle}>
+                      <IconLink size={14} /> Connections
+                    </p>
+                    <div class={styles.connectionsList}>
+                      <For each={outgoing()}>
+                        {(link) => (
+                          <span class={styles.connectionChip}>
+                            {linkedBlockTitle(link, "to")}
+                          </span>
+                        )}
+                      </For>
+                      <For each={backlinks()}>
+                        {(link) => (
+                          <span class={styles.connectionChip}>
+                            {linkedBlockTitle(link, "from")}
+                          </span>
+                        )}
+                      </For>
+                    </div>
+                  </div>
+                </Show>
+
                 <div class={styles.actions}>
                   <button
                     class={styles.actionBtn}
@@ -161,6 +236,56 @@ export function PassageView(props: {
                   </button>
                 </div>
 
+                <div class={styles.snoozeRow}>
+                  <button
+                    class={styles.snoozeBtn}
+                    onClick={() => setShowSnooze(!showSnooze())}
+                  >
+                    <IconClock size={16} />
+                    <span>Snooze</span>
+                  </button>
+                  <Show when={stage() !== "ember"}>
+                    <button
+                      class={styles.snoozeBtn}
+                      style={{ color: "var(--color-text-tertiary)" }}
+                      onClick={() => handleAction("ember")}
+                    >
+                      <IconFire size={16} />
+                      <span>Archive</span>
+                    </button>
+                  </Show>
+                </div>
+
+                <Show when={showSnooze()}>
+                  <div class={styles.snoozePanel}>
+                    <div class={styles.snoozePresets}>
+                      <For each={[1, 3, 7, 30]}>
+                        {(days) => (
+                          <button class={styles.snoozePreset} onClick={() => handleSnooze(days)}>
+                            {days}d
+                          </button>
+                        )}
+                      </For>
+                    </div>
+                    <div class={styles.snoozeCustom}>
+                      <input
+                        type="date"
+                        class={styles.snoozeInput}
+                        value={snoozeDate()}
+                        min={new Date().toISOString().split("T")[0]}
+                        onInput={(e) => setSnoozeDate(e.currentTarget.value)}
+                      />
+                      <button
+                        class={styles.snoozePreset}
+                        disabled={!snoozeDate()}
+                        onClick={handleSnoozeDate}
+                      >
+                        Go
+                      </button>
+                    </div>
+                  </div>
+                </Show>
+
                 <Show when={b().scripture_display_ref}>
                   <button
                     class={styles.noteBtn}
@@ -169,16 +294,6 @@ export function PassageView(props: {
                     }
                   >
                     <IconNotePencil size={16} /> Add Reflection
-                  </button>
-                </Show>
-
-                <Show when={stage() !== "ember"}>
-                  <button
-                    class={styles.noteBtn}
-                    style={{ color: "var(--color-text-tertiary)" }}
-                    onClick={() => handleAction("ember")}
-                  >
-                    <IconFire size={16} /> Archive
                   </button>
                 </Show>
               </div>

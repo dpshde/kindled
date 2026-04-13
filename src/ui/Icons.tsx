@@ -43,6 +43,10 @@ import IconUserRaw from "phosphor-icons-solid/IconUserRegular";
 import IconMapPinRaw from "phosphor-icons-solid/IconMapPinRegular";
 // @ts-ignore
 import IconTrashRaw from "phosphor-icons-solid/IconTrashRegular";
+// @ts-ignore
+import IconClockRaw from "phosphor-icons-solid/IconClockRegular";
+// @ts-ignore
+import IconLinkRaw from "phosphor-icons-solid/IconLinkRegular";
 
 interface IconProps {
   size?: number;
@@ -82,3 +86,5 @@ export const IconWarning = wrapIcon(IconWarningRaw);
 export const IconUser = wrapIcon(IconUserRaw);
 export const IconMapPin = wrapIcon(IconMapPinRaw);
 export const IconTrash = wrapIcon(IconTrashRaw);
+export const IconClock = wrapIcon(IconClockRaw);
+export const IconLink = wrapIcon(IconLinkRaw);
