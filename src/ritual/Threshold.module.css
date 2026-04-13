@@ -14,7 +14,7 @@
   color: var(--color-fire);
   margin-bottom: 20px;
   animation: pulse 4s ease-in-out infinite alternate;
-  filter: drop-shadow(0 0 12px rgba(232, 146, 47, 0.3));
+  filter: drop-shadow(0 0 12px rgba(196, 106, 31, 0.3));
 }
 
 .label {
@@ -83,13 +83,13 @@
   gap: 10px;
   font-size: 15px;
   font-weight: 600;
-  color: #1a1714;
+  color: white;
   background: var(--color-fire);
   border-radius: var(--radius-md);
   padding: 14px 36px;
   letter-spacing: 0.01em;
   transition: transform var(--ease-in-out), box-shadow var(--ease-in-out);
-  box-shadow: 0 2px 12px rgba(232, 146, 47, 0.25);
+  box-shadow: 0 2px 12px rgba(196, 106, 31, 0.25);
 }
 
 .primaryButton:hover {

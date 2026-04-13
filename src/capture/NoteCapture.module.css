@@ -79,12 +79,12 @@
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #1a1714;
+  color: white;
   background: var(--color-growth);
   border-radius: var(--radius-md);
   padding: 13px 24px;
   transition: opacity var(--ease-in-out), transform var(--ease-in-out);
-  box-shadow: 0 2px 12px rgba(122, 173, 110, 0.2);
+  box-shadow: 0 2px 12px rgba(90, 138, 78, 0.25);
 }
 
 .saveBtn:hover {

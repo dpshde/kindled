@@ -1,4 +1,4 @@
-import { findEntityByName, getAllEntities } from "../db";
+import { findEntityByName, getAllEntities, createEntity, getEntity } from "../db";
 import type { Entity } from "../db";
 
 export interface ResolvedMention {
@@ -14,7 +14,6 @@ export async function resolveMentions(
   const seen = new Set<string>();
 
   for (const entity of entities) {
-    // Check primary name
     if (text.toLowerCase().includes(entity.name.toLowerCase())) {
       if (!seen.has(entity.id)) {
         seen.add(entity.id);
@@ -22,7 +21,6 @@ export async function resolveMentions(
       }
     }
 
-    // Check aliases
     for (const alias of entity.aliases) {
       if (alias.length < 3) continue;
       if (text.toLowerCase().includes(alias.toLowerCase())) {
@@ -37,9 +35,21 @@ export async function resolveMentions(
   return mentions;
 }
 
-export async function findOrCreateEntity(
-  name: string,
-): Promise<Entity | null> {
+export async function findOrCreateEntity(name: string): Promise<Entity> {
   const existing = await findEntityByName(name);
-  return existing;
+  if (existing) return existing;
+
+  const entityId = `ent_t_${name.toLowerCase().replace(/\s+/g, "_")}`;
+  await createEntity({
+    id: entityId,
+    type: "theme",
+    name,
+    aliases: [],
+    description: "",
+    key_passages: [],
+    familiarity: 0,
+  });
+
+  const created = await getEntity(entityId);
+  return created!;
 }

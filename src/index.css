@@ -1,25 +1,25 @@
 :root {
-  /* Candlelit Study palette — deep umber base, warm cream text, amber accents */
-  --color-bg: #1a1714;
-  --color-bg-warm: #1f1b16;
-  --color-bg-elevated: rgba(255, 240, 220, 0.05);
-  --color-bg-card: rgba(255, 240, 220, 0.04);
-  --color-bg-card-hover: rgba(255, 240, 220, 0.07);
+  /* Paper/Light palette — warm paper base, charcoal text, amber accents */
+  --color-bg: #fdfcf8;
+  --color-bg-warm: #f5f2eb;
+  --color-bg-elevated: rgba(0, 0, 0, 0.03);
+  --color-bg-card: rgba(0, 0, 0, 0.04);
+  --color-bg-card-hover: rgba(0, 0, 0, 0.07);
 
-  --color-text: #f0e6d6;
-  --color-text-secondary: #a89b8a;
-  --color-text-tertiary: #6b5f52;
+  --color-text: #2d2a26;
+  --color-text-secondary: #6b6359;
+  --color-text-tertiary: #9a9185;
 
-  --color-fire: #e8922f;
-  --color-fire-dim: #c47a24;
-  --color-ember: #b5622a;
-  --color-growth: #7aad6e;
-  --color-growth-dim: #5a8a4e;
-  --color-living: #a3cf96;
-  --color-mature: #8fb884;
+  --color-fire: #c46a1f;
+  --color-fire-dim: #a85a1a;
+  --color-ember: #d97a2e;
+  --color-growth: #5a8a4e;
+  --color-growth-dim: #4a7a3e;
+  --color-living: #6b9a5f;
+  --color-mature: #4a6f3f;
 
-  --color-line: rgba(168, 155, 138, 0.12);
-  --color-line-active: rgba(168, 155, 138, 0.25);
+  --color-line: rgba(107, 99, 89, 0.15);
+  --color-line-active: rgba(107, 99, 89, 0.35);
 
   --font-scripture: "Lora", "Georgia", "Times New Roman", serif;
   --font-ui: "DM Sans", system-ui, -apple-system, sans-serif;
@@ -112,14 +112,14 @@ input:focus, textarea:focus, select:focus {
 
 select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%236b5f52'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%236b6359'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
 }
 
 select option {
-  background: #1f1b16;
+  background: #f5f2eb;
   color: var(--color-text);
 }
 

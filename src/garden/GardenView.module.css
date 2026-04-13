@@ -102,6 +102,9 @@
   background: var(--color-bg-card);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
   transition: background var(--ease-in-out), border-color var(--ease-in-out);
 }
 

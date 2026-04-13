@@ -5,6 +5,7 @@ import {
   waterBlock,
   transplantBlock,
   harvestBlock,
+  emberBlock,
   recordLinger,
   type Block,
   type LifeStageRecord,
@@ -57,15 +58,20 @@ export function PassageView(props: {
     }
   });
 
-  const handleAction = async (action: "water" | "transplant" | "harvest") => {
+  const handleAction = async (action: "water" | "transplant" | "harvest" | "ember") => {
     const lingerSec = (Date.now() - startTs()) / 1000;
     try {
       await recordLinger(props.blockId, lingerSec);
       if (action === "water") await waterBlock(props.blockId);
       else if (action === "transplant") await transplantBlock(props.blockId);
       else if (action === "harvest") await harvestBlock(props.blockId);
+      else if (action === "ember") {
+        await emberBlock(props.blockId);
+        props.onAction(props.blockId, "water");
+        return;
+      }
     } catch {}
-    props.onAction(props.blockId, action);
+    if (action !== "ember") props.onAction(props.blockId, action);
   };
 
   return (
@@ -135,7 +141,7 @@ export function PassageView(props: {
                     onClick={() => handleAction("water")}
                   >
                     <IconDrop size={20} />
-                    <span>Water</span>
+                    <span>Review Later</span>
                   </button>
                   <button
                     class={styles.actionBtn}
@@ -143,7 +149,7 @@ export function PassageView(props: {
                     onClick={() => handleAction("transplant")}
                   >
                     <IconArrowUp size={20} />
-                    <span>Transplant</span>
+                    <span>Prioritize</span>
                   </button>
                   <button
                     class={styles.actionBtn}
@@ -151,7 +157,7 @@ export function PassageView(props: {
                     onClick={() => handleAction("harvest")}
                   >
                     <IconCheckCircle size={20} />
-                    <span>Harvest</span>
+                    <span>Mastered</span>
                   </button>
                 </div>
 
@@ -163,6 +169,16 @@ export function PassageView(props: {
                     }
                   >
                     <IconNotePencil size={16} /> Add Reflection
+                  </button>
+                </Show>
+
+                <Show when={stage() !== "ember"}>
+                  <button
+                    class={styles.noteBtn}
+                    style={{ color: "var(--color-text-tertiary)" }}
+                    onClick={() => handleAction("ember")}
+                  >
+                    <IconFire size={16} /> Archive
                   </button>
                 </Show>
               </div>
