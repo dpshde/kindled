@@ -61,7 +61,7 @@
 .resolveBtn {
   font-size: 14px;
   font-weight: 500;
-  color: #1b2d24;
+  color: #344532;
   background: var(--color-fire);
   border-radius: var(--radius-md);
   padding: 12px 24px;
@@ -115,7 +115,7 @@
   margin-top: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #1b2d24;
+  color: #344532;
   background: var(--color-growth);
   border-radius: var(--radius-md);
   padding: 12px 24px;

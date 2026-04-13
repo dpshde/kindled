@@ -38,6 +38,17 @@ export class Database {
   }
 
   private async getUserVersion(): Promise<number> {
+    // Check if schema_meta table exists first (it won't on fresh DB)
+    let exists = false;
+    await this.sqlite3.exec(
+      this.db,
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='schema_meta'",
+      (_row, _cols) => {
+        exists = true;
+      },
+    );
+    if (!exists) return 0;
+
     let version = 0;
     await this.sqlite3.exec(
       this.db,
