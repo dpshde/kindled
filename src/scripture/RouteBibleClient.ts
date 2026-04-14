@@ -1,6 +1,45 @@
-import type { Verse } from "../db";
-import { tryParsePassage, OSIS_BOOK_NAMES, type OsisBookCode } from "grab-bcv";
+import type { Block, Verse } from "../db";
+import {
+  findAnyPassage,
+  tryParsePassage,
+  OSIS_BOOK_NAMES,
+  parseToResolverPath,
+  type OsisBookCode,
+  type ParsedPassage,
+} from "grab-bcv";
 import { getChapterVerses } from "./BibleLoader";
+
+const ROUTE_BIBLE_ORIGIN = "https://route.bible";
+
+function parsedPassageForRouteHandoff(
+  scripture_ref: string | undefined,
+  scripture_display_ref: string | undefined,
+): ParsedPassage | null {
+  const ref = scripture_ref?.trim();
+  if (ref) {
+    const r = tryParsePassage(ref);
+    if (r.ok) return r.value;
+  }
+  const disp = scripture_display_ref?.trim();
+  if (!disp) return null;
+  const strict = tryParsePassage(disp);
+  if (strict.ok) return strict.value;
+  return findAnyPassage(disp);
+}
+
+/** Portable outbound URL for route.bible (launcher / web handoff). */
+export function routeBibleHandoffUrl(
+  b: Pick<Block, "scripture_ref" | "scripture_display_ref" | "scripture_translation">,
+): string | null {
+  const parsed = parsedPassageForRouteHandoff(b.scripture_ref, b.scripture_display_ref);
+  if (!parsed) return null;
+  const path = parseToResolverPath(parsed);
+  const url = new URL(path, ROUTE_BIBLE_ORIGIN);
+  const tr = b.scripture_translation?.trim();
+  if (tr) url.searchParams.set("v", tr.toUpperCase());
+  url.searchParams.set("src", "kindled");
+  return url.toString();
+}
 
 export interface ResolvedPassage {
   ref: string;

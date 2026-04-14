@@ -39,8 +39,12 @@
 
 .deleteBtn {
   color: var(--color-text-tertiary);
-  padding: 6px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 12px;
   display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-field);
   transition: color var(--ease-ui), background var(--ease-ui);
 }
@@ -52,8 +56,12 @@
 
 .infoBtn {
   color: var(--color-text-tertiary);
-  padding: 6px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 12px;
   display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-field);
   transition: color var(--ease-ui), background var(--ease-ui);
 }
@@ -78,7 +86,7 @@
   padding: max(16px, env(safe-area-inset-bottom))
     max(16px, env(safe-area-inset-right))
     max(16px, env(safe-area-inset-left));
-  background: color-mix(in srgb, var(--color-bg) 25%, rgba(0, 0, 0, 0.4));
+  background: var(--color-bg-warm);
 }
 
 @media (min-width: 520px) {
@@ -93,13 +101,9 @@
   max-width: 22rem;
   max-height: min(78vh, 36rem);
   overflow-y: auto;
-  /* Solid surface: --color-bg-elevated is ~transparent and reads as low-contrast on paper */
-  background: var(--color-bg-warm);
-  border: 1px solid var(--color-line-active);
+  background: var(--color-bg);
+  border: 2px solid var(--color-line-active);
   border-radius: var(--radius-field);
-  box-shadow:
-    0 1px 0 color-mix(in srgb, #fff 55%, transparent),
-    0 16px 48px color-mix(in srgb, var(--color-text) 14%, transparent);
   padding: 16px 18px 18px;
   box-sizing: border-box;
   color: var(--color-text);
@@ -213,6 +217,60 @@
   font-weight: 500;
   line-height: 1.25;
   letter-spacing: -0.02em;
+}
+
+.refLink {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+  max-width: 100%;
+  color: inherit;
+  text-decoration: none;
+  font-weight: inherit;
+}
+
+.refLink .translation {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--color-text-secondary);
+  line-height: 1.2;
+}
+
+.refLinkText {
+  min-width: 0;
+  text-decoration: none;
+}
+
+.refLinkIcon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-self: center;
+  opacity: 0.72;
+  translate: 0 0.04em;
+}
+
+.refLink:hover .refLinkIcon,
+.refLink:focus-visible .refLinkIcon {
+  opacity: 1;
+}
+
+.refLink:hover .refLinkText,
+.refLink:focus-visible .refLinkText {
+  text-decoration: underline;
+  text-underline-offset: 0.1em;
+}
+
+.refLink:hover .translation,
+.refLink:focus-visible .translation {
+  color: var(--color-fire-dim);
+}
+
+.refLink:hover,
+.refLink:focus-visible {
+  color: var(--color-fire);
 }
 
 .translation {
@@ -374,7 +432,7 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   line-height: 1.2;
-  border: 1px solid var(--color-line);
+  border: 2px solid var(--color-line);
   transition:
     background var(--ease-ui),
     border-color var(--ease-ui),
@@ -414,7 +472,7 @@
 }
 
 .actionBtnSecondary:hover {
-  background: color-mix(in srgb, var(--color-bg-warm) 45%, var(--color-bg));
+  background: var(--color-bg-card);
   border-color: var(--color-line-active);
 }
 
@@ -508,7 +566,7 @@
   font-family: var(--font-ui);
   letter-spacing: 0.02em;
   color: var(--color-text);
-  border: 1px solid var(--color-line);
+  border: 2px solid var(--color-line);
   border-radius: 3px;
   background: var(--color-bg);
   cursor: pointer;
@@ -518,12 +576,11 @@
     border-color var(--ease-ui),
     color var(--ease-ui),
     opacity var(--ease-ui);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 55%, transparent);
 }
 
 .noteBtn:hover {
-  background: color-mix(in srgb, var(--color-living) 12%, var(--color-bg));
-  border-color: color-mix(in srgb, var(--color-living) 35%, var(--color-line));
+  background: var(--color-bg-card);
+  border-color: var(--color-line-active);
   color: var(--color-text);
 }
 
@@ -672,6 +729,8 @@
   background: #b33;
   border-radius: var(--radius-field);
   padding: 8px 14px;
+  min-height: 48px;
+  border: 2px solid #822;
   transition: background var(--ease-ui), opacity var(--ease-ui);
 }
 
@@ -685,7 +744,8 @@
   background: var(--color-bg);
   border-radius: var(--radius-field);
   padding: 8px 14px;
-  border: 1px solid var(--color-line);
+  min-height: 48px;
+  border: 2px solid var(--color-line);
   transition: background var(--ease-ui);
 }
 
@@ -705,10 +765,10 @@
     grid-template-columns: 1fr;
   }
 
-  .actionBtn {
+   .actionBtn {
     flex-direction: row;
     justify-content: flex-start;
-    min-height: unset;
+    min-height: 48px;
     padding: 0.75rem 0.85rem;
     text-align: left;
   }

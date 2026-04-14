@@ -53,8 +53,16 @@ export function displayFromParsed(p: ParsedPassage): { display: string; canonica
   return { display, canonical: p.canonical };
 }
 
+/** Normalize typed refs so grab-bcv sees a stable shape (dashes, spaces). */
+export function normalizePassageTyping(val: string): string {
+  return val
+    .trim()
+    .replace(/[\u2013\u2014\u2212]/g, "-")
+    .replace(/\s+/g, " ");
+}
+
 export function parseInputToPassage(val: string): ParsedPassage | null {
-  const trimmed = val.trim();
+  const trimmed = normalizePassageTyping(val);
   if (!trimmed) return null;
   const strict = tryParsePassage(trimmed);
   if (strict.ok) return strict.value;

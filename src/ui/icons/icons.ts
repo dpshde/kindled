@@ -25,6 +25,8 @@ function phosphorIcon(pathD: string, props: IconProps): ArrowTemplate {
 }
 
 export const IconArrowLeft = (p: IconProps = {}) => phosphorIcon(paths.ARROW_LEFT, p);
+export const IconArrowSquareUpRight = (p: IconProps = {}) =>
+  phosphorIcon(paths.ARROW_SQUARE_UP_RIGHT, p);
 export const IconX = (p: IconProps = {}) => phosphorIcon(paths.X, p);
 export const IconCheck = (p: IconProps = {}) => phosphorIcon(paths.CHECK, p);
 export const IconFire = (p: IconProps = {}) => phosphorIcon(paths.FIRE, p);

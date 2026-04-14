@@ -31,11 +31,9 @@
   padding: 12px 0;
   position: sticky;
   top: 0;
-  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: var(--color-bg);
   z-index: 10;
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: 2px solid var(--color-line-active);
 }
 
 .headerLeading,
@@ -67,8 +65,12 @@
 
 .backBtn {
   color: var(--color-text-tertiary);
-  padding: 6px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 12px;
   display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-field);
   transition: color var(--ease-ui), background var(--ease-ui);
 }
@@ -115,3 +117,4 @@
   white-space: nowrap;
   font-size: 1.05rem;
 }
+

@@ -21,6 +21,7 @@ import {
 } from "../ui/helpers";
 import {
   IconArrowLeft,
+  IconArrowSquareUpRight,
   IconArrowsClockwise,
   IconCheckCircle,
   IconClock,
@@ -36,6 +37,7 @@ import { hapticTrigger } from "../haptics";
 import { fetchPassageBundle } from "./passage-data-load";
 import { linkEndpointLabel } from "./passage-link-title";
 import { passageReviewDetailsModal } from "./passage-view-modal";
+import { routeBibleHandoffUrl } from "../scripture/RouteBibleClient";
 
 export function passageView(props: {
   app: AppRootModel;
@@ -273,11 +275,30 @@ function passageReadingStack(
 
 function scriptureRefHead(b: Block): ArrowTemplate {
   if (b.type !== "scripture" || !b.scripture_display_ref) return html``;
+  const handoff = routeBibleHandoffUrl(b);
+  const ariaRef = b.scripture_translation
+    ? `${b.scripture_display_ref} (${b.scripture_translation})`
+    : b.scripture_display_ref;
+  const titleInner = handoff
+    ? html`<a
+        class="${styles.refLink}"
+        href="${handoff}"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="${`Open ${ariaRef} on route.bible`}"
+        @click="${() => hapticTrigger()}"
+        ><span class="${styles.refLinkText}">${b.scripture_display_ref}</span
+        >${b.scripture_translation
+          ? html`<span class="${styles.translation}">${b.scripture_translation}</span>`
+          : html``}<span class="${styles.refLinkIcon}" aria-hidden="true"
+          >${IconArrowSquareUpRight({ size: ICON_PX.compact })}</span
+        ></a>`
+    : html`${b.scripture_display_ref}`;
   return html`<div class="${styles.refHead}">
-    <h2 class="${styles.ref}">${b.scripture_display_ref}</h2>
-    ${b.scripture_translation
-      ? html`<span class="${styles.translation}">${b.scripture_translation}</span>`
-      : html``}
+    <h2 class="${styles.ref}">${titleInner}</h2>
+    ${handoff || !b.scripture_translation
+      ? html``
+      : html`<span class="${styles.translation}">${b.scripture_translation}</span>`}
   </div>`;
 }
 

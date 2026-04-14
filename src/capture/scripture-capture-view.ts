@@ -2,8 +2,6 @@ import { html, reactive, watch, type ArrowTemplate } from "@arrow-js/core";
 import { invalidateClientKindlingIdsCache, saveScripturePassageFromCapture } from "../db";
 import { resolvePassage } from "../scripture/RouteBibleClient";
 import {
-  tryParsePassage,
-  findAnyPassage,
   resolveBookAlias,
   autocompletePassage,
   OSIS_BOOK_CODES,
@@ -38,6 +36,7 @@ import {
   buildRefString,
   draftFromParsed,
   displayFromParsed,
+  normalizePassageTyping,
   parseInputToPassage,
   scriptureBoundedChapter,
   scriptureBook,
@@ -211,23 +210,16 @@ function syncDraftFromInput(
   state.input = val;
   if (state.status === "error") state.status = "idle";
 
-  const trimmed = val.trim();
+  const trimmed = normalizePassageTyping(val);
   if (!trimmed) {
     clearTimeout(debounce.t);
     state.draft = { book: "", chapter: "", startVerse: "", endVerse: "" };
     return;
   }
 
-  const strict = tryParsePassage(trimmed);
-  if (strict.ok) {
-    state.draft = draftFromParsed(strict.value);
-    scheduleResolveAfterDraftSync(state, debounce, props, instantResolve);
-    return;
-  }
-
-  const found = findAnyPassage(trimmed);
-  if (found) {
-    state.draft = draftFromParsed(found);
+  const parsed = parseInputToPassage(trimmed);
+  if (parsed) {
+    state.draft = draftFromParsed(parsed);
     scheduleResolveAfterDraftSync(state, debounce, props, instantResolve);
     return;
   }
@@ -353,35 +345,38 @@ function scriptureEditorSection(
     <p class="${styles.builderHint}">
       Choose a book below, or type the reference however you usually write it.
     </p>
-    <div class="${styles.pickerGrid}">
-      <label class="${styles.pickerField}">
-        <span class="${styles.pickerLabel}">Book</span>
-               <select
-          class="${styles.select}"
-          value="${() => state.draft.book as string}"
-          @change="${(e: Event) => {
-            const v = (e.target as HTMLSelectElement).value as OsisBookCode | "";
-            syncInputFromDraft(state, debounce, props, {
-              book: v,
-              chapter: "",
-              startVerse: "",
-              endVerse: "",
-            });
-          }}"
-        >
-          <option value="">Choose a book</option>
-          ${OSIS_BOOK_CODES.map(
-            (code) =>
-              html`<option value="${code}" title="${OSIS_BOOK_NAMES[code] ?? ""}"
-                >${pickerLabelForOsisBook(code)}</option
-              >`,
-          )}
-        </select>
-      </label>
-      ${() => scriptureChapterField(state, debounce, props)}
-      ${() => scriptureVerseField(state, debounce, props)}
-      ${() => scriptureEndVerseField(state, debounce, props)}
-    </div>
+    ${() =>
+      html`<div class="${styles.pickerGrid}">
+        <label class="${styles.pickerField}">
+          <span class="${styles.pickerLabel}">Book</span>
+          <select
+            class="${styles.select}"
+            value="${() => state.draft.book as string}"
+            @change="${(e: Event) => {
+              const v = (e.target as HTMLSelectElement).value as OsisBookCode | "";
+              syncInputFromDraft(state, debounce, props, {
+                book: v,
+                chapter: "",
+                startVerse: "",
+                endVerse: "",
+              });
+            }}"
+          >
+            <option value="">Choose a book</option>
+            ${OSIS_BOOK_CODES.map(
+              (code) =>
+                html`<option value="${code}" title="${OSIS_BOOK_NAMES[code] ?? ""}"
+                  >${pickerLabelForOsisBook(code)}</option
+                >`,
+            )}
+          </select>
+        </label>
+        ${() => scriptureChapterField(state, debounce, props)}
+        ${() => scriptureVerseField(state, debounce, props)}
+        ${() => scriptureEndVerseField(state, debounce, props)}
+      </div>`.key(
+        `${state.draft.book}-${state.draft.chapter}-${state.draft.startVerse}-${state.draft.endVerse}`,
+      )}
     <div class="${styles.inputGroup}">
       <span class="${styles.inputIcon}">${IconBookOpen({ size: ICON_PX.inline })}</span>
       <input

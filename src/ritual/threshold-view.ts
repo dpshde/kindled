@@ -24,15 +24,22 @@ export function thresholdView(props: {
     void loadKindling(state);
   });
 
-  return html`<div class="${styles.threshold}">
+  return html`<div
+    class="${() => {
+      if (state.loading) return styles.threshold;
+      if (state.kindlingIds.length === 0) {
+        return `${styles.threshold} ${styles.thresholdEmpty}`;
+      }
+      return `${styles.threshold} ${styles.thresholdKindling}`;
+    }}"
+  >
     <h1 class="${styles.title}">Kindled</h1>
     <div class="${styles.divider}" aria-hidden="true"></div>
     <p class="${styles.tagline}">
       Kindle Scripture a few minutes at a time, and grow the fire inside.
     </p>
-    ${() => thresholdBody(state, props)}
     ${() => (state.error ? html`<p class="${styles.error}">${state.error}</p>` : html``)}
-    ${() => thresholdFooter(state, props)}
+    ${() => thresholdContent(state, props)}
   </div>`;
 }
 
@@ -53,71 +60,72 @@ async function loadKindling(state: {
   }
 }
 
-function thresholdBody(
+function thresholdContent(
   state: { loading: boolean; kindlingIds: string[] },
-  props: { onBegin: (ids: string[]) => void; onCapture: () => void },
+  props: {
+    onBegin: (ids: string[]) => void;
+    onCapture: () => void;
+    onLibrary: () => void;
+  },
 ): ArrowTemplate {
   if (state.loading) {
     return html`<p class="${styles.sub}">Stoking your hearth...</p>`;
   }
   if (state.kindlingIds.length === 0) {
-    return html`<div class="${styles.empty}">
+    return html`<div class="${styles.ctaColumn}">
+      <div class="${styles.empty}">
+        <button
+          type="button"
+          class="${styles.button}"
+          @click="${() => {
+            hapticTrigger();
+            props.onCapture();
+          }}"
+        >
+          ${IconPlus({ size: ICON_PX.inline })} Capture a Passage
+        </button>
+      </div>
+    </div>`;
+  }
+  return html`<div class="${styles.ctaColumn}">
+    <div class="${styles.kindlingFocus}">
+      <p class="${styles.count}">
+        <span class="${styles.countIcon}">${IconFire({ size: ICON_PX.inline })}</span>
+        ${() => state.kindlingIds.length}
+        ${() => (state.kindlingIds.length === 1 ? "spark" : "sparks")} to tend today
+      </p>
       <button
         type="button"
-        class="${styles.button}"
+        class="${styles.primaryButton}"
+        @click="${() => {
+          hapticTrigger();
+          props.onBegin(state.kindlingIds);
+        }}"
+      >
+        ${BeginFireIcon({ size: ICON_PX.actionPrimary })} Begin
+      </button>
+    </div>
+    <div class="${styles.actions}" role="group" aria-label="More actions">
+      <button
+        type="button"
+        class="${styles.secondaryButton}"
         @click="${() => {
           hapticTrigger();
           props.onCapture();
         }}"
       >
-        ${IconPlus({ size: ICON_PX.inline })} Capture a Passage
+        ${IconPlus({ size: ICON_PX.inline })} Add
       </button>
-    </div>`;
-  }
-  return html`<p class="${styles.count}">
-      <span class="${styles.countIcon}">${IconFire({ size: ICON_PX.inline })}</span>
-      ${() => state.kindlingIds.length}
-      ${() => (state.kindlingIds.length === 1 ? "spark" : "sparks")} to tend today
-    </p>
-    <button
-      type="button"
-      class="${styles.primaryButton}"
-      @click="${() => {
-        hapticTrigger();
-        props.onBegin(state.kindlingIds);
-      }}"
-    >
-      ${BeginFireIcon({ size: ICON_PX.actionPrimary })} Begin
-    </button>`;
-}
-
-function thresholdFooter(
-  state: { loading: boolean; kindlingIds: string[] },
-  props: { onCapture: () => void; onLibrary: () => void },
-): ArrowTemplate {
-  if (!state.loading && state.kindlingIds.length === 0) {
-    return html``;
-  }
-  return html`<div class="${styles.actions}">
-    <button
-      type="button"
-      class="${styles.secondaryButton}"
-      @click="${() => {
-        hapticTrigger();
-        props.onCapture();
-      }}"
-    >
-      ${IconPlus({ size: ICON_PX.inline })} Add
-    </button>
-    <button
-      type="button"
-      class="${styles.secondaryButton}"
-      @click="${() => {
-        hapticTrigger();
-        props.onLibrary();
-      }}"
-    >
-      ${IconBookOpen({ size: ICON_PX.inline })} Hearth
-    </button>
+      <button
+        type="button"
+        class="${styles.secondaryButton}"
+        @click="${() => {
+          hapticTrigger();
+          props.onLibrary();
+        }}"
+      >
+        ${IconBookOpen({ size: ICON_PX.inline })} Hearth
+      </button>
+    </div>
   </div>`;
 }

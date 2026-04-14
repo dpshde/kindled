@@ -2,13 +2,11 @@
  * no gradient hero wash, no pulsing icons. i-distill: type and spacing carry hierarchy. */
 
 .threshold {
-  --ease-ui: 260ms cubic-bezier(0.22, 1, 0.36, 1);
-
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
+  justify-content: flex-start;
   min-height: 100vh;
   min-height: 100dvh;
   min-width: 0;
@@ -17,8 +15,42 @@
   padding: clamp(var(--space-xl), 8vh, 5.5rem) var(--space-lg);
   padding-inline: max(var(--space-lg), env(safe-area-inset-left))
     max(var(--space-lg), env(safe-area-inset-right));
+  padding-bottom: max(var(--space-lg), env(safe-area-inset-bottom));
   text-align: left;
   background: transparent;
+}
+
+/* No sparks yet — vertical center; copy and controls stay left-justified. */
+.thresholdEmpty {
+  justify-content: center;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.thresholdEmpty .ctaColumn {
+  flex: 0 1 auto;
+}
+
+/* Daily kindling — spark/Begin centered in column; Add/Hearth at bottom (see .kindlingFocus). */
+.thresholdKindling {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+}
+
+/* Grows with .ctaColumn; vertically centers count + Begin above pinned .actions. */
+.kindlingFocus {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  gap: var(--space-lg);
+  min-height: 0;
+}
+
+.thresholdKindling .actions {
+  margin-top: 0;
 }
 
 .title {
@@ -60,10 +92,23 @@
   overflow-wrap: anywhere;
 }
 
+/* One column for all CTAs; grows so secondary row can sit at the viewport bottom. */
+.ctaColumn {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 17.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-lg);
+  min-width: 0;
+}
+
 .empty {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   gap: var(--space-md);
   width: 100%;
   min-width: 0;
@@ -72,13 +117,12 @@
 .count {
   font-size: 1.05rem;
   color: var(--color-text-secondary);
-  margin: 0 0 var(--space-lg) 0;
+  margin: 0;
   display: flex;
   align-items: baseline;
   gap: 0.4rem;
   flex-wrap: wrap;
   line-height: 1.45;
-  max-width: 28ch;
 }
 
 .countIcon {
@@ -89,16 +133,19 @@
 }
 
 .primaryButton {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  min-height: 44px;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 48px;
   padding-inline: 1.35rem;
   font-size: 15px;
   font-weight: 600;
-   color: #fffef9;
+  color: #fffef9;
   background: var(--color-fire);
+  border: 2px solid var(--color-fire-dim);
   border-radius: 2px;
   letter-spacing: 0.02em;
   transition: background var(--ease-ui), opacity var(--ease-ui);
@@ -118,15 +165,15 @@
   justify-content: center;
   gap: 0.45rem;
   width: 100%;
-  max-width: 17.5rem;
-  min-height: 44px;
+  max-width: none;
+  min-height: 48px;
   padding-inline: 1.1rem;
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text);
   background: transparent;
   border-radius: 2px;
-  border: 1px solid var(--color-text);
+  border: 2px solid var(--color-text);
   transition:
     background var(--ease-ui),
     border-color var(--ease-ui),
@@ -145,35 +192,52 @@
 
 .actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-md);
-  margin-top: var(--space-2xl);
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+  margin-top: auto;
+  margin-inline: 0;
+  margin-bottom: 0;
   padding-top: var(--space-lg);
-  border-top: 1px solid var(--color-line);
+  border-top: 2px solid var(--color-line);
   width: 100%;
-  max-width: 17.5rem;
+  box-sizing: border-box;
+  background: transparent;
 }
 
+/* Outline CTAs on paper: same base as the shell; warm shifts on press/hover only. */
 .secondaryButton {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.35rem;
-  padding: 0.15rem 0;
+  min-width: 0;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 10px;
   font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--color-text-tertiary) 65%, transparent);
-  text-underline-offset: 0.22em;
-  transition: color var(--ease-ui), text-decoration-color var(--ease-ui);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--color-text);
+  border: 2px solid var(--color-text-tertiary);
+  border-radius: 2px;
+  background: var(--color-bg);
+  text-decoration: none;
+  transition:
+    background var(--ease-ui),
+    border-color var(--ease-ui),
+    color var(--ease-ui);
 }
 
 .secondaryButton:hover {
+  background: var(--color-bg-warm);
+  border-color: var(--color-text-secondary);
   color: var(--color-text);
-  text-decoration-color: var(--color-text);
+}
+
+.secondaryButton:active {
+  background: var(--color-bg-elevated);
 }
 
 .button:focus-visible,
@@ -191,6 +255,14 @@
   overflow-wrap: anywhere;
 }
 
+/* Kindling on wide viewports: CTAs span the same width as the shell (tagline/title column). */
+@media (min-width: 521px) {
+  .thresholdKindling .ctaColumn {
+    max-width: 100%;
+    align-self: stretch;
+  }
+}
+
 @media (max-width: 520px) {
   .threshold {
     align-items: center;
@@ -198,18 +270,29 @@
     max-width: none;
   }
 
-  .empty {
-    align-items: center;
+  .thresholdEmpty {
+    align-items: flex-start;
+    text-align: left;
   }
 
-  .sub,
-  .tagline,
-  .count {
+  .thresholdKindling {
+    align-items: center;
+    text-align: center;
+  }
+
+  .ctaColumn {
+    align-self: stretch;
+    max-width: min(17.5rem, 100%);
     margin-inline: auto;
   }
 
-  .actions {
+  .thresholdKindling .sub,
+  .thresholdKindling .tagline,
+  .thresholdKindling .count {
+    margin-inline: auto;
+  }
+
+  .thresholdKindling .count {
     justify-content: center;
-    max-width: none;
   }
 }

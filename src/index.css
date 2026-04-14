@@ -1,30 +1,30 @@
 :root {
-  /* Shared motion + layout (matches Threshold / editorial shell) */
-  --ease-ui: 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  /* Calm, page-stable UI: short eases; use prefers-reduced-motion for instant changes */
+  --ease-ui: 160ms cubic-bezier(0.22, 1, 0.36, 1);
   --page-shell-max: 34rem;
   --radius-field: 2px;
 
-  /* Paper/Light palette — warm paper base, charcoal text, amber accents */
-  --color-bg: #fdfcf8;
-  --color-bg-warm: #f5f2eb;
-  --color-bg-elevated: rgba(0, 0, 0, 0.03);
-  --color-bg-card: rgba(0, 0, 0, 0.04);
-  --color-bg-card-hover: rgba(0, 0, 0, 0.07);
+  /* Paper — solid planes (no alpha stacks) for slow-refresh panels + crisp LCD */
+  --color-bg: #f7f5f0;
+  --color-bg-warm: #efebe3;
+  --color-bg-elevated: #e8e4db;
+  --color-bg-card: #e4dfd4;
+  --color-bg-card-hover: #dcd7cc;
 
-  --color-text: #2d2a26;
-  --color-text-secondary: #6b6359;
-  --color-text-tertiary: #9a9185;
+  --color-text: #26231f;
+  --color-text-secondary: #524a42;
+  --color-text-tertiary: #6f665b;
 
-  --color-fire: #c46a1f;
-  --color-fire-dim: #a85a1a;
-  --color-ember: #d97a2e;
-  --color-growth: #5a8a4e;
-  --color-growth-dim: #4a7a3e;
-  --color-living: #6b9a5f;
+  --color-fire: #b85f18;
+  --color-fire-dim: #9c5014;
+  --color-ember: #c96d1f;
+  --color-growth: #4a7a42;
+  --color-growth-dim: #3d6636;
+  --color-living: #5a8a4e;
   --color-mature: #4a6f3f;
 
-  --color-line: rgba(107, 99, 89, 0.15);
-  --color-line-active: rgba(107, 99, 89, 0.35);
+  --color-line: rgba(38, 35, 31, 0.18);
+  --color-line-active: rgba(38, 35, 31, 0.42);
 
   --font-scripture: "Lora", "Georgia", "Times New Roman", serif;
   --font-ui: "DM Sans", system-ui, -apple-system, sans-serif;
@@ -43,9 +43,9 @@
   --space-2xl: 48px;
   --space-3xl: 64px;
 
-  --ease-out: 400ms cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out: 200ms ease-in-out;
-  --ease-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: 140ms ease-in-out;
+  --ease-bounce: 0ms;
 
   font-family: var(--font-ui);
   line-height: 1.5;
@@ -57,6 +57,19 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ease-ui: 0ms;
+    --ease-out: 0ms;
+    --ease-in-out: 0ms;
+    --ease-bounce: 0ms;
+  }
+}
+
+html {
+  scroll-behavior: auto;
 }
 
 *,
@@ -73,22 +86,6 @@ body {
   position: relative;
   background-color: var(--color-bg);
   color: var(--color-text);
-}
-
-/* Same warm paper wash as home — all routes share one atmosphere */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  background: linear-gradient(
-    110deg,
-    color-mix(in srgb, var(--color-bg-warm) 55%, var(--color-bg)) 0%,
-    var(--color-bg) 42%,
-    var(--color-bg) 100%
-  );
-  opacity: 0.85;
 }
 
 #root {
@@ -117,8 +114,8 @@ button {
 input, textarea, select {
   font-family: var(--font-ui);
   color: var(--color-text);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  border: 2px solid var(--color-line);
   border-radius: var(--radius-field);
   padding: 10px 14px;
   font-size: 15px;
@@ -134,14 +131,14 @@ input:focus, textarea:focus, select:focus {
 
 select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%236b6359'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23524a42'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
 }
 
 select option {
-  background: #f5f2eb;
+  background: var(--color-bg-warm);
   color: var(--color-text);
 }
 
@@ -152,11 +149,15 @@ textarea {
 
 a {
   color: var(--color-living);
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-living) 45%, var(--color-line));
+  text-underline-offset: 0.18em;
+  font-weight: 500;
 }
 
 a:hover {
   color: var(--color-fire);
+  text-decoration-color: var(--color-fire);
 }
 
 /* Phosphor SVGs default to inline-block + 1em; fill the px-sized wrapper for stable flex alignment. */
@@ -176,7 +177,7 @@ a:hover {
 }
 
 ::selection {
-  background: rgba(232, 146, 47, 0.25);
+  background: #c8c2b4;
   color: var(--color-text);
 }
 
