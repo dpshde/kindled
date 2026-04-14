@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const triggerMock = vi.fn().mockResolvedValue(undefined);
+const { triggerMock } = vi.hoisted(() => ({
+  triggerMock: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock("web-haptics", () => ({
-  WebHaptics: vi.fn().mockImplementation(() => ({
-    trigger: triggerMock,
-  })),
+  WebHaptics: class {
+    constructor(_opts?: { debug?: boolean }) {}
+    trigger = triggerMock;
+  },
 }));
 
 import { hapticTrigger } from "./haptics";

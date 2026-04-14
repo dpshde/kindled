@@ -1,8 +1,8 @@
 {
-  "buildCommand": "bun run build",
+  "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "installCommand": "bun install",
+  "installCommand": "pnpm install",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

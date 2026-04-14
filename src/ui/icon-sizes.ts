@@ -7,10 +7,10 @@ export const ICON_PX = {
   header: 20,
   /** Stacked primary actions (e.g. Review later / Mastered) */
   actionPrimary: 20,
-  /** Decision panel: primary + tertiary row (one optical size) */
-  decisionPanel: 22,
-  /** Mastered / Review later stacked pair (larger than tertiary row) */
-  decisionStack: 30,
+  /** Decision panel: Add reflection, Snooze (inline with ~13px label) */
+  decisionPanel: 16,
+  /** Mastered / Review later — keep modest vs 12px stacked label */
+  decisionStack: 20,
   /** Inline controls: tertiary rows, inputs, list rows, small buttons */
   inline: 16,
   /** Dense lists: autocomplete rows, meta chips */

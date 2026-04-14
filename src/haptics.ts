@@ -17,7 +17,7 @@ function getWebHaptics(): WebHaptics {
 }
 
 /**
- * Solid has no `useWebHaptics` hook; this matches `const { trigger } = useWebHaptics()` from `web-haptics/react`.
+ * Framework-agnostic helper; React apps use `const { trigger } = useWebHaptics()` from `web-haptics/react`.
  */
 export function hapticTrigger(
   input?: HapticInput,
