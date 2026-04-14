@@ -43,6 +43,7 @@ export function passageReviewDetailsModal(
           ${IconX({ size: ICON_PX.header })}
         </button>
       </div>
+      <div class="${styles.reviewDetailsDivider}" aria-hidden="true"></div>
       <div class="${styles.reviewDetailsList}">
         ${reviewDetailRow("Added", formatTimestampMedium(block.captured_at))}
         ${reviewDetailRow("Last updated", formatTimestampMedium(block.modified_at))}

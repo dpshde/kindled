@@ -1,3 +1,32 @@
+/* Stack passage editor, topic, and resolve/preview with reorder when preview is shown */
+.captureLayout {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.captureStackEditor {
+  order: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.captureStackTopic,
+.captureStackFlow {
+  min-width: 0;
+  width: 100%;
+}
+
+.captureStackFlow {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
 /* Book pickers + reference input — one paper field, not a floating card */
 .passageEditor {
   display: flex;

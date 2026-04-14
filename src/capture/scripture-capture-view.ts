@@ -49,6 +49,11 @@ const PASSAGE_INPUT_ID = "scripture-passage-input";
 
 type CaptureStatus = "idle" | "resolving" | "preview" | "saving" | "saved" | "error";
 
+/** Topic search stays under the editor until a preview exists; then it moves below the preview card. */
+function topicSectionFollowsPreview(status: CaptureStatus): boolean {
+  return status === "preview" || status === "saving" || status === "saved";
+}
+
 export function scriptureCaptureView(props: {
   initialRef?: string;
   onBack: () => void;
@@ -114,15 +119,31 @@ export function scriptureCaptureView(props: {
       </header>
       <div class="${shell.main}">
         <div class="${shell.shellContent}">
-          ${scriptureEditorSection(state, debounce, props)}
-          ${scriptureTopicSection(state, debounce, props)}
-          ${() => scriptureParsedPreview(state)}
-          ${() => scriptureIdleResolveBtn(state, debounce, props)}
-          ${() => scriptureResolving(state)}
-          ${() => scripturePreviewBlock(state, debounce, props)}
-          ${() => scriptureSaving(state)}
-          ${() => scriptureSaved(state)}
-          ${() => scriptureErrorBlock(state)}
+          <div class="${styles.captureLayout}">
+            <div class="${styles.captureStackEditor}">
+              ${scriptureEditorSection(state, debounce, props)}
+            </div>
+            <div
+              class="${styles.captureStackTopic}"
+              style="${() =>
+                `order: ${topicSectionFollowsPreview(state.status) ? 3 : 2}`}"
+            >
+              ${scriptureTopicSection(state, debounce, props)}
+            </div>
+            <div
+              class="${styles.captureStackFlow}"
+              style="${() =>
+                `order: ${topicSectionFollowsPreview(state.status) ? 2 : 3}`}"
+            >
+              ${() => scriptureParsedPreview(state)}
+              ${() => scriptureIdleResolveBtn(state, debounce, props)}
+              ${() => scriptureResolving(state)}
+              ${() => scripturePreviewBlock(state, debounce, props)}
+              ${() => scriptureSaving(state)}
+              ${() => scriptureSaved(state)}
+              ${() => scriptureErrorBlock(state)}
+            </div>
+          </div>
         </div>
       </div>
     </div>

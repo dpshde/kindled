@@ -36,7 +36,7 @@ export function thresholdView(props: {
     <h1 class="${styles.title}">Kindled</h1>
     <div class="${styles.divider}" aria-hidden="true"></div>
     <p class="${styles.tagline}">
-      Kindle Scripture a few minutes at a time, and grow the fire inside.
+      Spark scripture into an eternal, internal flame.
     </p>
     ${() => (state.error ? html`<p class="${styles.error}">${state.error}</p>` : html``)}
     ${() => thresholdContent(state, props)}

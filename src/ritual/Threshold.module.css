@@ -31,19 +31,19 @@
   flex: 0 1 auto;
 }
 
-/* Daily kindling — spark/Begin centered in column; Add/Hearth at bottom (see .kindlingFocus). */
+/* Daily kindling — spark/Begin above Add/Hearth; secondary row pinned at bottom. */
 .thresholdKindling {
   justify-content: flex-start;
   align-items: flex-start;
   text-align: left;
 }
 
-/* Grows with .ctaColumn; vertically centers count + Begin above pinned .actions. */
+/* Grows with .ctaColumn; count + Begin sit at bottom, flush above .actions. */
 .kindlingFocus {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: stretch;
   gap: var(--space-lg);
   min-height: 0;
