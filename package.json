@@ -9,6 +9,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "oxlint src/",
     "complexity": "lizard src/app src/capture src/hearth src/ritual src/ui/icons src/main.ts -l typescript -x '*test*' -C 12"
   },
   "dependencies": {
@@ -19,6 +21,8 @@
   },
   "devDependencies": {
     "@types/node": "^24.12.2",
+    "@vitest/coverage-v8": "^4.1.4",
+    "oxlint": "^1.60.0",
     "typescript": "~6.0.2",
     "vite": "^8.0.4",
     "vitest": "^4.1.4"

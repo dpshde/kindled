@@ -5,7 +5,6 @@ import {
   normalizeAppScreen,
 } from "./app-screen";
 import { consumeCaptureRefFromWindow } from "../navigation/capture-deep-link";
-import { loadBibleData } from "../scripture/BibleLoader";
 import { renderRoot } from "./render-root";
 
 export function mountApp(root: HTMLElement) {
@@ -23,8 +22,6 @@ export function mountApp(root: HTMLElement) {
   const bumpPassageReload = () => {
     app.passageReloadTick++;
   };
-
-  void loadBibleData().catch(() => {});
 
   html`${() => renderRoot({ app, navigate, bumpPassageReload })}`(root);
 }
