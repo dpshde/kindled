@@ -781,17 +781,39 @@
   outline-offset: 2px;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 34rem) {
   .actions {
     gap: 6px;
     grid-template-columns: 1fr;
   }
 
-   .actionBtn {
+  .actionBtn {
     flex-direction: row;
-    justify-content: flex-start;
+    justify-content: center;
     min-height: 48px;
     padding: 0.75rem 0.85rem;
-    text-align: left;
+    text-align: center;
+  }
+
+  .tertiaryBtn {
+    justify-content: center;
+  }
+
+  .readingStack {
+    justify-content: flex-start;
+    gap: 0.75rem;
+  }
+
+  .ref {
+    font-size: 1.25rem;
+  }
+
+  .textBlock {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .verse {
+    padding: 1px 0;
   }
 }

@@ -85,6 +85,28 @@ function thresholdContent(
           ${IconPlus({ size: ICON_PX.inline })} Capture a Passage
         </button>
       </div>
+      <div class="${styles.actions}" role="group" aria-label="More actions">
+        <button
+          type="button"
+          class="${styles.secondaryButton}"
+          @click="${() => {
+            hapticTrigger();
+            props.onCapture();
+          }}"
+        >
+          ${IconPlus({ size: ICON_PX.inline })} Add
+        </button>
+        <button
+          type="button"
+          class="${styles.secondaryButton}"
+          @click="${() => {
+            hapticTrigger();
+            props.onLibrary();
+          }}"
+        >
+          ${IconBookOpen({ size: ICON_PX.inline })} Hearth
+        </button>
+      </div>
     </div>`;
   }
   return html`<div class="${styles.ctaColumn}">

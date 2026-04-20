@@ -276,14 +276,20 @@
   }
 
   .thresholdKindling {
-    align-items: center;
+    align-items: stretch;
     text-align: center;
+    justify-content: flex-end;
+  }
+
+  .thresholdKindling .ctaColumn {
+    flex: 0 0 auto;
+    margin-top: auto;
   }
 
   .ctaColumn {
     align-self: stretch;
-    max-width: min(17.5rem, 100%);
-    margin-inline: auto;
+    max-width: none;
+    margin-inline: 0;
   }
 
   .thresholdKindling .sub,
@@ -294,5 +300,16 @@
 
   .thresholdKindling .count {
     justify-content: center;
+  }
+
+  .primaryButton,
+  .button,
+  .secondaryButton {
+    justify-content: flex-start;
+    padding-inline: 1.1rem;
+  }
+
+  .actions {
+    margin-top: var(--space-lg);
   }
 }
