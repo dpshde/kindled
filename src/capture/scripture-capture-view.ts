@@ -329,7 +329,6 @@ async function handleResolve(
 
 async function handleSave(
   state: CaptureStatusAware,
-  props: { onSaved: () => void },
 ) {
   const val = state.input.trim();
   const parsed = parseInputToPassage(val);
@@ -350,11 +349,20 @@ async function handleSave(
     });
     invalidateClientKindlingIdsCache();
     state.status = "saved";
-    setTimeout(() => props.onSaved(), 800);
+    setTimeout(() => resetForNextCapture(state), 1200);
   } catch (e) {
     state.status = "error";
     state.errorMsg = e instanceof Error ? e.message : "Failed to save";
   }
+}
+
+function resetForNextCapture(state: CaptureStatusAware) {
+  state.input = "";
+  state.draft = { book: "", chapter: "", startVerse: "", endVerse: "" };
+  state.status = "idle";
+  state.preview = null;
+  state.errorMsg = "";
+  queueMicrotask(() => document.getElementById(PASSAGE_INPUT_ID)?.focus());
 }
 
 function scriptureEditorSection(
@@ -707,7 +715,7 @@ function scriptureResolving(state: { status: CaptureStatus }): ArrowTemplate {
 function scripturePreviewBlock(
   state: CaptureStatusAware,
   _debounce: { t: ReturnType<typeof setTimeout> | undefined },
-  props: { onSaved: () => void },
+  _props: { onSaved: () => void },
 ): ArrowTemplate {
   if (state.status !== "preview" || !state.preview) return html``;
   const pv = state.preview;
@@ -717,7 +725,7 @@ function scripturePreviewBlock(
     <p class="${styles.previewText}">
       ${pv.text.slice(0, 300)}${pv.text.length > 300 ? "..." : ""}
     </p>
-    <button class="${styles.saveBtn}" @click="${() => void handleSave(state, props)}">
+    <button class="${styles.saveBtn}" @click="${() => void handleSave(state)}">
       ${IconCheck({ size: ICON_PX.inline })} Kindle
     </button>
   </div>`;

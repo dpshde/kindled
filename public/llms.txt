@@ -1,0 +1,61 @@
+# Kindled
+
+> Personal Scripture companion. Capture passages, write reflections, and tend a living hearth of God's Word in your daily rhythm.
+
+## About
+
+Kindled is a client-side single-page application. All data lives in the browser (SQLite via wa-sqlite, stored in OPFS). There is no server-side state, no accounts, and no analytics.
+
+## URL Structure
+
+The app is a SPA served from a single HTML entry point. All routes are client-side (no URL path routing).
+
+### Query Parameters
+
+#### Scripture capture deep link
+
+Open the app directly to the "Add Passage" screen with a pre-filled reference:
+
+```
+?ref=John 3:16
+?passage=Ruth 1:1
+?q=Ps 23
+```
+
+Supported keys (first non-empty value wins, in order): `ref`, `passage`, `q`. The value should be a human-readable Bible reference (e.g. `Rev 12`, `Genesis 1:1-3`). The parameter is consumed on load and stripped from the URL via `replaceState`.
+
+Example:
+```
+https://kindled.app/?ref=John%203%3A16
+```
+
+## Core Screens
+
+| Screen       | Description                                                               |
+| ------------ | ------------------------------------------------------------------------- |
+| Threshold    | Home. Shows daily kindling queue (passages due for review).               |
+| Capture      | Add a new Scripture passage. Accepts a pre-filled ref via query param.    |
+| Hearth       | Library of all captured passages, entities, and notes. Includes export.   |
+| Passage      | View a single passage with its reflections, links, and review rhythm.     |
+| Note         | Write or edit a reflection on a passage.                                  |
+| Quiet Close  | Session-end screen shown after completing a kindling queue.               |
+
+## Data Model
+
+- **Blocks** — Scripture passages, notes, and entity cards. Scripture blocks carry the full verse text, canonical OSIS reference, and translation.
+- **Entities** — Persons, places, themes, and events extracted from content via `[[wiki links]]`.
+- **Links** — Connections between blocks (created from wiki-link syntax or reflection context).
+- **Reflections** — User-written notes attached to a block.
+- **Life Stages** — Spaced-repetition rhythm per block: spark → flame → steady → ember. Tracks review count, settledness, linger time, and next review date.
+
+## Export
+
+The Hearth screen can export all data as a single JSON file (`kindled-export-YYYY-MM-DD.json`) containing blocks, entities, links, reflections, and life stages with format metadata.
+
+## Tech Stack
+
+- Vite, TypeScript, Arrow.js (reactive templates)
+- wa-sqlite (client-side SQLite in WASM)
+- grab-bcv (Bible reference parsing)
+- RouteBible (passage text resolution)
+- PWA with service worker and manifest

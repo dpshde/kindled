@@ -1,12 +1,13 @@
 import { html, reactive, watch, type ArrowTemplate } from "@arrow-js/core";
 import { getAllBlocks, getLifeStage, searchBlocks, type Block, type LifeStageRecord } from "../db";
 import { nextReviewPresentation } from "../ui/helpers";
-import { IconArrowLeft, IconFire, IconMagnifyingGlass, IconPlus } from "../ui/icons/icons";
+import { IconArrowLeft, IconArrowSquareUpRight, IconCheck, IconFire, IconMagnifyingGlass, IconPlus } from "../ui/icons/icons";
 import { ICON_PX } from "../ui/icon-sizes";
 import shell from "../ui/app-shell.module.css";
 import styles from "./HearthView.module.css";
 import { hapticTrigger } from "../haptics";
 import { hearthTypeIcon } from "./hearth-type-icon";
+import { downloadExport, exportAllData } from "../db/export";
 
 export function hearthView(props: {
   onBack: () => void;
@@ -19,6 +20,7 @@ export function hearthView(props: {
     stages: {} as Record<string, LifeStageRecord>,
     query: "",
     loading: true,
+    exporting: false,
   });
 
   const debounce = { t: undefined as ReturnType<typeof setTimeout> | undefined };
@@ -47,6 +49,18 @@ export function hearthView(props: {
           <h1 class="${shell.headerTitle}">Hearth</h1>
         </div>
         <div class="${shell.headerTrailing}">
+          <button
+            type="button"
+            class="${styles.addBtn}"
+            ?disabled="${() => state.exporting}"
+            @click="${() => {
+              hapticTrigger();
+              handleExport(state);
+            }}"
+            aria-label="Export"
+          >
+            ${() => state.exporting ? IconCheck({ size: ICON_PX.header }) : IconArrowSquareUpRight({ size: ICON_PX.header })}
+          </button>
           <button
             type="button"
             class="${styles.addBtn}"
@@ -185,4 +199,16 @@ function hearthCard(
       <span class="${styles.cardSub}">${sub}</span>
     </div>
   </button>`;
+}
+
+async function handleExport(state: { exporting: boolean }) {
+  state.exporting = true;
+  try {
+    const payload = await exportAllData();
+    downloadExport(payload);
+  } finally {
+    setTimeout(() => {
+      state.exporting = false;
+    }, 1200);
+  }
 }
