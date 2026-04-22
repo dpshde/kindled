@@ -253,15 +253,8 @@
   overflow-wrap: anywhere;
 }
 
-/* Theme toggle — top-right corner */
-.themeToggle {
-  position: absolute;
-  top: calc(clamp(var(--space-xl), 8vh, 5.5rem) + env(safe-area-inset-top) - 4px);
-  right: max(var(--space-lg), env(safe-area-inset-right));
-  z-index: 5;
-}
-
-.themeToggleBtn {
+/* Theme toggle — inline in actions row */
+.themeToggleInline {
   color: var(--color-text-tertiary);
   min-width: 44px;
   min-height: 44px;
@@ -271,9 +264,10 @@
   justify-content: center;
   border-radius: var(--radius-field);
   transition: color var(--ease-ui), background var(--ease-ui);
+  margin-top: var(--space-sm);
 }
 
-.themeToggleBtn:hover {
+.themeToggleInline:hover {
   color: var(--color-text-secondary);
   background: var(--color-bg-elevated);
 }

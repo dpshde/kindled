@@ -77,9 +77,6 @@ export function ThresholdView(props: {
 
   return (
     <div class={stateClass()}>
-      <div class={styles.themeToggle}>
-        <ThemeToggle class={styles.themeToggleBtn} />
-      </div>
       <h1 class={styles.title}>Kindled</h1>
       <div class={styles.divider} aria-hidden="true" />
       <p class={styles.tagline}>Spark scripture into an eternal, internal flame.</p>
@@ -155,6 +152,7 @@ function ThresholdContent(props: {
                 <IconFileCloud size={ICON_PX.inline} /> Sync
               </button>
             )}
+            <ThemeToggle class={styles.themeToggleInline} />
           </div>
         ) : (
           <div class={styles.actions} role="group" aria-label="More actions">
@@ -168,6 +166,7 @@ function ThresholdContent(props: {
             >
               <IconFileCloud size={ICON_PX.inline} /> Sync
             </button>
+            <ThemeToggle class={styles.themeToggleInline} />
           </div>
         )}
       </div>
@@ -229,6 +228,7 @@ function ThresholdContent(props: {
             <IconFileCloud size={ICON_PX.inline} /> Sync
           </button>
         )}
+        <ThemeToggle class={styles.themeToggleInline} />
       </div>
     </div>
   );
