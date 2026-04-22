@@ -374,11 +374,12 @@
 
   .thresholdKindling .actions {
     order: 2;
+    margin-top: auto;
   }
 
   .thresholdKindling .primaryButton {
     order: 3;
-    margin-top: auto;
+    margin-top: var(--space-sm);
   }
 
   .ctaColumn {

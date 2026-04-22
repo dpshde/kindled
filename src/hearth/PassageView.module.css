@@ -158,6 +158,10 @@
   padding-bottom: max(20px, env(safe-area-inset-bottom));
 }
 
+.passageContentFocus .readingStack {
+  padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
+}
+
 /*
  * Reading column grows to fill space above the decision panel; passage is vertically centered.
  * Decision panel uses margin-top: auto to pin to the bottom.
