@@ -115,6 +115,7 @@ export const IconClose = (p: IconProps = {}) => phosphorIcon(paths.X, p);
 export const IconDownload = (p: IconProps = {}) => phosphorIcon(paths.DOWNLOAD, p);
 export const IconFileText = (p: IconProps = {}) => phosphorIcon(paths.FILE_TEXT, p);
 export const IconCopy = (p: IconProps = {}) => phosphorIcon(paths.COPY, p);
+export const IconGear = (p: IconProps = {}) => phosphorIcon(paths.GEAR_SIX, p);
 
 /** Phosphor regular sun (stroke icon) */
 export function IconSun(props: IconProps = {}): JSX.Element {

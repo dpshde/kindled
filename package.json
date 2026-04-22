@@ -19,9 +19,13 @@
     "tauri:ios:build": "tauri ios build",
     "tauri:android:init": "tauri android init",
     "tauri:android:dev": "tauri android dev",
-    "tauri:android:build": "tauri android build"
+    "tauri:android:build": "tauri android build",
+    "supabase:db:push": "supabase db push",
+    "supabase:functions:deploy": "supabase functions deploy provision-vault --no-verify-jwt && supabase functions deploy get-sync-config --no-verify-jwt"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.2",
+    "@supabase/supabase-js": "^2.104.0",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-dialog": "^2.7.0",
     "@tauri-apps/plugin-fs": "^2.5.0",
@@ -36,6 +40,7 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.10.1",
+    "@tursodatabase/api": "^2.0.0",
     "@types/node": "^24.12.2",
     "@vitest/coverage-v8": "^4.1.4",
     "fake-indexeddb": "^6.2.5",

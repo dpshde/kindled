@@ -1,5 +1,6 @@
 import { getDb } from "./connection";
 import { ensureLifeStage, prioritizeBlockForReview } from "./ritual";
+import { recordDeletedRecords } from "./tombstones";
 import type { Block, BlockType, Verse } from "./types";
 
 function generateId(): string {
@@ -70,8 +71,9 @@ export async function createBlock(
   );
 
   await db.run(
-    `INSERT INTO life_stages (block_id, stage, kindled_at, next_review_at) VALUES (?, 'spark', ?, ?)`,
+    `INSERT INTO life_stages (block_id, stage, kindled_at, next_review_at, updated_at) VALUES (?, 'spark', ?, ?, ?)`,
     id,
+    now,
     now,
     now,
   );
@@ -192,6 +194,24 @@ export async function updateBlockContent(
 
 export async function deleteBlock(id: string): Promise<void> {
   const db = await getDb();
+  const safeId = id.replace(/'/g, "''");
+  const [linkRows, reflectionRows] = await Promise.all([
+    db.query<{ id: string }>(
+      `SELECT id FROM links WHERE from_block = '${safeId}' OR to_block = '${safeId}'`,
+    ),
+    db.query<{ id: string }>(
+      `SELECT id FROM reflections WHERE block_id = '${safeId}'`,
+    ),
+  ]);
+
+  await recordDeletedRecords([
+    { table_name: "blocks", record_id: id },
+    { table_name: "life_stages", record_id: id },
+    ...linkRows.map((row) => ({ table_name: "links" as const, record_id: row.id })),
+    ...reflectionRows.map((row) => ({ table_name: "reflections" as const, record_id: row.id })),
+  ]);
+
+  await db.run(`DELETE FROM reflections WHERE block_id = ?`, id);
   await db.run(`DELETE FROM life_stages WHERE block_id = ?`, id);
   await db.run(`DELETE FROM links WHERE from_block = ? OR to_block = ?`, id, id);
   await db.run(`DELETE FROM blocks WHERE id = ?`, id);

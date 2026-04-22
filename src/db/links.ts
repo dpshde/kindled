@@ -1,4 +1,5 @@
 import { getDb } from "./connection";
+import { recordDeletedRecords } from "./tombstones";
 import type { Link } from "./types";
 
 function generateId(): string {
@@ -30,7 +31,8 @@ export async function createLink(link: {
 
   // Update connections_made on the source block's life stage
   await db.run(
-    `UPDATE life_stages SET connections_made = connections_made + 1 WHERE block_id = ?`,
+    `UPDATE life_stages SET connections_made = connections_made + 1, updated_at = ? WHERE block_id = ?`,
+    new Date().toISOString(),
     link.from_block,
   );
 
@@ -79,18 +81,22 @@ export async function getBacklinks(blockId: string): Promise<Link[]> {
 export async function deleteLinksForReflection(reflectionId: string): Promise<void> {
   const db = await getDb();
   const safe = reflectionId.replace(/'/g, "''");
-  const rows = await db.query<{ from_block: string }>(
-    `SELECT from_block FROM links WHERE reflection_id = '${safe}'`,
+  const rows = await db.query<{ id: string; from_block: string }>(
+    `SELECT id, from_block FROM links WHERE reflection_id = '${safe}'`,
   );
   const byBlock = new Map<string, number>();
   for (const r of rows) {
     byBlock.set(r.from_block, (byBlock.get(r.from_block) ?? 0) + 1);
   }
+  if (rows.length > 0) {
+    await recordDeletedRecords(rows.map((row) => ({ table_name: "links", record_id: row.id })));
+  }
   await db.run(`DELETE FROM links WHERE reflection_id = ?`, reflectionId);
   for (const [blockId, n] of byBlock) {
     await db.run(
-      `UPDATE life_stages SET connections_made = MAX(0, connections_made - ?) WHERE block_id = ?`,
+      `UPDATE life_stages SET connections_made = MAX(0, connections_made - ?), updated_at = ? WHERE block_id = ?`,
       n,
+      new Date().toISOString(),
       blockId,
     );
   }
@@ -98,6 +104,13 @@ export async function deleteLinksForReflection(reflectionId: string): Promise<vo
 
 export async function deleteLinksFrom(blockId: string): Promise<void> {
   const db = await getDb();
+  const safe = blockId.replace(/'/g, "''");
+  const rows = await db.query<{ id: string }>(
+    `SELECT id FROM links WHERE from_block = '${safe}'`,
+  );
+  if (rows.length > 0) {
+    await recordDeletedRecords(rows.map((row) => ({ table_name: "links", record_id: row.id })));
+  }
   await db.run(`DELETE FROM links WHERE from_block = ?`, blockId);
 }
 

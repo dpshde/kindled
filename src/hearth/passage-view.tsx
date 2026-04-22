@@ -37,7 +37,8 @@ import { ICON_PX } from "../ui/icon-sizes";
 import shell from "../ui/app-shell.module.css";
 import styles from "./PassageView.module.css";
 import { hapticLight, hapticMedium, hapticHeavy, hapticSelection, hapticWarning } from "../haptics";
-import { isTauriRuntime } from "../sync/tauri-file-store";
+import { isTauriRuntime } from "../platform/runtime";
+import { onSyncDataApplied } from "../sync/hosted-sync";
 import { fetchPassageBundle } from "./passage-data-load";
 import { linkEndpointLabel } from "./passage-link-title";
 import { PassageReviewDetailsModal } from "./passage-view-modal";
@@ -99,6 +100,11 @@ export function PassageView(props: {
       setLoading(false);
     })();
   });
+
+  const unsubDataApplied = onSyncDataApplied(() => {
+    props.app.bumpPassageReload();
+  });
+  onCleanup(() => unsubDataApplied());
 
   // Escape key for review details modal
   createEffect(() => {

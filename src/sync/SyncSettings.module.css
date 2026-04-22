@@ -86,9 +86,45 @@
 }
 
 .statusWarn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
   font-size: 13px;
   color: var(--color-ember);
   font-weight: 500;
+}
+
+.statusPending {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.accountLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.statusMeta {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-tertiary);
+}
+
+.callout {
+  padding: 0.75rem 0.85rem;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-warm);
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
 }
 
 .lastSync {
@@ -132,24 +168,54 @@
   gap: var(--space-sm);
 }
 
-.detachBtn {
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.7rem 0.8rem;
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
+}
+
+.input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-growth) 30%, transparent);
+  outline-offset: 1px;
+}
+
+.secondaryBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 36px;
+  min-height: 40px;
   padding-inline: var(--space-md);
   font-size: 13px;
   font-weight: 500;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   background: none;
-  border: none;
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
   cursor: pointer;
-  transition: color var(--ease-ui);
+  transition: background var(--ease-ui), color var(--ease-ui);
 }
 
-.detachBtn:hover {
-  color: var(--color-ember);
+.secondaryBtn:hover {
+  background: var(--color-bg-warm);
+  color: var(--color-text);
 }
 
 .error {

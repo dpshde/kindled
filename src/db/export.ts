@@ -1,7 +1,7 @@
 import { getDb } from "./connection";
 import { SCHEMA_VERSION } from "./schema";
 import type { Block, Entity, LifeStageRecord, Link, Reflection } from "./types";
-import { isTauriRuntime } from "../sync/tauri-file-store";
+import { isTauriRuntime } from "../platform/runtime";
 
 export interface KindledExport {
   format: "kindled";

@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const MIGRATIONS: Record<number, string[]> = {
   1: [
@@ -104,6 +104,18 @@ CREATE TABLE IF NOT EXISTS reflections (
 
   /** Bump only — life_stages shape is defined in migration 1 (fresh DBs). Use a new SQLite file name to reset local data. */
   3: [],
+
+  4: [
+    `ALTER TABLE entities ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime('now'));`,
+    `ALTER TABLE life_stages ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime('now'));`,
+    `CREATE TABLE IF NOT EXISTS deleted_records (
+      table_name TEXT NOT NULL,
+      record_id TEXT NOT NULL,
+      deleted_at TEXT NOT NULL,
+      PRIMARY KEY (table_name, record_id)
+    );`,
+    `CREATE INDEX IF NOT EXISTS idx_deleted_records_deleted_at ON deleted_records(deleted_at DESC);`,
+  ],
 };
 
 export function allMigrations(): string[] {

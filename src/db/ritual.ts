@@ -48,8 +48,9 @@ export async function ensureLifeStage(blockId: string): Promise<LifeStageRecord>
   const db = await getDb();
   const now = new Date().toISOString();
   await db.run(
-    `INSERT INTO life_stages (block_id, stage, kindled_at, next_review_at) VALUES (?, 'spark', ?, ?)`,
+    `INSERT INTO life_stages (block_id, stage, kindled_at, next_review_at, updated_at) VALUES (?, 'spark', ?, ?, ?)`,
     blockId,
+    now,
     now,
     now,
   );
@@ -77,10 +78,11 @@ export async function stokeBlock(blockId: string): Promise<LifeStage> {
 
   const db = await getDb();
   await db.run(
-    `UPDATE life_stages SET stage = ?, last_reviewed = ?, next_review_at = ?, review_count = review_count + 1, settledness = MIN(100, settledness + 5) WHERE block_id = ?`,
+    `UPDATE life_stages SET stage = ?, last_reviewed = ?, next_review_at = ?, review_count = review_count + 1, settledness = MIN(100, settledness + 5), updated_at = ? WHERE block_id = ?`,
     newStage,
     now.toISOString(),
     nextReviewAt,
+    now.toISOString(),
     blockId,
   );
 
@@ -104,10 +106,11 @@ export async function nudgeBlock(blockId: string): Promise<void> {
 
   const db = await getDb();
   await db.run(
-    `UPDATE life_stages SET stage = ?, last_reviewed = ?, next_review_at = ?, review_count = review_count + 1 WHERE block_id = ?`,
+    `UPDATE life_stages SET stage = ?, last_reviewed = ?, next_review_at = ?, review_count = review_count + 1, updated_at = ? WHERE block_id = ?`,
     newStage,
     now.toISOString(),
     nextReviewAt,
+    now.toISOString(),
     blockId,
   );
 }
@@ -118,18 +121,21 @@ export async function deepenBlock(blockId: string): Promise<void> {
   const now = new Date();
 
   await db.run(
-    `UPDATE life_stages SET stage = 'steady', last_reviewed = ?, next_review_at = ?, review_count = review_count + 1, settledness = MIN(100, settledness + 20) WHERE block_id = ?`,
+    `UPDATE life_stages SET stage = 'steady', last_reviewed = ?, next_review_at = ?, review_count = review_count + 1, settledness = MIN(100, settledness + 20), updated_at = ? WHERE block_id = ?`,
     now.toISOString(),
     addDays(now, 90),
+    now.toISOString(),
     blockId,
   );
 }
 
 export async function emberBlock(blockId: string): Promise<void> {
   const db = await getDb();
+  const now = new Date().toISOString();
   await db.run(
-    `UPDATE life_stages SET stage = 'ember', next_review_at = ? WHERE block_id = ?`,
+    `UPDATE life_stages SET stage = 'ember', next_review_at = ?, updated_at = ? WHERE block_id = ?`,
     addDays(new Date(), 365),
+    now,
     blockId,
   );
 }
@@ -140,8 +146,9 @@ export async function recordLinger(
 ): Promise<void> {
   const db = await getDb();
   await db.run(
-    `UPDATE life_stages SET linger_seconds = linger_seconds + ? WHERE block_id = ?`,
+    `UPDATE life_stages SET linger_seconds = linger_seconds + ?, updated_at = ? WHERE block_id = ?`,
     seconds,
+    new Date().toISOString(),
     blockId,
   );
 }
@@ -149,7 +156,8 @@ export async function recordLinger(
 export async function incrementNotes(blockId: string): Promise<void> {
   const db = await getDb();
   await db.run(
-    `UPDATE life_stages SET notes_added = notes_added + 1 WHERE block_id = ?`,
+    `UPDATE life_stages SET notes_added = notes_added + 1, updated_at = ? WHERE block_id = ?`,
+    new Date().toISOString(),
     blockId,
   );
 }
@@ -157,8 +165,9 @@ export async function incrementNotes(blockId: string): Promise<void> {
 export async function snoozeBlock(blockId: string, untilDate: Date): Promise<void> {
   const db = await getDb();
   await db.run(
-    `UPDATE life_stages SET next_review_at = ? WHERE block_id = ?`,
+    `UPDATE life_stages SET next_review_at = ?, updated_at = ? WHERE block_id = ?`,
     untilDate.toISOString(),
+    new Date().toISOString(),
     blockId,
   );
 }
@@ -168,7 +177,8 @@ export async function prioritizeBlockForReview(blockId: string): Promise<void> {
   const db = await getDb();
   const now = new Date().toISOString();
   await db.run(
-    `UPDATE life_stages SET next_review_at = ?, stage = CASE WHEN stage = 'ember' THEN 'spark' ELSE stage END WHERE block_id = ?`,
+    `UPDATE life_stages SET next_review_at = ?, stage = CASE WHEN stage = 'ember' THEN 'spark' ELSE stage END, updated_at = ? WHERE block_id = ?`,
+    now,
     now,
     blockId,
   );

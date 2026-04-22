@@ -1,6 +1,6 @@
 import "./index.css";
 import { mountApp } from "./app/mount-app";
-import { initFileSync, pullFromFileSync, getSyncState } from "./sync/file-sync";
+import { initHostedSync } from "./sync/hosted-sync";
 import { initTheme } from "./ui/theme";
 
 const userAgent = navigator.userAgent;
@@ -24,17 +24,9 @@ if (!root) throw new Error("missing #root");
 initTheme();
 mountApp(root);
 
-// Initialise file-backed sync (no-op if no file attached).
-// Must run after mountApp so the DB is ready when a pull is triggered.
-void (async () => {
-  await initFileSync();
-
-  // If we have an attached file with permission, pull data from it
-  // to ensure the JSON file remains the source of truth on refresh.
-  if (getSyncState().status === "attached") {
-    await pullFromFileSync();
-  }
-})();
+// Initialise hosted sync after mount so local content can render immediately
+// and then reconcile with the user's hosted vault in the background.
+void initHostedSync();
 
 if (!("__TAURI_INTERNALS__" in window) && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {

@@ -14,12 +14,6 @@
   white-space: nowrap;
 }
 
-/* Sync status color overrides */
-.syncBtnIdle { color: var(--color-text-tertiary); }
-.syncBtnAttached { color: var(--color-growth); }
-.syncBtnNeedsPermission { color: var(--color-ember); }
-.syncBtnSyncing { color: var(--color-fire); }
-
 /* ── Search ── */
 
 .search {
@@ -358,6 +352,60 @@
 .editPrimaryBtn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+/* ── Settings menu ── */
+
+.settingsWrap {
+  position: relative;
+}
+
+.settingsMenu {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 0;
+  z-index: 120;
+  min-width: 180px;
+  padding: 4px 0;
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.settingsMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--ease-ui);
+}
+
+.settingsMenuItem:hover,
+.settingsMenuItem:focus-visible {
+  background: var(--color-bg-warm);
+}
+
+.settingsMenuIcon {
+  display: flex;
+  color: var(--color-text-tertiary);
+}
+
+.settingsMenuLabel {
+  flex: 1;
+}
+
+.settingsMenuHint {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
 }
 
 /* ── Export menu ── */

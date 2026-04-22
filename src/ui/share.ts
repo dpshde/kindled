@@ -8,7 +8,7 @@
  * otherwise copies to clipboard.
  */
 
-import { isTauriRuntime } from "../sync/tauri-file-store";
+import { isTauriRuntime } from "../platform/runtime";
 
 export async function shareUrl(url: string): Promise<void> {
   if (isTauriRuntime()) {

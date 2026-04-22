@@ -8,9 +8,11 @@ export async function createEntity(
   const db = await getDb();
   const id = entity.id ?? `ent_${entity.type.charAt(0)}_${entity.name.toLowerCase().replace(/\s+/g, "_")}`;
 
+  const now = new Date().toISOString();
+
   await db.run(
-    `INSERT OR REPLACE INTO entities (id, type, name, aliases, description, key_passages, mentioned_in, connected_entities, familiarity, last_studied, next_suggested)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO entities (id, type, name, aliases, description, key_passages, mentioned_in, connected_entities, familiarity, last_studied, next_suggested, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     id,
     entity.type,
     entity.name,
@@ -22,6 +24,7 @@ export async function createEntity(
     entity.familiarity ?? 0,
     entity.last_studied ?? null,
     entity.next_suggested ?? null,
+    now,
   );
 
   return id;
@@ -116,8 +119,9 @@ export async function addBlockMention(
 
   const db = await getDb();
   await db.run(
-    `UPDATE entities SET mentioned_in = ? WHERE id = ?`,
+    `UPDATE entities SET mentioned_in = ?, updated_at = ? WHERE id = ?`,
     JSON.stringify([...mentioned]),
+    new Date().toISOString(),
     entityId,
   );
 }
@@ -127,10 +131,12 @@ export async function updateEntityFamiliarity(
   delta: number,
 ): Promise<void> {
   const db = await getDb();
+  const now = new Date().toISOString();
   await db.run(
-    `UPDATE entities SET familiarity = MIN(100, MAX(0, familiarity + ?)), last_studied = ? WHERE id = ?`,
+    `UPDATE entities SET familiarity = MIN(100, MAX(0, familiarity + ?)), last_studied = ?, updated_at = ? WHERE id = ?`,
     delta,
-    new Date().toISOString(),
+    now,
+    now,
     entityId,
   );
 }

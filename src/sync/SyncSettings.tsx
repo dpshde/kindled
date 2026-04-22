@@ -1,46 +1,133 @@
-/**
- * Sync settings popover — attach/detach a local JSON file for cross-device sync.
- */
-
+import { createSignal, onCleanup, type JSX } from "solid-js";
 import {
-  createSignal,
-  type JSX,
-} from "solid-js";
-import {
-  attachFile,
-  createFile,
-  detachFile,
   getSyncState,
-  grantPermission,
   onSyncStateChange,
+  requestEmailCode,
+  signOutHostedSync,
+  syncNow,
   type SyncState,
-} from "../sync/file-sync";
-import { isTauriRuntime } from "./tauri-file-store";
-import { IconFileCloud, IconCheck, IconPlus, IconX } from "../ui/icons/icons";
+  verifyEmailCode,
+} from "./hosted-sync";
+import { isSupabaseConfigured } from "../auth/supabase-client";
+import { IconCheck, IconFileCloud, IconPlus, IconUser, IconX } from "../ui/icons/icons";
 import { ICON_PX } from "../ui/icon-sizes";
 import { hapticLight, hapticMedium, hapticWarning } from "../haptics";
 import styles from "./SyncSettings.module.css";
+
+type BusyAction = "send" | "verify" | "signout" | null;
+
+function isSignedIn(status: SyncState["status"]): boolean {
+  return (
+    status === "provisioning" ||
+    status === "syncing" ||
+    status === "connected" ||
+    status === "offline-pending" ||
+    status === "error"
+  );
+}
+
+function statusLabel(sync: SyncState): string {
+  switch (sync.status) {
+    case "provisioning":
+      return "Preparing your vault";
+    case "syncing":
+      return "Syncing in the background";
+    case "offline-pending":
+      return "Changes will sync when you're back online";
+    case "error":
+      return "Sync hit a problem";
+    case "connected":
+      return "Connected";
+    default:
+      return "Sign in";
+  }
+}
 
 export function SyncSettingsView(props: {
   onClose: () => void;
   onSynced: () => void;
 }): JSX.Element {
-  const [sync, setSync] = createSignal<SyncState>(getSyncState());
-  const [error, setError] = createSignal<string | null>(null);
+  const initial = getSyncState();
+  const [sync, setSync] = createSignal<SyncState>(initial);
+  const [email, setEmail] = createSignal(initial.email ?? "");
+  const [code, setCode] = createSignal("");
+  const [busy, setBusy] = createSignal<BusyAction>(null);
+  const [localMessage, setLocalMessage] = createSignal<string | null>(null);
+  const [localError, setLocalError] = createSignal<string | null>(null);
 
-  const unsub = onSyncStateChange((s) => {
-    setSync({ ...s });
+  const unsub = onSyncStateChange((next) => {
+    setSync({ ...next });
+    if (next.email) setEmail(next.email);
   });
+  onCleanup(() => unsub());
 
   function close() {
-    unsub();
     hapticLight();
     props.onClose();
   }
 
+  function clearFeedback() {
+    setLocalError(null);
+    setLocalMessage(null);
+  }
+
+  async function handleSendCode() {
+    hapticLight();
+    setBusy("send");
+    clearFeedback();
+    try {
+      await requestEmailCode(email().trim());
+      setLocalMessage(`We sent a 6-digit code to ${email().trim()}.`);
+    } catch (error) {
+      setLocalError(
+        error instanceof Error ? error.message : "Could not send sign-in code.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleVerify() {
+    hapticMedium();
+    setBusy("verify");
+    clearFeedback();
+    try {
+      await verifyEmailCode(code().trim(), email().trim());
+      setLocalMessage("Code accepted. Finishing sync setup…");
+      await syncNow();
+      setCode("");
+      props.onSynced();
+    } catch (error) {
+      setLocalError(
+        error instanceof Error ? error.message : "Could not verify that code.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleSignOut() {
+    hapticWarning();
+    setBusy("signout");
+    clearFeedback();
+    try {
+      await signOutHostedSync();
+      setCode("");
+      setLocalMessage(null);
+    } catch (error) {
+      setLocalError(
+        error instanceof Error ? error.message : "Could not sign out.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const detail = () => localError() ?? localMessage() ?? sync().error;
+
   return (
     <div class={styles.overlay} onClick={close} role="dialog" aria-label="Sync settings">
-      <div class={styles.panel} onClick={(e) => e.stopPropagation()}>
+      <div class={styles.panel} onClick={(event) => event.stopPropagation()}>
         <header class={styles.header}>
           <div class={styles.headerTitle}>
             <IconFileCloud size={ICON_PX.inline} /> Sync
@@ -51,152 +138,108 @@ export function SyncSettingsView(props: {
         </header>
 
         <div class={styles.body}>
-          <SyncStatus sync={sync()} />
-          <SyncActions
-            sync={sync()}
-            error={error()}
-            setError={setError}
-            setSync={setSync}
-            onClose={props.onClose}
-            onSynced={props.onSynced}
-          />
-          {error() && <p class={styles.error}>{error()}</p>}
+          {!isSupabaseConfigured() || sync().status === "disabled" ? (
+            <p class={styles.hint}>
+              Hosted sync isn't configured in this build yet. Set the Supabase public URL and publishable key to enable account sync.
+            </p>
+          ) : !isSignedIn(sync().status) ? (
+            <>
+              <div class={styles.statusBlock}>
+                <p class={styles.hint}>
+                  Sign in with your email to keep Kindled synced across devices. Hosted sync is automatic after sign-in.
+                </p>
+                <div class={styles.callout}>
+                  1. Enter your email and send a code. 2. Paste the 6-digit code below. You never need to wait for the UI to advance.
+                </div>
+                {detail() && <span class={styles.statusMeta}>{detail()}</span>}
+              </div>
+
+              <div class={styles.actionsRow}>
+                <label class={styles.field}>
+                  <span class={styles.label}>Email</span>
+                  <input
+                    class={styles.input}
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email()}
+                    onInput={(event) => setEmail(event.currentTarget.value)}
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  class={styles.actionBtn}
+                  onClick={() => void handleSendCode()}
+                  disabled={!email().trim() || busy() === "send"}
+                >
+                  <IconPlus size={ICON_PX.inline} />
+                  {busy() === "send" ? "Sending code…" : "Email me a code"}
+                </button>
+
+                <label class={styles.field}>
+                  <span class={styles.label}>6-digit code</span>
+                  <input
+                    class={styles.input}
+                    type="text"
+                    inputMode="numeric"
+                    autocomplete="one-time-code"
+                    placeholder="123456"
+                    value={code()}
+                    onInput={(event) => setCode(event.currentTarget.value)}
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  class={styles.actionBtn}
+                  onClick={() => void handleVerify()}
+                  disabled={!email().trim() || !code().trim() || busy() === "verify"}
+                >
+                  <IconCheck size={ICON_PX.inline} />
+                  {busy() === "verify" ? "Verifying…" : "Verify & sync"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div class={styles.statusBlock}>
+                <span
+                  class={
+                    sync().status === "error"
+                      ? styles.statusWarn
+                      : sync().status === "offline-pending"
+                        ? styles.statusPending
+                        : styles.statusOk
+                  }
+                >
+                  <IconCheck size={ICON_PX.inline} /> {statusLabel(sync())}
+                </span>
+                {sync().email && (
+                  <span class={styles.accountLine}>
+                    <IconUser size={ICON_PX.inline} /> {sync().email}
+                  </span>
+                )}
+                {detail() && <span class={styles.statusMeta}>{detail()}</span>}
+                {sync().lastSyncedAt && (
+                  <span class={styles.lastSync}>Last synced {formatRelative(sync().lastSyncedAt!)}</span>
+                )}
+              </div>
+
+              <div class={styles.actionsRow}>
+                <button
+                  type="button"
+                  class={styles.secondaryBtn}
+                  onClick={() => void handleSignOut()}
+                  disabled={busy() === "signout"}
+                >
+                  {busy() === "signout" ? "Signing out…" : "Sign out"}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
-  );
-}
-
-function SyncStatus(props: { sync: SyncState }): JSX.Element {
-  const s = props.sync;
-
-  if (s.status === "unsupported") {
-    return (
-      <p class={styles.hint}>
-        Your browser doesn't support local file sync. Try Chrome or Edge on desktop.
-      </p>
-    );
-  }
-
-  if (s.status === "idle") {
-    const hint = isTauriRuntime()
-      ? "Choose a sync file in shared storage (like iCloud Drive or Files) so this device can stay in sync with your others."
-      : "Attach a local file (e.g. on iCloud Drive) to sync your data across devices. All your blocks, reflections, and life stages will be kept in that file.";
-    return <p class={styles.hint}>{hint}</p>;
-  }
-
-  const statusLine =
-    s.status === "attached" ? (
-      <span class={styles.statusOk}>
-        <IconCheck size={ICON_PX.inline} /> {s.fileName}
-      </span>
-    ) : (
-      <span class={styles.statusWarn}>
-        Permission needed for {s.fileName}
-      </span>
-    );
-
-  const lastSync = s.lastSyncedAt ? (
-    <span class={styles.lastSync}>
-      Last synced {formatRelative(s.lastSyncedAt)}
-    </span>
-  ) : (
-    <></>
-  );
-
-  return (
-    <div class={styles.statusBlock}>
-      {statusLine}
-      {lastSync}
-    </div>
-  );
-}
-
-function SyncActions(props: {
-  sync: SyncState;
-  error: string | null;
-  setError: (v: string | null) => void;
-  setSync: (v: SyncState) => void;
-  onClose: () => void;
-  onSynced: () => void;
-}): JSX.Element {
-  const s = props.sync;
-
-  async function handleAttach() {
-    hapticLight();
-    props.setError(null);
-    try {
-      const result = await attachFile();
-      props.setSync({ ...result });
-      if (result.status === "attached") {
-        props.onSynced();
-      }
-    } catch (e) {
-      props.setError(e instanceof Error ? e.message : "Failed to attach file");
-    }
-  }
-
-  async function handleCreate() {
-    hapticMedium();
-    props.setError(null);
-    try {
-      const result = await createFile();
-      props.setSync({ ...result });
-    } catch (e) {
-      props.setError(e instanceof Error ? e.message : "Failed to create file");
-    }
-  }
-
-  async function handleGrantPermission() {
-    props.setError(null);
-    try {
-      const result = await grantPermission();
-      props.setSync({ ...result });
-    } catch (e) {
-      props.setError(e instanceof Error ? e.message : "Permission denied");
-    }
-  }
-
-  async function handleDetach() {
-    hapticWarning();
-    props.setError(null);
-    try {
-      await detachFile();
-      props.setSync({ ...getSyncState() });
-    } catch (e) {
-      props.setError(e instanceof Error ? e.message : "Detach failed");
-    }
-  }
-
-  if (s.status === "unsupported") {
-    return <></>;
-  }
-
-  if (s.status === "idle") {
-    return (
-      <div class={styles.actionsRow}>
-        <button type="button" class={styles.actionBtn} onClick={() => void handleCreate()}>
-          <IconPlus size={ICON_PX.inline} /> Create File
-        </button>
-        <button type="button" class={styles.actionBtn} onClick={() => void handleAttach()}>
-          <IconFileCloud size={ICON_PX.inline} /> Browse for File
-        </button>
-      </div>
-    );
-  }
-
-  if (s.status === "needs-permission") {
-    return (
-      <button type="button" class={styles.actionBtn} onClick={() => void handleGrantPermission()}>
-        Grant Permission
-      </button>
-    );
-  }
-
-  return (
-    <button type="button" class={styles.detachBtn} onClick={() => void handleDetach()}>
-      Detach
-    </button>
   );
 }
 

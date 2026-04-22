@@ -1,5 +1,6 @@
 import { getDb } from "./connection";
 import { deleteLinksForReflection } from "./links";
+import { recordDeletedRecord } from "./tombstones";
 import type { Reflection } from "./types";
 
 function generateReflectionId(): string {
@@ -50,8 +51,9 @@ async function syncNotesAddedForBlock(blockId: string): Promise<void> {
   );
   const n = parseInt(rows[0]?.c ?? "0", 10);
   await db.run(
-    `UPDATE life_stages SET notes_added = ? WHERE block_id = ?`,
+    `UPDATE life_stages SET notes_added = ?, updated_at = ? WHERE block_id = ?`,
     n,
+    new Date().toISOString(),
     blockId,
   );
 }
@@ -162,6 +164,7 @@ export async function deleteReflection(id: string): Promise<void> {
   if (!r) return;
   await deleteLinksForReflection(id);
   const db = await getDb();
+  await recordDeletedRecord("reflections", id);
   await db.run(`DELETE FROM reflections WHERE id = ?`, id);
   await syncNotesAddedForBlock(r.block_id);
 }

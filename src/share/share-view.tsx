@@ -12,7 +12,7 @@ import {
 } from "../db";
 import { hapticLight, hapticMedium } from "../haptics";
 import passageStyles from "../hearth/PassageView.module.css";
-import { isTauriRuntime } from "../sync/tauri-file-store";
+import { isTauriRuntime } from "../platform/runtime";
 import shell from "../ui/app-shell.module.css";
 import { ICON_PX } from "../ui/icon-sizes";
 import {

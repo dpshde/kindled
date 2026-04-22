@@ -27,21 +27,25 @@ import {
   IconFileText,
   IconFire,
   IconFloppyDisk,
+  IconGear,
   IconMagnifyingGlass,
   IconPencilSimple,
   IconPlus,
+  IconSun,
+  IconMoon,
   IconX,
 } from "../ui/icons/icons";
-import { ICON_PX } from "../ui/icon-sizes";
 import shell from "../ui/app-shell.module.css";
 import styles from "./HearthView.module.css";
 import { hapticLight, hapticMedium, hapticSave } from "../haptics";
 import { hearthTypeIcon } from "./hearth-type-icon";
 import { downloadExport, exportAllData, type ExportFormat } from "../db/export";
-import { isTauriRuntime } from "../sync/tauri-file-store";
-import { getSyncState, onSyncStateChange, type SyncState } from "../sync/file-sync";
+import { isTauriRuntime } from "../platform/runtime";
+import { getSyncState, onSyncStateChange, onSyncDataApplied, type SyncState } from "../sync/hosted-sync";
 import { SyncSettingsView } from "../sync/SyncSettings";
-import { ThemeToggle } from "../ui/theme-toggle";
+import { toggleTheme, getCurrentTheme } from "../ui/theme";
+import { ICON_PX } from "../ui/icon-sizes";
+
 
 
 export function HearthView(props: {
@@ -57,13 +61,21 @@ export function HearthView(props: {
   const [showExportMenu, setShowExportMenu] = createSignal(false);
   const [copiedExport, setCopiedExport] = createSignal(false);
   const [showSync, setShowSync] = createSignal(false);
+  const [showSettingsMenu, setShowSettingsMenu] = createSignal(false);
   const [editingPassage, setEditingPassage] = createSignal<Block | null>(null);
   const [syncState, setSyncState] = createSignal<SyncState>(getSyncState());
+  const [theme, setTheme] = createSignal<"light" | "dark">(getCurrentTheme());
 
   const unsub = onSyncStateChange((s) => {
     setSyncState({ ...s });
   });
-  onCleanup(() => unsub());
+  const unsubDataApplied = onSyncDataApplied(() => {
+    void bootstrapHearth();
+  });
+  onCleanup(() => {
+    unsub();
+    unsubDataApplied();
+  });
 
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -108,10 +120,33 @@ export function HearthView(props: {
   }
 
   let exportMenuRef: HTMLDivElement | undefined;
+  let settingsMenuRef: HTMLDivElement | undefined;
 
   function closeExportMenu() {
     setShowExportMenu(false);
   }
+
+  function closeSettingsMenu() {
+    setShowSettingsMenu(false);
+  }
+
+  createEffect(() => {
+    if (!showSettingsMenu()) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (settingsMenuRef && !settingsMenuRef.contains(e.target as Node)) {
+        closeSettingsMenu();
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeSettingsMenu();
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKey);
+    onCleanup(() => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKey);
+    });
+  });
 
   createEffect(() => {
     if (!showExportMenu()) return;
@@ -169,23 +204,6 @@ export function HearthView(props: {
       /* clipboard not available */
     }
   }
-
-  const syncToneClass = () => {
-    const sync = syncState();
-    if (sync.syncing) return styles.syncBtnSyncing;
-    if (sync.status === "attached") return styles.syncBtnAttached;
-    if (sync.status === "needs-permission") return styles.syncBtnNeedsPermission;
-    return styles.syncBtnIdle;
-  };
-
-  const syncLabel = () => {
-    const sync = syncState();
-    if (sync.syncing) return "Sync settings (syncing)";
-    if (sync.status === "attached") return `Sync settings (connected${sync.fileName ? `: ${sync.fileName}` : ""})`;
-    if (sync.status === "needs-permission") return "Sync settings (permission needed)";
-    if (sync.status === "unsupported") return "Sync settings (unsupported here)";
-    return "Sync settings (not connected)";
-  };
 
   const listContent = (): JSX.Element => {
     if (loading()) {
@@ -247,20 +265,75 @@ export function HearthView(props: {
             </Show>
           </div>
           <div class={shell.headerActions}>
-            <ThemeToggle class={shell.headerBtn} />
-            <button
-              type="button"
-              class={`${shell.headerBtn} ${syncToneClass()}`}
-              onClick={() => {
-                hapticLight();
-                setShowSync(true);
-              }}
-              aria-label={syncLabel()}
-              title={syncLabel()}
-            >
-              <IconFileCloud size={ICON_PX.header} />
-            </button>
-            <div class={styles.exportWrap} ref={exportMenuRef}>
+            <div class={styles.settingsWrap} ref={(el) => { settingsMenuRef = el; }}>
+              <button
+                type="button"
+                class={shell.headerBtn}
+                onClick={() => {
+                  hapticLight();
+                  setShowSettingsMenu((v) => !v);
+                }}
+                aria-label="Settings"
+                aria-expanded={showSettingsMenu()}
+              >
+                <IconGear size={ICON_PX.header} />
+              </button>
+              <Show when={showSettingsMenu()}>
+                <div class={styles.settingsMenu} role="menu">
+                  <button
+                    type="button"
+                    class={styles.settingsMenuItem}
+                    role="menuitem"
+                    onClick={() => {
+                      hapticLight();
+                      const next = toggleTheme();
+                      setTheme(next);
+                    }}
+                    aria-label={theme() === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                  >
+                    <span class={styles.settingsMenuIcon}>
+                      <Show when={theme() === "dark"} fallback={<IconMoon size={ICON_PX.inline} />}>
+                        <IconSun size={ICON_PX.inline} />
+                      </Show>
+                    </span>
+                    <span class={styles.settingsMenuLabel}>
+                      {theme() === "dark" ? "Light mode" : "Dark mode"}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    class={styles.settingsMenuItem}
+                    role="menuitem"
+                    onClick={() => {
+                      hapticLight();
+                      setShowSettingsMenu(false);
+                      setShowSync(true);
+                    }}
+                  >
+                    <span class={styles.settingsMenuIcon}>
+                      <IconFileCloud size={ICON_PX.inline} />
+                    </span>
+                    <span class={styles.settingsMenuLabel}>Sync</span>
+                    <Show when={syncState().status === "connected"}>
+                      <span class={styles.settingsMenuHint}>Connected</span>
+                    </Show>
+                    <Show when={syncState().status === "syncing" || syncState().status === "provisioning"}>
+                      <span class={styles.settingsMenuHint}>Syncing</span>
+                    </Show>
+                    <Show when={syncState().status === "offline-pending"}>
+                      <span class={styles.settingsMenuHint}>Changes waiting</span>
+                    </Show>
+                    <Show when={syncState().status === "awaiting-code"}>
+                      <span class={styles.settingsMenuHint}>Check email</span>
+                    </Show>
+                    <Show when={syncState().status === "error"}>
+                      <span class={styles.settingsMenuHint}>Needs attention</span>
+                    </Show>
+                  </button>
+                </div>
+              </Show>
+            </div>
+            <div class={styles.exportWrap} ref={(el) => { exportMenuRef = el; }}>
               <button
                 type="button"
                 class={shell.headerBtn}
