@@ -19,8 +19,6 @@ import { resolvePassage } from "../scripture/RouteBibleClient";
 import { parseInputToPassage } from "../capture/scripture-capture-helpers";
 import { nextReviewPresentation } from "../ui/helpers";
 import {
-  IconArrowSquareUpRight,
-  IconCheck,
   IconCopy,
   IconDownload,
   IconFileCloud,
@@ -40,7 +38,6 @@ import styles from "./HearthView.module.css";
 import { hapticLight, hapticMedium, hapticSave } from "../haptics";
 import { hearthTypeIcon } from "./hearth-type-icon";
 import { downloadExport, exportAllData, type ExportFormat } from "../db/export";
-import { isTauriRuntime } from "../platform/runtime";
 import { getSyncState, onSyncStateChange, onSyncDataApplied, type SyncState } from "../sync/hosted-sync";
 import { SyncSettingsView } from "../sync/SyncSettings";
 import { toggleTheme, getCurrentTheme } from "../ui/theme";
@@ -57,9 +54,6 @@ export function HearthView(props: {
   const [stages, setStages] = createSignal<Record<string, LifeStageRecord>>({});
   const [query, setQuery] = createSignal("");
   const [loading, setLoading] = createSignal(true);
-  const [exporting, setExporting] = createSignal(false);
-  const [showExportMenu, setShowExportMenu] = createSignal(false);
-  const [copiedExport, setCopiedExport] = createSignal(false);
   const [showSync, setShowSync] = createSignal(false);
   const [showSettingsMenu, setShowSettingsMenu] = createSignal(false);
   const [editingPassage, setEditingPassage] = createSignal<Block | null>(null);
@@ -119,12 +113,7 @@ export function HearthView(props: {
     }, 200);
   }
 
-  let exportMenuRef: HTMLDivElement | undefined;
   let settingsMenuRef: HTMLDivElement | undefined;
-
-  function closeExportMenu() {
-    setShowExportMenu(false);
-  }
 
   function closeSettingsMenu() {
     setShowSettingsMenu(false);
@@ -148,46 +137,18 @@ export function HearthView(props: {
     });
   });
 
-  createEffect(() => {
-    if (!showExportMenu()) return;
-    const onClickOutside = (e: MouseEvent) => {
-      if (exportMenuRef && !exportMenuRef.contains(e.target as Node)) {
-        closeExportMenu();
-      }
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeExportMenu();
-    };
-    document.addEventListener("mousedown", onClickOutside);
-    document.addEventListener("keydown", onKey);
-    onCleanup(() => {
-      document.removeEventListener("mousedown", onClickOutside);
-      document.removeEventListener("keydown", onKey);
-    });
-  });
-
   async function handleExportFormat(format: ExportFormat) {
-    setExporting(true);
-    closeExportMenu();
-    setCopiedExport(false);
+    closeSettingsMenu();
     try {
       const payload = await exportAllData();
-      if (isTauriRuntime()) {
-        try {
-          await downloadExport(payload, format);
-          return;
-        } catch {
-          // cancelled or unsupported
-        }
-      }
       await downloadExport(payload, format);
-    } finally {
-      setTimeout(() => setExporting(false), 1200);
+    } catch {
+      // cancelled or unsupported
     }
   }
 
   async function handleExportCopyText() {
-    closeExportMenu();
+    closeSettingsMenu();
     try {
       const payload = await exportAllData();
       const text = payload.data.blocks
@@ -198,8 +159,6 @@ export function HearthView(props: {
         })
         .join("\n\n");
       await navigator.clipboard.writeText(text);
-      setCopiedExport(true);
-      setTimeout(() => setCopiedExport(false), 1400);
     } catch {
       /* clipboard not available */
     }
@@ -330,92 +289,70 @@ export function HearthView(props: {
                       <span class={styles.settingsMenuHint}>Needs attention</span>
                     </Show>
                   </button>
-                </div>
-              </Show>
-            </div>
-            <div class={styles.exportWrap} ref={(el) => { exportMenuRef = el; }}>
-              <button
-                type="button"
-                class={shell.headerBtn}
-                disabled={exporting()}
-                onClick={() => {
-                  hapticLight();
-                  setShowExportMenu((v) => !v);
-                }}
-                aria-label="Export"
-                aria-expanded={showExportMenu()}
-              >
-                <Show when={copiedExport()} fallback={<IconArrowSquareUpRight size={ICON_PX.header} />}>
-                  <IconCheck size={ICON_PX.header} />
-                </Show>
-              </button>
-              <Show when={showExportMenu()}>
-                <div class={styles.exportMenu} role="menu">
                   <button
                     type="button"
-                    class={styles.exportMenuItem}
+                    class={styles.settingsMenuItem}
                     role="menuitem"
                     onClick={() => {
                       hapticLight();
                       void handleExportFormat("json");
                     }}
                   >
-                    <span class={styles.exportMenuIcon}><IconFileText size={ICON_PX.inline} /></span>
-                    <span class={styles.exportMenuLabel}>JSON</span>
-                    <span class={styles.exportMenuHint}>Full data</span>
+                    <span class={styles.settingsMenuIcon}><IconFileText size={ICON_PX.inline} /></span>
+                    <span class={styles.settingsMenuLabel}>Export JSON</span>
+                    <span class={styles.settingsMenuHint}>Full data</span>
                   </button>
                   <button
                     type="button"
-                    class={styles.exportMenuItem}
+                    class={styles.settingsMenuItem}
                     role="menuitem"
                     onClick={() => {
                       hapticLight();
                       void handleExportFormat("csv");
                     }}
                   >
-                    <span class={styles.exportMenuIcon}><IconDownload size={ICON_PX.inline} /></span>
-                    <span class={styles.exportMenuLabel}>CSV</span>
-                    <span class={styles.exportMenuHint}>Spreadsheet</span>
+                    <span class={styles.settingsMenuIcon}><IconDownload size={ICON_PX.inline} /></span>
+                    <span class={styles.settingsMenuLabel}>Export CSV</span>
+                    <span class={styles.settingsMenuHint}>Spreadsheet</span>
                   </button>
                   <button
                     type="button"
-                    class={styles.exportMenuItem}
+                    class={styles.settingsMenuItem}
                     role="menuitem"
                     onClick={() => {
                       hapticLight();
                       void handleExportFormat("markdown");
                     }}
                   >
-                    <span class={styles.exportMenuIcon}><IconFileText size={ICON_PX.inline} /></span>
-                    <span class={styles.exportMenuLabel}>Markdown</span>
-                    <span class={styles.exportMenuHint}>Readable</span>
+                    <span class={styles.settingsMenuIcon}><IconFileText size={ICON_PX.inline} /></span>
+                    <span class={styles.settingsMenuLabel}>Export Markdown</span>
+                    <span class={styles.settingsMenuHint}>Readable</span>
                   </button>
                   <button
                     type="button"
-                    class={styles.exportMenuItem}
+                    class={styles.settingsMenuItem}
                     role="menuitem"
                     onClick={() => {
                       hapticLight();
                       void handleExportFormat("text");
                     }}
                   >
-                    <span class={styles.exportMenuIcon}><IconDownload size={ICON_PX.inline} /></span>
-                    <span class={styles.exportMenuLabel}>Plain text</span>
-                    <span class={styles.exportMenuHint}>Simple list</span>
+                    <span class={styles.settingsMenuIcon}><IconDownload size={ICON_PX.inline} /></span>
+                    <span class={styles.settingsMenuLabel}>Export text</span>
+                    <span class={styles.settingsMenuHint}>Simple list</span>
                   </button>
-                  <div class={styles.exportMenuDivider} />
                   <button
                     type="button"
-                    class={styles.exportMenuItem}
+                    class={styles.settingsMenuItem}
                     role="menuitem"
                     onClick={() => {
                       hapticLight();
                       void handleExportCopyText();
                     }}
                   >
-                    <span class={styles.exportMenuIcon}><IconCopy size={ICON_PX.inline} /></span>
-                    <span class={styles.exportMenuLabel}>Copy text</span>
-                    <span class={styles.exportMenuHint}>Clipboard</span>
+                    <span class={styles.settingsMenuIcon}><IconCopy size={ICON_PX.inline} /></span>
+                    <span class={styles.settingsMenuLabel}>Copy all text</span>
+                    <span class={styles.settingsMenuHint}>Clipboard</span>
                   </button>
                 </div>
               </Show>

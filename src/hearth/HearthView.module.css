@@ -365,7 +365,7 @@
   top: calc(100% + 2px);
   right: 0;
   z-index: 120;
-  min-width: 180px;
+  min-width: 220px;
   padding: 4px 0;
   background: var(--color-bg);
   border: 1px solid var(--color-line);
@@ -406,66 +406,6 @@
 .settingsMenuHint {
   font-size: 12px;
   color: var(--color-text-tertiary);
-}
-
-/* ── Export menu ── */
-
-.exportWrap {
-  position: relative;
-}
-
-.exportMenu {
-  position: absolute;
-  top: calc(100% + 2px);
-  right: 0;
-  z-index: 120;
-  min-width: 200px;
-  padding: 4px 0;
-  background: var(--color-bg);
-  border: 1px solid var(--color-line);
-  border-radius: 4px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-}
-
-.exportMenuItem {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 9px 14px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text);
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  transition: background var(--ease-ui);
-}
-
-.exportMenuItem:hover,
-.exportMenuItem:focus-visible {
-  background: var(--color-bg-warm);
-}
-
-.exportMenuIcon {
-  display: flex;
-  color: var(--color-text-tertiary);
-}
-
-.exportMenuLabel {
-  flex: 1;
-}
-
-.exportMenuHint {
-  font-size: 12px;
-  color: var(--color-text-tertiary);
-}
-
-.exportMenuDivider {
-  height: 1px;
-  margin: 4px 0;
-  background: var(--color-line);
 }
 
 /* ── Desktop (≥ 800px): full-width library grid ── */
@@ -531,10 +471,6 @@
   .editPrimaryBtn:hover {
     background: var(--color-fire);
     border-color: var(--color-fire);
-  }
-
-  .exportMenuItem:hover {
-    background: transparent;
   }
 }
 
