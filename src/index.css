@@ -71,6 +71,8 @@
 
 html {
   scroll-behavior: auto;
+  overflow-x: hidden;
+  width: 100vw;
 }
 
 html[data-platform="ios"] {
@@ -96,11 +98,15 @@ body {
   user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 #root {
   height: var(--viewport-block-size);
   overflow: hidden;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {

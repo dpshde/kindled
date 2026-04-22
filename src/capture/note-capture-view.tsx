@@ -18,6 +18,7 @@ import {
   createBlock,
   getAllEntities,
   getLinksForReflection,
+  saveScripturePassageFromCapture,
   type Entity,
   type Reflection,
   type Link,
@@ -52,7 +53,6 @@ import shell from "../ui/app-shell.module.css";
 import { applyWikiLinkSuggestion } from "./wikiLinkAutocomplete";
 import styles from "./NoteCapture.module.css";
 import { hapticLight, hapticSave, hapticWarning } from "../haptics";
-import { findScriptureBlockByRef } from "./note-capture-db";
 import { getBracketRanges, getWikiLinkContext } from "./note-capture-wiki";
 
 const TEXTAREA_ID = "note-capture-textarea";
@@ -487,19 +487,15 @@ async function noteProcessLink(
 ) {
   const passageResult = await resolvePassage(linkText);
   if (passageResult && passageResult.verses.length > 0) {
-    const existingId = await findScriptureBlockByRef(passageResult.ref);
-    const targetId =
-      existingId ??
-      (await createBlock({
-        type: "scripture",
-        content: passageResult.verses.map((v) => v.text).join(" "),
-        scripture_ref: passageResult.ref,
-        scripture_display_ref: passageResult.displayRef,
-        scripture_translation: passageResult.translation,
-        scripture_verses: passageResult.verses,
-        source: "auto",
-        tags: [],
-      }));
+    const { blockId: targetId } = await saveScripturePassageFromCapture({
+      content: passageResult.verses.map((v) => v.text).join(" "),
+      scripture_ref: passageResult.ref,
+      scripture_display_ref: passageResult.displayRef,
+      scripture_translation: passageResult.translation,
+      scripture_verses: passageResult.verses,
+      source: "auto",
+      tags: [],
+    });
 
     const context = getSurroundingContext(fullText, linkText);
     await createLink({
@@ -584,19 +580,15 @@ async function noteAutoLinkPassages(
       const resolved = await resolvePassage(p.input);
       if (!resolved || resolved.verses.length === 0) continue;
 
-      const existingId = await findScriptureBlockByRef(resolved.ref);
-      const targetId =
-        existingId ??
-        (await createBlock({
-          type: "scripture",
-          content: resolved.verses.map((v) => v.text).join(" "),
-          scripture_ref: resolved.ref,
-          scripture_display_ref: resolved.displayRef,
-          scripture_translation: resolved.translation,
-          scripture_verses: resolved.verses,
-          source: "auto",
-          tags: [],
-        }));
+      const { blockId: targetId } = await saveScripturePassageFromCapture({
+        content: resolved.verses.map((v) => v.text).join(" "),
+        scripture_ref: resolved.ref,
+        scripture_display_ref: resolved.displayRef,
+        scripture_translation: resolved.translation,
+        scripture_verses: resolved.verses,
+        source: "auto",
+        tags: [],
+      });
 
       await createLink({
         from_block: blockId,

@@ -300,6 +300,12 @@ function PassageMain(props: {
   function handleContentTap(e: MouseEvent) {
     if (!canToggleReadingFocus()) return;
 
+    // Don't toggle focus from taps on interactive elements or their children
+    const target = e.target as HTMLElement | null;
+    if (target?.closest("button, a, input, textarea, select, [role='button'], .connectionChip, .connectionChipStatic, .decisionPanel, .snoozePanel, .reflectionAddRow, .reflectionCard")) {
+      return;
+    }
+
     if (props.showReadingFocus) {
       e.preventDefault();
       e.stopPropagation();
@@ -307,12 +313,10 @@ function PassageMain(props: {
       return;
     }
 
-    const target = e.target as HTMLElement | null;
-    if (target?.closest("button, a, input, textarea, select, [role='button']")) {
-      return;
+    // Only enter focus from taps on the reading stack area (scripture text)
+    if (target?.closest(".readingStack, .textBlock, .verse, .refHead")) {
+      props.onToggleReadingFocus(true);
     }
-
-    props.onToggleReadingFocus(true);
   }
 
   return (
@@ -415,7 +419,15 @@ function ScriptureRefHead(props: { block: Block }): JSX.Element {
       const { open } = await import("@tauri-apps/plugin-shell");
       await open(url);
     } else {
-      window.open(url, "_blank", "noopener,noreferrer");
+      // Use an anchor element for reliable mobile navigation
+      // (window.open is blocked as popup on many mobile browsers)
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
   }
 

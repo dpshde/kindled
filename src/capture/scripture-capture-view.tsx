@@ -592,9 +592,7 @@ function ScriptureTopicSection(props: {
   setTopicSectionCollapsed: (v: boolean) => void;
   syncDraftFromInput: (val: string, instant?: boolean) => void;
 }): JSX.Element {
-  const collapsed = () =>
-    props.topicSectionCollapsed &&
-    (props.status === "preview" || props.status === "saving");
+  const collapsed = () => props.topicSectionCollapsed;
   const summary = () =>
     props.activeTopic
       ? props.activeTopic.label
