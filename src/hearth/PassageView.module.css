@@ -183,9 +183,9 @@
   overscroll-behavior-y: contain;
   padding-right: 2px;
 
-  /* Fade hint at bottom when scrollable */
-  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  /* No static mask — the fade was clipping last verse on wider screens
+     where content fits entirely. Instead, rely on smooth inertial scroll
+     and overscroll containment for a natural reading experience. */
 }
 
 .rhythmDate {
