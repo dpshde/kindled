@@ -11,7 +11,7 @@ import {
   peekClientKindlingIdsCache,
   setClientKindlingIdsCache,
 } from "../db";
-import { getSyncState, onSyncStateChange } from "../sync/file-sync";
+import { getSyncState, onSyncDataApplied, onSyncStateChange, type SyncState } from "../sync/hosted-sync";
 import {
   IconBookOpen,
   IconFileCloud,
@@ -25,6 +25,16 @@ import { hapticLight, hapticMedium } from "../haptics";
 import { SyncSettingsView } from "../sync/SyncSettings";
 import { ThemeToggle } from "../ui/theme-toggle";
 
+function isSignedInSyncState(status: SyncState["status"]): boolean {
+  return (
+    status === "provisioning" ||
+    status === "syncing" ||
+    status === "connected" ||
+    status === "offline-pending" ||
+    status === "error"
+  );
+}
+
 export function ThresholdView(props: {
   onBegin: (blockIds: string[]) => void;
   onLibrary: () => void;
@@ -37,14 +47,20 @@ export function ThresholdView(props: {
   const [loading, setLoading] = createSignal(true);
   const [error, setError] = createSignal<string | null>(null);
   const [showSync, setShowSync] = createSignal(false);
-  const [syncAttached, setSyncAttached] = createSignal(
-    getSyncState().status === "attached",
+  const [signedInSync, setSignedInSync] = createSignal(
+    isSignedInSyncState(getSyncState().status),
   );
 
-  const unsub = onSyncStateChange((s) => {
-    setSyncAttached(s.status === "attached");
+  const unsubSyncState = onSyncStateChange((sync) => {
+    setSignedInSync(isSignedInSyncState(sync.status));
   });
-  onCleanup(() => unsub());
+  const unsubDataApplied = onSyncDataApplied(() => {
+    void loadKindling();
+  });
+  onCleanup(() => {
+    unsubSyncState();
+    unsubDataApplied();
+  });
 
   createEffect(() => {
     void loadKindling();
@@ -77,6 +93,7 @@ export function ThresholdView(props: {
 
   return (
     <div class={stateClass()}>
+      <ThemeToggle class={styles.themeToggleCorner} />
       <h1 class={styles.title}>Kindled</h1>
       <div class={styles.divider} aria-hidden="true" />
       <p class={styles.tagline}>Spark scripture into an eternal, internal flame.</p>
@@ -85,12 +102,11 @@ export function ThresholdView(props: {
         <ThresholdContent
           kindlingIds={kindlingIds()}
           totalBlocks={totalBlocks()}
-          syncAttached={syncAttached()}
           onBegin={props.onBegin}
           onCapture={props.onCapture}
           onLibrary={props.onLibrary}
-          showSync={showSync()}
           setShowSync={setShowSync}
+          showSyncButton={!signedInSync()}
         />
       </Show>
       {showSync() && (
@@ -106,12 +122,11 @@ export function ThresholdView(props: {
 function ThresholdContent(props: {
   kindlingIds: string[];
   totalBlocks: number;
-  syncAttached: boolean;
   onBegin: (ids: string[]) => void;
   onCapture: () => void;
   onLibrary: () => void;
-  showSync: boolean;
   setShowSync: (v: boolean) => void;
+  showSyncButton: boolean;
 }): JSX.Element {
   if (props.kindlingIds.length === 0) {
     return (
@@ -128,8 +143,8 @@ function ThresholdContent(props: {
             <IconPlus size={ICON_PX.inline} /> Capture a Passage
           </button>
         </div>
-        {(props.totalBlocks > 0 || props.syncAttached) ? (
-          <div class={styles.actions} role="group" aria-label="More actions">
+        <div class={styles.actions} role="group" aria-label="More actions">
+          <Show when={props.totalBlocks > 0}>
             <button
               type="button"
               class={styles.secondaryButton}
@@ -140,22 +155,8 @@ function ThresholdContent(props: {
             >
               <IconBookOpen size={ICON_PX.inline} /> Hearth
             </button>
-            {!props.syncAttached && (
-              <button
-                type="button"
-                class={styles.secondaryButton}
-                onClick={() => {
-                  hapticLight();
-                  props.setShowSync(true);
-                }}
-              >
-                <IconFileCloud size={ICON_PX.inline} /> Sync
-              </button>
-            )}
-            <ThemeToggle class={styles.themeToggleInline} />
-          </div>
-        ) : (
-          <div class={styles.actions} role="group" aria-label="More actions">
+          </Show>
+          <Show when={props.showSyncButton}>
             <button
               type="button"
               class={styles.secondaryButton}
@@ -166,36 +167,36 @@ function ThresholdContent(props: {
             >
               <IconFileCloud size={ICON_PX.inline} /> Sync
             </button>
-            <ThemeToggle class={styles.themeToggleInline} />
-          </div>
-        )}
+          </Show>
+        </div>
       </div>
     );
   }
 
   // Kindling state
   return (
-    <div class={styles.ctaColumn}>
-      <div class={styles.kindlingFocus}>
-        <p class={styles.count}>
-          <span class={styles.countIcon}>
-            <IconFire size={ICON_PX.inline} />
-          </span>
-          {props.kindlingIds.length}{" "}
-          {props.kindlingIds.length === 1 ? "spark" : "sparks"} to tend today
-        </p>
-        <button
-          type="button"
-          class={styles.primaryButton}
-          onClick={() => {
-            hapticMedium();
-            props.onBegin(props.kindlingIds);
-          }}
-        >
-          <BeginFireIcon size={ICON_PX.actionPrimary} /> Begin
-        </button>
-      </div>
-      <div class={styles.actions} role="group" aria-label="More actions">
+    <>
+      <p class={styles.count}>
+        <span class={styles.countIcon}>
+          <IconFire size={ICON_PX.inline} />
+        </span>
+        {props.kindlingIds.length}{" "}
+        {props.kindlingIds.length === 1 ? "spark" : "sparks"} to tend today
+      </p>
+      <div class={styles.ctaColumn}>
+        <div class={styles.kindlingFocus}>
+          <button
+            type="button"
+            class={styles.primaryButton}
+            onClick={() => {
+              hapticMedium();
+              props.onBegin(props.kindlingIds);
+            }}
+          >
+            <BeginFireIcon size={ICON_PX.actionPrimary} /> Begin
+          </button>
+        </div>
+        <div class={styles.actions} role="group" aria-label="More actions">
         <button
           type="button"
           class={styles.secondaryButton}
@@ -216,7 +217,7 @@ function ThresholdContent(props: {
         >
           <IconBookOpen size={ICON_PX.inline} /> Hearth
         </button>
-        {!props.syncAttached && (
+        <Show when={props.showSyncButton}>
           <button
             type="button"
             class={styles.secondaryButton}
@@ -227,9 +228,9 @@ function ThresholdContent(props: {
           >
             <IconFileCloud size={ICON_PX.inline} /> Sync
           </button>
-        )}
-        <ThemeToggle class={styles.themeToggleInline} />
+        </Show>
       </div>
     </div>
+    </>
   );
 }

@@ -32,7 +32,7 @@
   flex: 0 1 auto;
 }
 
-/* Daily kindling — spark/Begin above Add/Hearth; secondary row pinned at bottom. */
+/* Daily kindling — count leads, secondary actions follow, primary CTA anchors the stack. */
 .thresholdKindling {
   justify-content: flex-start;
   align-items: flex-start;
@@ -50,8 +50,7 @@
   min-height: 0;
 }
 
-.thresholdKindling .actions {
-}
+
 
 .title {
   font-family: var(--font-scripture);
@@ -253,8 +252,11 @@
   overflow-wrap: anywhere;
 }
 
-/* Theme toggle — inline in actions row */
-.themeToggleInline {
+/* Theme toggle — fixed top-right corner of viewport */
+.themeToggleCorner {
+  position: fixed;
+  top: calc(6px + env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
   color: var(--color-text-tertiary);
   min-width: 44px;
   min-height: 44px;
@@ -264,23 +266,88 @@
   justify-content: center;
   border-radius: var(--radius-field);
   transition: color var(--ease-ui), background var(--ease-ui);
-  margin-top: var(--space-sm);
+  z-index: 50;
+  opacity: 0.7;
 }
 
-.themeToggleInline:hover {
+.themeToggleCorner:hover {
   color: var(--color-text-secondary);
   background: var(--color-bg-elevated);
+  opacity: 1;
 }
 
-/* Kindling on wide viewports: CTAs span the same width as the shell (tagline/title column). */
+/* Kindling on medium+: centered like a landing page. */
 @media (min-width: 521px) {
-  .thresholdKindling .ctaColumn {
-    max-width: 100%;
-    align-self: stretch;
+  .thresholdKindling {
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .thresholdKindling > .title {
+    font-size: clamp(2.75rem, 5vw, 3.5rem);
+  }
+
+  .thresholdKindling > .divider {
+    align-self: center;
+  }
+
+  .thresholdKindling > .tagline {
+    text-align: center;
+    margin-inline: auto;
+    margin-bottom: var(--space-xl);
+  }
+
+  .thresholdKindling > .count {
+    justify-content: center;
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary);
+    order: 3;
+    margin-top: var(--space-lg);
+  }
+
+  .thresholdKindling > .ctaColumn {
+    flex: 0 0 auto;
+    max-width: 22rem;
+    align-self: center;
+  }
+
+  .thresholdKindling .kindlingFocus {
+    display: contents;
+  }
+
+  .thresholdKindling .actions {
+    order: 2;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-lg);
+    margin-top: var(--space-sm);
+  }
+
+  .thresholdKindling .secondaryButton {
+    width: auto;
+    flex: 0 0 auto;
+    min-height: auto;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-tertiary);
+    border: none;
+    background: transparent;
+  }
+
+  .thresholdKindling .secondaryButton:hover {
+    color: var(--color-text-secondary);
+    background: transparent;
+  }
+
+  .thresholdKindling .primaryButton {
+    order: 1;
   }
 }
 
-/* ── Desktop (≥ 800px): horizontal composition ── */
+/* ── Desktop (≥ 800px): landing page — centered, generous ── */
 
 @media (min-width: 800px) {
   .threshold {
@@ -300,60 +367,29 @@
     max-width: 26rem;
   }
 
-  /* Kindling state: two-column grid — branding left, actions right */
-  .thresholdKindling {
-    display: grid;
-    grid-template-columns: 1fr minmax(240px, 22rem);
-    grid-template-rows: auto auto auto;
-    row-gap: 0;
-    column-gap: clamp(3rem, 8vw, 6rem);
-    align-content: center;
-    align-items: center;
-    max-width: 52rem;
-    padding-inline: clamp(2rem, 5vw, 4rem);
-    text-align: left;
-    padding-bottom: max(var(--space-lg), env(safe-area-inset-bottom));
-  }
-
+  /* Kindling state: bigger title, wider action column */
   .thresholdKindling > .title {
-    grid-column: 1;
-    grid-row: 1;
     font-size: clamp(3rem, 6vw, 4.5rem);
     letter-spacing: -0.04em;
   }
 
   .thresholdKindling > .divider {
-    grid-column: 1;
-    grid-row: 2;
     width: 3.5rem;
     height: 3px;
     opacity: 0.7;
   }
 
   .thresholdKindling > .tagline {
-    grid-column: 1;
-    grid-row: 3;
     font-size: 1.15rem;
-    max-width: 36ch;
-  }
-
-  .thresholdKindling > .error {
-    grid-column: 1;
-    grid-row: 4;
+    max-width: 42ch;
   }
 
   .thresholdKindling > .ctaColumn {
-    grid-column: 2;
-    grid-row: 1 / 4;
-    align-self: center;
-    flex: 0 0 auto;
-    max-width: 17.5rem;
-    margin-top: 0;
+    max-width: 26rem;
   }
 
-  .thresholdKindling .kindlingFocus {
-    justify-content: center;
-    flex: 0 0 auto;
+  .thresholdKindling .primaryButton {
+    min-height: 54px;
   }
 }
 
@@ -363,6 +399,8 @@
     text-align: center;
     max-width: none;
   }
+
+  /* empty — fixed position works at all sizes */
 
   .thresholdEmpty {
     align-items: flex-start;
@@ -386,19 +424,16 @@
   }
 
   .thresholdKindling .count {
-    order: 1;
-    margin-top: 0;
     margin-bottom: var(--space-md);
   }
 
   .thresholdKindling .actions {
-    order: 2;
+    order: 1;
     margin-top: auto;
   }
 
   .thresholdKindling .primaryButton {
-    order: 3;
-    margin-top: var(--space-sm);
+    order: 2;
   }
 
   .ctaColumn {
