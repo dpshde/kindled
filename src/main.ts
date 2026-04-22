@@ -1,6 +1,7 @@
 import "./index.css";
 import { mountApp } from "./app/mount-app";
 import { initFileSync, pullFromFileSync, getSyncState } from "./sync/file-sync";
+import { initTheme } from "./ui/theme";
 
 const userAgent = navigator.userAgent;
 if (/iPhone|iPad|iPod/.test(userAgent)) {
@@ -20,6 +21,7 @@ if (/iPhone|iPad|iPod/.test(userAgent)) {
 
 const root = document.getElementById("root");
 if (!root) throw new Error("missing #root");
+initTheme();
 mountApp(root);
 
 // Initialise file-backed sync (no-op if no file attached).

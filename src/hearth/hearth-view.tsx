@@ -41,6 +41,7 @@ import { downloadExport, exportAllData, type ExportFormat } from "../db/export";
 import { isTauriRuntime } from "../sync/tauri-file-store";
 import { getSyncState, onSyncStateChange, type SyncState } from "../sync/file-sync";
 import { SyncSettingsView } from "../sync/SyncSettings";
+import { ThemeToggle } from "../ui/theme-toggle";
 
 
 export function HearthView(props: {
@@ -246,6 +247,7 @@ export function HearthView(props: {
             </Show>
           </div>
           <div class={shell.headerActions}>
+            <ThemeToggle class={shell.headerBtn} />
             <button
               type="button"
               class={`${shell.headerBtn} ${syncToneClass()}`}

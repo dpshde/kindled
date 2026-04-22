@@ -23,6 +23,7 @@ import { ICON_PX } from "../ui/icon-sizes";
 import styles from "./Threshold.module.css";
 import { hapticLight, hapticMedium } from "../haptics";
 import { SyncSettingsView } from "../sync/SyncSettings";
+import { ThemeToggle } from "../ui/theme-toggle";
 
 export function ThresholdView(props: {
   onBegin: (blockIds: string[]) => void;
@@ -76,6 +77,9 @@ export function ThresholdView(props: {
 
   return (
     <div class={stateClass()}>
+      <div class={styles.themeToggle}>
+        <ThemeToggle class={styles.themeToggleBtn} />
+      </div>
       <h1 class={styles.title}>Kindled</h1>
       <div class={styles.divider} aria-hidden="true" />
       <p class={styles.tagline}>Spark scripture into an eternal, internal flame.</p>
