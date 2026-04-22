@@ -150,6 +150,10 @@
   max-width: 40rem;
   margin-inline: auto;
   gap: 1.25rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
 }
 
 .passageContentFocus {
@@ -174,6 +178,14 @@
   justify-content: center;
   gap: 1.25rem;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+  padding-right: 2px;
+
+  /* Fade hint at bottom when scrollable */
+  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
 }
 
 .rhythmDate {
@@ -275,6 +287,8 @@
   white-space: pre-wrap;
   -webkit-user-select: text;
   user-select: text;
+  hanging-punctuation: first last;
+  text-wrap: pretty;
 }
 
 .verse {

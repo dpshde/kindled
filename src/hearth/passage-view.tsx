@@ -309,12 +309,14 @@ function PassageMain(props: {
     if (props.showReadingFocus) {
       e.preventDefault();
       e.stopPropagation();
+      hapticLight();
       props.onToggleReadingFocus(false);
       return;
     }
 
     // Only enter focus from taps on the reading stack area (scripture text)
     if (target?.closest(".readingStack, .textBlock, .verse, .refHead")) {
+      hapticSelection();
       props.onToggleReadingFocus(true);
     }
   }

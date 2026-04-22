@@ -69,6 +69,65 @@
   }
 }
 
+/* ── Dark mode ── */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Warm dark — not cold blue-black, but a deep charcoal-brown */
+    --color-bg: #1a1816;
+    --color-bg-warm: #222019;
+    --color-bg-elevated: #2a2722;
+    --color-bg-card: #312e28;
+    --color-bg-card-hover: #393530;
+
+    --color-text: #e8e4dc;
+    --color-text-secondary: #a69e92;
+    --color-text-tertiary: #7a7268;
+
+    --color-fire: #d4792a;
+    --color-fire-dim: #b8661e;
+    --color-ember: #e08a35;
+    --color-growth: #5f9a54;
+    --color-growth-dim: #4e8244;
+    --color-living: #6daa60;
+    --color-mature: #5a8f4e;
+
+    --color-line: rgba(232, 228, 220, 0.12);
+    --color-line-active: rgba(232, 228, 220, 0.28);
+  }
+
+  /* Selection highlight for dark */
+  ::selection {
+    background: #4a463c;
+    color: var(--color-text);
+  }
+
+  /* Select dropdown arrow for dark */
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23a69e92'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  }
+
+  select option {
+    background: var(--color-bg-warm);
+    color: var(--color-text);
+  }
+
+  input, textarea {
+    background: var(--color-bg-warm);
+    border-color: var(--color-line);
+  }
+
+  input:focus, textarea:focus {
+    border-color: var(--color-fire-dim);
+    background: var(--color-bg-elevated);
+  }
+
+  /* Update theme-color for mobile status bar */
+  meta[name="theme-color"] {
+    color: #1a1816;
+  }
+}
+
 html {
   scroll-behavior: auto;
   overflow-x: hidden;

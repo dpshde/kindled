@@ -75,7 +75,7 @@
   padding: 8px 0 24px;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 8px;
   flex: 1;
   width: 100%;
 }
@@ -99,7 +99,11 @@
 
 /* ── Cards ── */
 
-.cardWrap { position: relative; }
+.cardWrap {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
 .cardWrapEditable {}
 
 .card {
@@ -108,21 +112,24 @@
   gap: 14px;
   padding: 14px 16px;
   background: var(--color-bg);
-  border-radius: 0;
-  border: none;
-  border-bottom: 1px solid var(--color-line);
-  min-height: 52px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-line);
+  min-height: 56px;
   cursor: pointer;
   text-align: left;
   width: 100%;
-  transition: background var(--ease-ui), border-color var(--ease-ui);
+  transition: background var(--ease-ui), border-color var(--ease-ui), box-shadow var(--ease-ui);
 }
 
 .cardEditable { padding-right: 3.6rem; }
 
 .card:hover {
   background: var(--color-bg-card);
-  border-bottom-color: var(--color-line-active);
+  border-color: var(--color-line-active);
+}
+
+.card:active {
+  background: var(--color-bg-card-hover);
 }
 
 .cardIcon {
@@ -148,6 +155,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.35;
 }
 
 .cardRhythm {
@@ -160,7 +168,7 @@
 
 .cardSub {
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -433,8 +441,6 @@
   .card {
     padding: 14px 16px;
     min-height: unset;
-    border: 1px solid var(--color-line);
-    border-radius: 4px;
   }
 
   .cardEditable { padding-right: 4rem; }
@@ -449,7 +455,7 @@
 @media (hover: none) {
   .card:hover {
     background: var(--color-bg);
-    border-bottom-color: var(--color-line);
+    border-color: var(--color-line);
   }
 
   .cardEditBtn {
