@@ -362,13 +362,21 @@
     margin-top: auto;
   }
 
-  .thresholdKindling .actions {
-    order: 1;
+  .thresholdKindling .kindlingFocus {
+    display: contents;
   }
 
-  .thresholdKindling .kindlingFocus {
-    order: 2;
+  .thresholdKindling .count {
+    order: 1;
     margin-top: auto;
+  }
+
+  .thresholdKindling .actions {
+    order: 2;
+  }
+
+  .thresholdKindling .primaryButton {
+    order: 3;
   }
 
   .ctaColumn {
@@ -401,5 +409,22 @@
 
   .actions {
     margin-top: 0;
+  }
+}
+
+@media (hover: none) {
+  .primaryButton:hover {
+    background: var(--color-fire);
+  }
+
+  .button:hover {
+    background: transparent;
+    color: var(--color-text);
+  }
+
+  .secondaryButton:hover {
+    background: var(--color-bg);
+    border-color: var(--color-text-tertiary);
+    color: var(--color-text);
   }
 }
