@@ -2,7 +2,8 @@ import { defineConfig } from "vite";
 import solidPlugin from "vite-plugin-solid";
 
 const tauriHost = process.env.TAURI_DEV_HOST;
-const devPort = 3001;
+const isReplit = !!process.env.REPLIT_DEV_DOMAIN;
+const devPort = isReplit ? 5000 : 3001;
 
 export default defineConfig({
   plugins: [solidPlugin()],
@@ -14,7 +15,8 @@ export default defineConfig({
   },
   envPrefix: ["VITE_", "TAURI_ENV_"],
   server: {
-    host: tauriHost || false,
+    host: isReplit ? "0.0.0.0" : tauriHost || false,
+    allowedHosts: isReplit ? true : undefined,
     hmr: tauriHost
       ? {
           protocol: "ws",
