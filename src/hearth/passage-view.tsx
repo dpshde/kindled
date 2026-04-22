@@ -67,6 +67,7 @@ export function PassageView(props: {
   const [showSnooze, setShowSnooze] = createSignal(false);
   const [snoozeDate, setSnoozeDate] = createSignal("");
   const [showReviewDetails, setShowReviewDetails] = createSignal(false);
+  const [showReadingFocus, setShowReadingFocus] = createSignal(false);
   const [reflections, setReflections] = createSignal<Reflection[]>([]);
 
   let passageLoadSeq = 0;
@@ -77,6 +78,7 @@ export function PassageView(props: {
     setSnoozeDate("");
     setConfirmDelete(false);
     setShowReviewDetails(false);
+    setShowReadingFocus(false);
   }
 
   createEffect(() => {
@@ -111,22 +113,24 @@ export function PassageView(props: {
   return (
     <div class={shell.view}>
       <div class={shell.shell}>
-        <PassageHeader
-          loading={loading()}
-          block={block()}
-          lifeStage={lifeStage()}
-          kindlingProgress={props.kindlingProgress}
-          onBack={props.onBack}
-          onHome={props.onNavigateHome}
-          onInfo={() => {
-            hapticLight();
-            setShowReviewDetails(true);
-          }}
-          onDelete={() => {
-            hapticWarning();
-            setConfirmDelete(true);
-          }}
-        />
+        <Show when={!showReadingFocus()}>
+          <PassageHeader
+            loading={loading()}
+            block={block()}
+            lifeStage={lifeStage()}
+            kindlingProgress={props.kindlingProgress}
+            onBack={props.onBack}
+            onHome={props.onNavigateHome}
+            onInfo={() => {
+              hapticLight();
+              setShowReviewDetails(true);
+            }}
+            onDelete={() => {
+              hapticWarning();
+              setConfirmDelete(true);
+            }}
+          />
+        </Show>
         <div class={shell.main}>
           <Show
             when={!loading() && block()}
@@ -150,6 +154,8 @@ export function PassageView(props: {
               passageId={props.passageId}
               isKindling={isKindling}
               kindlingProgress={props.kindlingProgress}
+              showReadingFocus={showReadingFocus()}
+              onToggleReadingFocus={(next) => setShowReadingFocus(next)}
               onKindlingAdvance={props.onKindlingAdvance}
               onNavigate={props.onNavigate}
               onDeleted={props.onDeleted}
@@ -276,6 +282,8 @@ function PassageMain(props: {
   passageId: string;
   isKindling: boolean;
   kindlingProgress?: { index: number; total: number };
+  showReadingFocus: boolean;
+  onToggleReadingFocus: (next: boolean) => void;
   onKindlingAdvance?: () => void;
   onNavigate: (id: string) => void;
   onDeleted: () => void;
@@ -287,24 +295,49 @@ function PassageMain(props: {
   setReflections: (v: Reflection[]) => void;
 }): JSX.Element {
   const b = props.block;
+  const canToggleReadingFocus = () => b.type === "scripture";
+
+  function handleContentTap(e: MouseEvent) {
+    if (!canToggleReadingFocus()) return;
+
+    if (props.showReadingFocus) {
+      e.preventDefault();
+      e.stopPropagation();
+      props.onToggleReadingFocus(false);
+      return;
+    }
+
+    const target = e.target as HTMLElement | null;
+    if (target?.closest("button, a, input, textarea, select, [role='button']")) {
+      return;
+    }
+
+    props.onToggleReadingFocus(true);
+  }
 
   return (
-    <div class={`${shell.shellContent} ${styles.passageContent}`}>
+    <div
+      class={`${shell.shellContent} ${styles.passageContent}${props.showReadingFocus ? ` ${styles.passageContentFocus}` : ""}`}
+      onClick={handleContentTap}
+    >
       <PassageReadingStack
         block={b}
         outgoing={props.outgoing}
         backlinks={props.backlinks}
         linkedBlocks={props.linkedBlocks}
         isKindling={props.isKindling}
+        showReadingFocus={props.showReadingFocus}
       />
-      <PassageConnectionsLibrary
-        outgoing={props.outgoing}
-        backlinks={props.backlinks}
-        linkedBlocks={props.linkedBlocks}
-        isKindling={props.isKindling}
-        onNavigate={props.onNavigate}
-      />
-      <Show when={props.lifeStage}>
+      <Show when={!props.showReadingFocus}>
+        <PassageConnectionsLibrary
+          outgoing={props.outgoing}
+          backlinks={props.backlinks}
+          linkedBlocks={props.linkedBlocks}
+          isKindling={props.isKindling}
+          onNavigate={props.onNavigate}
+        />
+      </Show>
+      <Show when={props.lifeStage && !props.showReadingFocus}>
         <PassageDecisionPanel
           block={b}
           lifeStage={props.lifeStage!}
@@ -344,6 +377,7 @@ function PassageReadingStack(props: {
   backlinks: Link[];
   linkedBlocks: Record<string, Block>;
   isKindling: boolean;
+  showReadingFocus: boolean;
 }): JSX.Element {
   const b = props.block;
   return (
@@ -356,12 +390,14 @@ function PassageReadingStack(props: {
       <div class={styles.textBlock}>
         <VerseOrContent block={b} />
       </div>
-      <KindlingConnectionsSection
-        outgoing={props.outgoing}
-        backlinks={props.backlinks}
-        linkedBlocks={props.linkedBlocks}
-        isKindling={props.isKindling}
-      />
+      <Show when={!props.showReadingFocus}>
+        <KindlingConnectionsSection
+          outgoing={props.outgoing}
+          backlinks={props.backlinks}
+          linkedBlocks={props.linkedBlocks}
+          isKindling={props.isKindling}
+        />
+      </Show>
     </div>
   );
 }

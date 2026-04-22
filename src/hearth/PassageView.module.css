@@ -152,6 +152,12 @@
   gap: 1.25rem;
 }
 
+.passageContentFocus {
+  justify-content: center;
+  padding-top: max(20px, env(safe-area-inset-top));
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+}
+
 /*
  * Reading column grows to fill space above the decision panel; passage is vertically centered.
  * Decision panel uses margin-top: auto to pin to the bottom.
