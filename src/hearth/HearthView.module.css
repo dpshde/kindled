@@ -447,10 +447,40 @@
 }
 
 @media (hover: none) {
+  .card:hover {
+    background: var(--color-bg);
+    border-bottom-color: var(--color-line);
+  }
+
   .cardEditBtn {
     opacity: 1;
     pointer-events: auto;
     transform: none;
+  }
+
+  .cardEditBtn:hover {
+    color: var(--color-text-tertiary);
+    border-color: var(--color-line);
+    background: color-mix(in srgb, var(--color-bg) 90%, var(--color-bg-warm));
+  }
+
+  .editCloseBtn:hover {
+    color: var(--color-text-tertiary);
+    background: transparent;
+  }
+
+  .editSecondaryBtn:hover {
+    color: var(--color-text-secondary);
+    background: var(--color-bg);
+  }
+
+  .editPrimaryBtn:hover {
+    background: var(--color-fire);
+    border-color: var(--color-fire);
+  }
+
+  .exportMenuItem:hover {
+    background: transparent;
   }
 }
 

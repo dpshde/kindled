@@ -359,7 +359,7 @@
 
   .thresholdKindling .ctaColumn {
     flex: 1 1 auto;
-    margin-top: auto;
+    margin-top: 0;
   }
 
   .thresholdKindling .kindlingFocus {
@@ -368,7 +368,8 @@
 
   .thresholdKindling .count {
     order: 1;
-    margin-top: auto;
+    margin-top: 0;
+    margin-bottom: var(--space-md);
   }
 
   .thresholdKindling .actions {
@@ -377,6 +378,7 @@
 
   .thresholdKindling .primaryButton {
     order: 3;
+    margin-top: auto;
   }
 
   .ctaColumn {
