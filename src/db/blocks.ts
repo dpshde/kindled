@@ -107,6 +107,7 @@ export async function updateScripturePassageData(
   id: string,
   data: {
     content: string;
+    scripture_ref?: string;
     scripture_display_ref: string;
     scripture_translation: string;
     scripture_verses: Verse[];
@@ -115,8 +116,9 @@ export async function updateScripturePassageData(
   const db = await getDb();
   const now = new Date().toISOString();
   await db.run(
-    `UPDATE blocks SET content = ?, scripture_display_ref = ?, scripture_translation = ?, scripture_verses = ?, modified_at = ? WHERE id = ?`,
+    `UPDATE blocks SET content = ?, scripture_ref = ?, scripture_display_ref = ?, scripture_translation = ?, scripture_verses = ?, modified_at = ? WHERE id = ?`,
     data.content,
+    data.scripture_ref ?? null,
     data.scripture_display_ref,
     data.scripture_translation,
     JSON.stringify(data.scripture_verses),
@@ -209,4 +211,10 @@ export async function searchBlocks(query: string): Promise<Block[]> {
   );
 
   return rows.map((r) => blockFromRow(r));
+}
+
+export async function getTotalBlockCount(): Promise<number> {
+  const db = await getDb();
+  const rows = await db.query<{ count: string }>(`SELECT COUNT(*) as count FROM blocks`);
+  return parseInt(rows[0]?.count ?? "0", 10);
 }

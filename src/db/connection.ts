@@ -1,6 +1,7 @@
 import SQLiteESMFactory from "wa-sqlite/dist/wa-sqlite-async.mjs";
 import * as SQLite from "wa-sqlite";
 import { SCHEMA_VERSION, allMigrations } from "./schema";
+import { schedulePush } from "../sync/file-sync";
 
 type Sqlite3 = ReturnType<typeof SQLite.Factory>;
 
@@ -100,6 +101,7 @@ export class Database {
     if (this.isClosed) return;
     return this.withMutex(async () => {
       await this.sqlite3.exec(this.db, sql);
+      schedulePush();
     });
   }
 
@@ -129,6 +131,7 @@ export class Database {
     if (this.isClosed) return;
     return this.withMutex(async () => {
       await this.sqlite3.run(this.db, sql, params as (string | number | null)[]);
+      schedulePush();
     });
   }
 

@@ -9,12 +9,14 @@ export {
   findScriptureBlockByCanonicalRef,
   updateScripturePassageData,
   saveScripturePassageFromCapture,
+  getTotalBlockCount,
 } from "./blocks";
 export { createEntity, getEntity, getAllEntities, findEntityByName, addBlockMention, updateEntityFamiliarity } from "./entities";
 export {
   createLink,
   getOutgoingLinks,
   getBacklinks,
+  getLinksForReflection,
   deleteLinksFrom,
   deleteLinksForReflection,
   getConnectedBlockIds,

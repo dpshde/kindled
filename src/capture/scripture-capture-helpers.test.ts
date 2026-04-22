@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   normalizePassageTyping,
+  parseCapturePassage,
   parseInputToPassage,
 } from "./scripture-capture-helpers";
 
@@ -23,5 +24,35 @@ describe("parseInputToPassage", () => {
     expect(p?.start.chapter).toBe(4);
     expect(p?.start.verse).toBe(11);
     expect(p?.end.verse).toBe(13);
+  });
+
+  it("parses the screenshot case rom 5 3-6", () => {
+    const p = parseInputToPassage("rom 5 3-6");
+    expect(p?.canonical).toBe("ROM.5.3-6");
+    expect(p?.start.chapter).toBe(5);
+    expect(p?.start.verse).toBe(3);
+    expect(p?.end.verse).toBe(6);
+  });
+});
+
+describe("parseCapturePassage", () => {
+  it("uses selected book context for chapter/verse-only input", () => {
+    const p = parseCapturePassage("5 3-6", {
+      book: "ROM",
+      chapter: "",
+      startVerse: "",
+      endVerse: "",
+    });
+    expect(p?.canonical).toBe("ROM.5.3-6");
+  });
+
+  it("uses selected chapter context for verse-only input", () => {
+    const p = parseCapturePassage("3-6", {
+      book: "ROM",
+      chapter: "5",
+      startVerse: "",
+      endVerse: "",
+    });
+    expect(p?.canonical).toBe("ROM.5.3-6");
   });
 });

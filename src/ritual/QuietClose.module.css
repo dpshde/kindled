@@ -3,11 +3,11 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  min-height: 100vh;
-  min-height: 100dvh;
+  min-height: var(--viewport-block-size);
   max-width: 36rem;
   margin: 0 auto;
   padding: clamp(var(--space-xl), 8vh, 5.5rem) var(--space-lg);
+  padding-top: calc(clamp(var(--space-xl), 8vh, 5.5rem) + env(safe-area-inset-top));
   padding-inline: max(var(--space-lg), env(safe-area-inset-left))
     max(var(--space-lg), env(safe-area-inset-right));
   text-align: left;
@@ -80,3 +80,17 @@
   }
 }
 
+/* ── Desktop (≥ 800px): wider, more spacious rest screen ── */
+@media (min-width: 800px) {
+  .view {
+    max-width: 44rem;
+  }
+
+  .title {
+    font-size: clamp(1.35rem, 4vw, 2rem);
+  }
+
+  .sub {
+    max-width: 36ch;
+  }
+}

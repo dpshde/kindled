@@ -12,9 +12,9 @@ The app is a SPA served from a single HTML entry point. All routes are client-si
 
 ### Query Parameters
 
-#### Scripture capture deep link
+#### Scripture share deep link
 
-Open the app directly to the "Add Passage" screen with a pre-filled reference:
+Open the app directly to the Share screen with a pre-filled reference preview:
 
 ```
 ?ref=John 3:16
@@ -34,7 +34,8 @@ https://kindled.app/?ref=John%203%3A16
 | Screen       | Description                                                               |
 | ------------ | ------------------------------------------------------------------------- |
 | Threshold    | Home. Shows daily kindling queue (passages due for review).               |
-| Capture      | Add a new Scripture passage. Accepts a pre-filled ref via query param.    |
+| Capture      | Add a new Scripture passage manually from within the app.                  |
+| Share        | Shared-passage intake screen. Full preview + add-to-hearth action.        |
 | Hearth       | Library of all captured passages, entities, and notes. Includes export.   |
 | Passage      | View a single passage with its reflections, links, and review rhythm.     |
 | Note         | Write or edit a reflection on a passage.                                  |

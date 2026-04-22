@@ -1,0 +1,218 @@
+.shareContent {
+  width: 100%;
+  max-width: 40rem;
+  margin-inline: auto;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-sizing: border-box;
+  padding: 14px 0 max(14px, env(safe-area-inset-bottom));
+}
+
+.reading {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+  overflow-y: auto;
+}
+
+.textBlock {
+  font-family: var(--font-scripture);
+  font-size: 18px;
+  line-height: 1.8;
+  color: var(--color-text);
+  white-space: pre-wrap;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.verse {
+  margin: 0;
+  padding: 2px 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.45em;
+  row-gap: 0.15em;
+}
+
+.verseNum {
+  flex: 0 0 auto;
+  font-size: 0.68em;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  color: var(--color-text-tertiary);
+  line-height: 1;
+  position: relative;
+  top: -0.35em;
+  margin-right: 0.1em;
+}
+
+.verseText {
+  flex: 1 1 12em;
+  min-width: 0;
+}
+
+.actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 0.75rem;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  margin-top: auto;
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 20px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fffef9;
+  background: var(--color-fire);
+  border: 2px solid var(--color-fire);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background var(--ease-ui), opacity var(--ease-ui);
+}
+
+.primaryBtn:hover {
+  background: var(--color-fire-dim);
+  border-color: var(--color-fire-dim);
+}
+
+.primaryBtn:active {
+  opacity: 0.92;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.primaryBtn:focus-visible {
+  outline: 2px solid var(--color-fire);
+  outline-offset: 3px;
+}
+
+.contextBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 14px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color var(--ease-ui), background var(--ease-ui);
+}
+
+.contextBtn:hover {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-bg-warm) 40%, var(--color-bg));
+}
+
+.contextBtn:focus-visible {
+  outline: 2px solid var(--color-fire);
+  outline-offset: 2px;
+}
+
+.inlineError {
+  margin: 4px 0 0;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--color-ember);
+  text-align: center;
+}
+
+.copiedCheck {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-mature);
+  line-height: 1;
+}
+
+.stateShell {
+  justify-content: center;
+}
+
+.stateCard {
+  width: 100%;
+  max-width: 32rem;
+  margin: auto;
+  padding: 1.1rem 1rem;
+  border: 1px solid var(--color-line);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--color-bg-card) 84%, var(--color-bg-warm));
+}
+
+.stateTitle {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-scripture);
+  font-size: 1.1rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
+.stateText {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 34rem) {
+  .reading {
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .textBlock {
+    font-size: 16px;
+    line-height: 1.65;
+  }
+
+  .verse {
+    padding: 1px 0;
+  }
+}
+
+@media (min-width: 800px) {
+  .shareContent {
+    max-width: 48rem;
+    padding-top: clamp(1.75rem, 6vh, 4rem);
+    gap: 1.5rem;
+  }
+
+  .textBlock {
+    font-size: 19px;
+    line-height: 1.9;
+  }
+
+  .verseNum {
+    font-size: 0.72em;
+  }
+}

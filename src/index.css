@@ -46,6 +46,7 @@
   --ease-out: 220ms cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: 140ms ease-in-out;
   --ease-bounce: 0ms;
+  --viewport-block-size: 100dvh;
 
   font-family: var(--font-ui);
   line-height: 1.5;
@@ -72,6 +73,10 @@ html {
   scroll-behavior: auto;
 }
 
+html[data-platform="ios"] {
+  --viewport-block-size: 100vh;
+}
+
 *,
 *::before,
 *::after {
@@ -81,16 +86,21 @@ html {
 body {
   margin: 0;
   padding: 0;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: var(--viewport-block-size);
+  overflow: hidden;
+  overscroll-behavior: none;
   position: relative;
   background-color: var(--color-bg);
   color: var(--color-text);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #root {
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: var(--viewport-block-size);
+  overflow: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -118,10 +128,12 @@ input, textarea, select {
   border: 2px solid var(--color-line);
   border-radius: var(--radius-field);
   padding: 10px 14px;
-  font-size: 15px;
+  font-size: 16px;
   width: 100%;
   outline: none;
   transition: border-color var(--ease-in-out), background var(--ease-in-out);
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 input:focus, textarea:focus, select:focus {
@@ -185,4 +197,29 @@ a:hover {
   :root {
     font-size: 15px;
   }
+}
+
+/* Desktop: individual views control their own max-width. */
+@media (min-width: 800px) {
+  :root {
+    --page-shell-max: none;
+  }
+}
+
+/* Platform-specific adjustments for title bar */
+html[data-platform="macos"] {
+  /* macOS with overlay title bar has native traffic lights */
+  --title-bar-leading-space: 80px;
+}
+
+html[data-platform="windows"],
+html[data-platform="linux"] {
+  /* Windows/Linux need custom window controls */
+  --title-bar-leading-space: 16px;
+}
+
+html[data-platform="ios"],
+html[data-platform="android"] {
+  /* Mobile: no title bar, full screen */
+  --title-bar-leading-space: 0px;
 }

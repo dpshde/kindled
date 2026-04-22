@@ -101,6 +101,24 @@ export async function deleteLinksFrom(blockId: string): Promise<void> {
   await db.run(`DELETE FROM links WHERE from_block = ?`, blockId);
 }
 
+export async function getLinksForReflection(reflectionId: string): Promise<Link[]> {
+  const db = await getDb();
+  const safe = reflectionId.replace(/'/g, "''");
+  const rows = await db.query<Record<string, string>>(
+    `SELECT * FROM links WHERE reflection_id = '${safe}' ORDER BY created_at ASC`,
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    from_block: r.from_block,
+    to_block: r.to_block,
+    link_text: r.link_text,
+    context: r.context,
+    created_at: r.created_at,
+    is_entity_link: r.is_entity_link === "1",
+    reflection_id: r.reflection_id ?? null,
+  }));
+}
+
 export async function getConnectedBlockIds(blockId: string): Promise<string[]> {
   const outgoing = await getOutgoingLinks(blockId);
   const back = await getBacklinks(blockId);

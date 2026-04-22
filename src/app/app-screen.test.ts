@@ -1,26 +1,26 @@
 import { describe, expect, it } from "vitest";
 import {
-  initialAppScreenFromCaptureRef,
+  initialAppScreenFromShareRef,
   normalizeAppScreen,
   noteScreenFromPassageAction,
   screenAfterBeginKindling,
   screenAfterKindlingAdvance,
 } from "./app-screen";
 
-describe("initialAppScreenFromCaptureRef", () => {
-  it("returns capture when ref is non-empty", () => {
-    expect(initialAppScreenFromCaptureRef("John 3:16")).toEqual({
-      kind: "capture",
+describe("initialAppScreenFromShareRef", () => {
+  it("returns share when ref is non-empty", () => {
+    expect(initialAppScreenFromShareRef("John 3:16")).toEqual({
+      kind: "share",
       initialRef: "John 3:16",
     });
   });
 
   it("returns threshold when ref is null", () => {
-    expect(initialAppScreenFromCaptureRef(null)).toEqual({ kind: "threshold" });
+    expect(initialAppScreenFromShareRef(null)).toEqual({ kind: "threshold" });
   });
 
   it("returns threshold when ref is empty after trim", () => {
-    expect(initialAppScreenFromCaptureRef("   ")).toEqual({ kind: "threshold" });
+    expect(initialAppScreenFromShareRef("   ")).toEqual({ kind: "threshold" });
   });
 });
 
@@ -28,6 +28,12 @@ describe("normalizeAppScreen", () => {
   it("maps passage with empty passageId to threshold", () => {
     expect(
       normalizeAppScreen({ kind: "passage", passageId: "" }),
+    ).toEqual({ kind: "threshold" });
+  });
+
+  it("maps share with empty ref to threshold", () => {
+    expect(
+      normalizeAppScreen({ kind: "share", initialRef: "   " }),
     ).toEqual({ kind: "threshold" });
   });
 

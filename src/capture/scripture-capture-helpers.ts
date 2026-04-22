@@ -69,6 +69,60 @@ export function parseInputToPassage(val: string): ParsedPassage | null {
   return findAnyPassage(trimmed);
 }
 
+/**
+ * Capture-form parser.
+ *
+ * Uses the raw typed text first, then falls back to the currently selected
+ * book / chapter draft so the structured controls and freeform input stay in
+ * sync. This makes forms like "5 3-6" resolve correctly when "Romans" is
+ * selected in the book picker.
+ */
+export function parseCapturePassage(
+  val: string,
+  draft?: StructuredDraft | null,
+): ParsedPassage | null {
+  const direct = parseInputToPassage(val);
+  if (direct) return direct;
+
+  const trimmed = normalizePassageTyping(val);
+  if (!trimmed || !draft?.book) return null;
+
+  const bookName = OSIS_BOOK_NAMES[draft.book];
+  const candidates = new Set<string>();
+
+  // User typed only chapter / verse pieces while book is selected.
+  if (/^\d+$/.test(trimmed)) {
+    candidates.add(`${bookName} ${trimmed}`);
+    if (draft.chapter) candidates.add(`${bookName} ${draft.chapter}:${trimmed}`);
+  }
+
+  const chapterVerse = trimmed.match(/^(\d+)(?::|\s+)(\d+)(?:-(\d+))?$/);
+  if (chapterVerse) {
+    const [, chapter, startVerse, endVerse] = chapterVerse;
+    candidates.add(
+      `${bookName} ${chapter}:${startVerse}${endVerse ? `-${endVerse}` : ""}`,
+    );
+  }
+
+  const verseOnly = trimmed.match(/^(\d+)(?:-(\d+))?$/);
+  if (verseOnly && draft.chapter) {
+    const [, startVerse, endVerse] = verseOnly;
+    candidates.add(
+      `${bookName} ${draft.chapter}:${startVerse}${endVerse ? `-${endVerse}` : ""}`,
+    );
+  }
+
+  const fromDraft = buildRefString(draft);
+  if (fromDraft) candidates.add(fromDraft);
+
+  for (const candidate of candidates) {
+    const parsed = parseInputToPassage(candidate);
+    if (parsed) return parsed;
+  }
+
+  return null;
+}
+
 export function buildRefString(d: StructuredDraft): string {
   if (!d.book) return "";
   const name = OSIS_BOOK_NAMES[d.book as OsisBookCode];

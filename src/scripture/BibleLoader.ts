@@ -35,43 +35,67 @@ async function loadBook(osis: OsisBookCode): Promise<void> {
   if (bookLoadPromises.has(key)) return bookLoadPromises.get(key)!;
 
   const promise = (async () => {
-    const response = await fetch(`/data/bible/${key}.jsonl`);
-    if (!response.ok) return;
-
-    const text = await response.text();
-    const lines = text.trim().split("\n");
-
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      try {
-        const raw: BibleVerse = JSON.parse(line);
-        const filePrefix = raw.ref.split(".")[0];
-        const mapped = BSB_PREFIX_TO_OSIS.get(filePrefix);
-        if (!mapped) continue;
-
-        const osisRef = `${mapped}.${raw.chapter}.${raw.verseNum}`;
-        const verse: BibleVerse = { ...raw, ref: osisRef };
-        verseCache.set(osisRef, verse);
-
-        if (!bookIndex.has(mapped)) {
-          bookIndex.set(mapped, {
-            name: verse.book,
-            code: mapped,
-            chapters: 0,
-            versesPerChapter: {},
-          });
-        }
-        const book = bookIndex.get(mapped)!;
-        const chapter = parseInt(verse.chapter, 10);
-        const verseNum = parseInt(verse.verseNum, 10);
-
-        if (chapter > book.chapters) book.chapters = chapter;
-        if (!book.versesPerChapter[chapter] || verseNum > book.versesPerChapter[chapter]) {
-          book.versesPerChapter[chapter] = verseNum;
-        }
-      } catch {
-        // Skip malformed lines
+    try {
+      const url = `/data/bible/${key}.json`;
+      console.log("[BibleLoader] loadBook:start", { osis, key, url });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10_000);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+      console.log("[BibleLoader] loadBook:response", {
+        key,
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+      });
+      if (!response.ok) {
+        console.error(`[BibleLoader] Failed to load ${key}: ${response.status} ${response.statusText}`);
+        return;
       }
+
+      const text = await response.text();
+      const lines = text.trim().split("\n");
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const raw: BibleVerse = JSON.parse(line);
+          const filePrefix = raw.ref.split(".")[0];
+          const mapped = BSB_PREFIX_TO_OSIS.get(filePrefix);
+          if (!mapped) continue;
+
+          const osisRef = `${mapped}.${raw.chapter}.${raw.verseNum}`;
+          const verse: BibleVerse = { ...raw, ref: osisRef };
+          verseCache.set(osisRef, verse);
+
+          if (!bookIndex.has(mapped)) {
+            bookIndex.set(mapped, {
+              name: verse.book,
+              code: mapped,
+              chapters: 0,
+              versesPerChapter: {},
+            });
+          }
+          const book = bookIndex.get(mapped)!;
+          const chapter = parseInt(verse.chapter, 10);
+          const verseNum = parseInt(verse.verseNum, 10);
+
+          if (chapter > book.chapters) book.chapters = chapter;
+          if (!book.versesPerChapter[chapter] || verseNum > book.versesPerChapter[chapter]) {
+            book.versesPerChapter[chapter] = verseNum;
+          }
+        } catch {
+          // Skip malformed lines
+        }
+      }
+      console.log("[BibleLoader] loadBook:loaded", {
+        key,
+        lineCount: lines.length,
+        cachedVerses: Array.from(verseCache.keys()).filter((ref) => ref.startsWith(`${osis}.`)).length,
+        chapters: bookIndex.get(osis)?.chapters ?? 0,
+      });
+    } catch (e) {
+      console.error(`[BibleLoader] Error loading ${key}:`, e);
     }
   })();
 
@@ -97,11 +121,15 @@ export async function getChapterVerses(
   osisBook: OsisBookCode | string,
   chapter: number,
 ): Promise<BibleVerse[]> {
+  console.log("[BibleLoader] getChapterVerses:start", { osisBook, chapter });
   await loadBook(osisBook as OsisBookCode);
   const verses: BibleVerse[] = [];
 
   const book = bookIndex.get(osisBook as OsisBookCode);
-  if (!book) return verses;
+  if (!book) {
+    console.log("[BibleLoader] getChapterVerses:no-book-index", { osisBook, chapter });
+    return verses;
+  }
 
   const maxVerse = book.versesPerChapter[chapter] ?? 0;
   for (let i = 1; i <= maxVerse; i++) {
@@ -110,6 +138,12 @@ export async function getChapterVerses(
     if (verse) verses.push(verse);
   }
 
+  console.log("[BibleLoader] getChapterVerses:done", {
+    osisBook,
+    chapter,
+    maxVerse,
+    returned: verses.length,
+  });
   return verses;
 }
 

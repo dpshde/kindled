@@ -11,20 +11,39 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "lint": "oxlint src/",
-    "complexity": "lizard src/app src/capture src/hearth src/ritual src/ui/icons src/main.ts -l typescript -x '*test*' -C 12"
+    "complexity": "lizard src/app src/capture src/hearth src/ritual src/ui/icons src/main.ts -l typescript -x '*test*' -C 12",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri:ios:init": "tauri ios init",
+    "tauri:ios:dev": "tauri ios dev",
+    "tauri:ios:build": "tauri ios build",
+    "tauri:android:init": "tauri android init",
+    "tauri:android:dev": "tauri android dev",
+    "tauri:android:build": "tauri android build"
   },
   "dependencies": {
-    "@arrow-js/core": "^1.0.6",
+    "@tauri-apps/api": "^2.10.1",
+    "@tauri-apps/plugin-dialog": "^2.7.0",
+    "@tauri-apps/plugin-fs": "^2.5.0",
+    "@tauri-apps/plugin-haptics": "^2.3.2",
+    "@tauri-apps/plugin-os": "^2.3.2",
+    "@tauri-apps/plugin-shell": "^2.3.5",
     "grab-bcv": "^0.1.5",
+    "solid-js": "^1.9.12",
+    "tauri-plugin-macos-haptics-api": "^1.0.0",
     "wa-sqlite": "^1.0.0",
     "web-haptics": "^0.0.6"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.10.1",
     "@types/node": "^24.12.2",
     "@vitest/coverage-v8": "^4.1.4",
+    "fake-indexeddb": "^6.2.5",
+    "happy-dom": "^20.9.0",
     "oxlint": "^1.60.0",
     "typescript": "~6.0.2",
     "vite": "^8.0.4",
+    "vite-plugin-solid": "^2.11.12",
     "vitest": "^4.1.4"
   }
 }

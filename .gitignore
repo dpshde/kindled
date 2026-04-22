@@ -35,3 +35,10 @@ skills-lock.json
 .kiro/skills/
 .pi/skills/
 .windsurf/skills/
+
+# Local/generated
+coverage/
+.superset/
+data/
+src-tauri/target/
+src-tauri/gen/apple/build/

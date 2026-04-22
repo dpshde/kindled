@@ -1,6 +1,7 @@
 import { getDb } from "./connection";
 import { SCHEMA_VERSION } from "./schema";
 import type { Block, Entity, LifeStageRecord, Link, Reflection } from "./types";
+import { isTauriRuntime } from "../sync/tauri-file-store";
 
 export interface KindledExport {
   format: "kindled";
@@ -157,13 +158,197 @@ function lifeStageFromRow(r: Record<string, string>): LifeStageRecord {
   };
 }
 
-export function downloadExport(payload: KindledExport): void {
-  const json = JSON.stringify(payload, null, 2);
-  const blob = new Blob([json], { type: "application/json" });
+export type ExportFormat = "json" | "csv" | "markdown" | "text";
+
+function escapeCsvField(val: string): string {
+  if (val.includes(",") || val.includes('"') || val.includes("\n")) {
+    return `"${val.replace(/"/g, '""')}"`;
+  }
+  return val;
+}
+
+function joinArrayForCsv(arr: string[]): string {
+  return arr.join("; ");
+}
+
+export function formatAsCsv(payload: KindledExport): string {
+  const header = [
+    "Title",
+    "Type",
+    "Content",
+    "Scripture Ref",
+    "Translation",
+    "Tags",
+    "Entity Name",
+    "Entity Type",
+    "Source",
+    "Captured At",
+    "Life Stage",
+    "Review Count",
+    "Settledness",
+  ].join(",");
+
+  const rows = payload.data.blocks.map((b) => {
+    const ls = payload.data.life_stages.find((s) => s.block_id === b.id);
+    const title = b.scripture_display_ref ?? b.entity_name ?? "Note";
+    const stage = ls?.stage ?? "";
+    const reviewCount = ls ? String(ls.review_count) : "";
+    const settledness = ls ? String(ls.settledness) : "";
+    return [
+      escapeCsvField(title),
+      escapeCsvField(b.type),
+      escapeCsvField(b.content),
+      escapeCsvField(b.scripture_ref ?? ""),
+      escapeCsvField(b.scripture_translation ?? ""),
+      escapeCsvField(joinArrayForCsv(b.tags)),
+      escapeCsvField(b.entity_name ?? ""),
+      escapeCsvField(b.entity_type ?? ""),
+      escapeCsvField(b.source ?? ""),
+      escapeCsvField(b.captured_at),
+      escapeCsvField(stage),
+      reviewCount,
+      settledness,
+    ].join(",");
+  });
+
+  return [header, ...rows].join("\n");
+}
+
+export function formatAsMarkdown(payload: KindledExport): string {
+  const lines: string[] = [];
+  lines.push(`# Kindled Export`);
+  lines.push(`_Exported ${payload.exported_at}_`);
+  lines.push("");
+  lines.push(`${payload.counts.blocks} passages · ${payload.counts.entities} entities · ${payload.counts.reflections} reflections`);
+  lines.push("");
+  lines.push("---");
+  lines.push("");
+
+  for (const b of payload.data.blocks) {
+    const title = b.scripture_display_ref ?? b.entity_name ?? "Note";
+    const ls = payload.data.life_stages.find((s) => s.block_id === b.id);
+    lines.push(`## ${title}`);
+    if (b.scripture_ref) {
+      lines.push(`**${b.scripture_ref}** (${b.scripture_translation ?? ""})`);
+    }
+    if (b.type !== "scripture") {
+      lines.push(`_Type: ${b.type}_`);
+    }
+    lines.push("");
+    lines.push(b.content);
+    lines.push("");
+    if (ls) {
+      lines.push(`> Stage: **${ls.stage}** · Reviews: ${ls.review_count} · Settledness: ${ls.settledness}`);
+      lines.push("");
+    }
+    const reflections = payload.data.reflections.filter((r) => r.block_id === b.id);
+    for (const r of reflections) {
+      lines.push(`### Reflection`);
+      lines.push(r.body);
+      lines.push("");
+    }
+    lines.push("---");
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+export function formatAsPlainText(payload: KindledExport): string {
+  const lines: string[] = [];
+  lines.push(`Kindled Export`);
+  lines.push(`Exported ${payload.exported_at}`);
+  lines.push("");
+
+  for (const b of payload.data.blocks) {
+    const title = b.scripture_display_ref ?? b.entity_name ?? "Note";
+    const ls = payload.data.life_stages.find((s) => s.block_id === b.id);
+    lines.push(`${title}`);
+    if (b.scripture_ref && b.scripture_translation) {
+      lines.push(`${b.scripture_ref} (${b.scripture_translation})`);
+    }
+    lines.push("");
+    lines.push(b.content);
+    lines.push("");
+    if (ls) {
+      lines.push(`Stage: ${ls.stage} · Reviews: ${ls.review_count}`);
+    }
+    const reflections = payload.data.reflections.filter((r) => r.block_id === b.id);
+    for (const r of reflections) {
+      lines.push("");
+      lines.push(`Reflection: ${r.body}`);
+    }
+    lines.push("────────────────────────────────");
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+export function formatPayload(payload: KindledExport, format: ExportFormat): string {
+  switch (format) {
+    case "json":
+      return JSON.stringify(payload, null, 2);
+    case "csv":
+      return formatAsCsv(payload);
+    case "markdown":
+      return formatAsMarkdown(payload);
+    case "text":
+      return formatAsPlainText(payload);
+  }
+}
+
+function fileExtension(format: ExportFormat): string {
+  switch (format) {
+    case "json": return "json";
+    case "csv": return "csv";
+    case "markdown": return "md";
+    case "text": return "txt";
+  }
+}
+
+function mimeType(format: ExportFormat): string {
+  switch (format) {
+    case "json": return "application/json";
+    case "csv": return "text/csv";
+    case "markdown": return "text/markdown";
+    case "text": return "text/plain";
+  }
+}
+
+function filterName(format: ExportFormat): string {
+  switch (format) {
+    case "json": return "JSON";
+    case "csv": return "CSV";
+    case "markdown": return "Markdown";
+    case "text": return "Text";
+  }
+}
+
+export async function downloadExport(payload: KindledExport, format: ExportFormat = "json"): Promise<void> {
+  const content = formatPayload(payload, format);
+  const ext = fileExtension(format);
+  const mime = mimeType(format);
+  const filename = `kindled-export-${new Date().toISOString().slice(0, 10)}.${ext}`;
+
+  if (isTauriRuntime()) {
+    const { save } = await import("@tauri-apps/plugin-dialog");
+    const { writeTextFile } = await import("@tauri-apps/plugin-fs");
+    const path = await save({
+      defaultPath: filename,
+      filters: [{ name: filterName(format), extensions: [ext] }],
+    });
+    if (!path) return; // user cancelled
+    await writeTextFile(path, content);
+    return;
+  }
+
+  // Browser fallback
+  const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `kindled-export-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

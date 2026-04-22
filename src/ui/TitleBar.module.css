@@ -1,0 +1,254 @@
+/**
+ * Title Bar - Kindled Design System
+ * 
+ * Warm, paper-like aesthetic with calm, page-stable UI.
+ * Uses solid color planes (no alpha stacks) for crisp rendering.
+ * 
+ * Key design tokens:
+ * - Background: var(--color-bg) for seamless integration
+ * - Text: var(--font-scripture) for elegance, var(--color-text)
+ * - Borders: var(--color-line) for subtle separation
+ * - Spacing: env(safe-area-inset-top) for mobile notches
+ */
+
+.titleBar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 max(var(--space-md), env(safe-area-inset-left)) 0 max(var(--space-md), env(safe-area-inset-right));
+  padding-top: env(safe-area-inset-top);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-line);
+  box-sizing: border-box;
+  position: relative;
+  z-index: 100;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+/* macOS overlay mode: padding for traffic lights at x:16, y:16 */
+/* Traffic lights are 52px wide (3 buttons × 12px + 2 gaps × 8px) sitting at left edge */
+.macos {
+  padding-left: 84px; /* 16px (traffic light x) + 52px (traffic lights width) + 16px (gap) */
+}
+
+/* When there's a back button on macOS, we need slightly less padding */
+/* because the button sits where the traffic lights are */
+.macos:has(.backBtn) {
+  padding-left: 72px;
+}
+
+/* Allow interactive elements to receive events */
+.titleBar button,
+.titleBar [data-tauri-drag-region="false"] {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* Three equal columns for true centering */
+/* The title will be truly centered in the window, not centered in remaining space */
+.leading,
+.trailing {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.leading {
+  justify-content: flex-start;
+}
+
+.trailing {
+  justify-content: flex-end;
+}
+
+/* Center column: size to content, not flex-grow */
+.center {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  max-width: 50%; /* Prevent overflow into side columns */
+}
+
+/* Title typography - matches scripture/header style */
+.title {
+  margin: 0;
+  font-family: var(--font-scripture);
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--color-text);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Placeholder for when no title provided */
+.titlePlaceholder {
+  font-family: var(--font-scripture);
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+}
+
+/* Back button - matches app-shell backBtn style */
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 8px;
+  border-radius: var(--radius-field);
+  color: var(--color-text-tertiary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color var(--ease-ui), background var(--ease-ui);
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.backBtn:hover {
+  color: var(--color-text);
+  background: var(--color-bg-elevated);
+}
+
+.backBtn:active {
+  transform: scale(0.96);
+}
+
+/* Window controls for non-macOS platforms */
+.windowControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.windowControl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-elevated);
+  transition: color var(--ease-ui), background var(--ease-ui), transform 100ms ease;
+}
+
+.windowControl:hover {
+  color: var(--color-text);
+  background: var(--color-bg-card);
+  transform: scale(1.05);
+}
+
+.windowControl:active {
+  transform: scale(0.95);
+}
+
+.closeControl:hover {
+  color: #fff;
+  background: #e74c3c;
+}
+
+/* Variant-specific styles */
+
+/* Default: clean, minimal */
+.default {
+  /* Uses base styles */
+}
+
+/* Passage view: more emphasis, slightly larger title */
+.passage .title {
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+/* Capture view: minimal chrome, focus on content */
+.capture {
+  border-bottom-color: transparent;
+  opacity: 0.9;
+}
+
+/* Library: consistent with navigation */
+.library .title {
+  font-weight: 600;
+}
+
+/* Mobile adaptations */
+@media (max-width: 480px) {
+  .titleBar {
+    height: 48px;
+    padding: 0 var(--space-sm);
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .macos {
+    padding-left: 72px; /* Slightly less on mobile */
+  }
+
+  .macos:has(.backBtn) {
+    padding-left: 60px;
+  }
+
+  .title {
+    font-size: 1.05rem;
+    max-width: 70%; /* Allow more space on small screens */
+  }
+
+  .leading,
+  .trailing {
+    flex: 0 0 auto;
+    min-width: 44px;
+  }
+
+  .center {
+    max-width: 70%;
+  }
+}
+
+/* iOS-specific: account for home indicator safe area */
+@supports (-webkit-touch-callout: none) {
+  .titleBar {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+}
+
+/* Dark mode support (if system changes) */
+@media (prefers-color-scheme: dark) {
+  /* Uses CSS variables which should update in dark mode if supported */
+  .titleBar {
+    background: var(--color-bg);
+    border-bottom-color: var(--color-line);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .backBtn,
+  .windowControl {
+    transition: none;
+  }
+
+  .backBtn:active,
+  .windowControl:active {
+    transform: none;
+  }
+}

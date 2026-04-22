@@ -7,6 +7,7 @@ export type AppScreen =
   | { kind: "quietClose" }
   | { kind: "library" }
   | { kind: "capture"; initialRef?: string }
+  | { kind: "share"; initialRef: string }
   | {
       kind: "note";
       passageId: string;
@@ -20,14 +21,17 @@ export type AppScreen =
       kindling?: { queueIds: string[]; index: number };
     };
 
-export function initialAppScreenFromCaptureRef(ref: string | null): AppScreen {
+export function initialAppScreenFromShareRef(ref: string | null): AppScreen {
   const t = ref?.trim();
-  if (t) return { kind: "capture", initialRef: t };
+  if (t) return { kind: "share", initialRef: t };
   return { kind: "threshold" };
 }
 
 export function normalizeAppScreen(screen: AppScreen): AppScreen {
   if (screen.kind === "passage" && !screen.passageId) {
+    return { kind: "threshold" };
+  }
+  if (screen.kind === "share" && !screen.initialRef.trim()) {
     return { kind: "threshold" };
   }
   return screen;

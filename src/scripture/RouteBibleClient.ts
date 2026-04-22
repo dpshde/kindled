@@ -53,10 +53,18 @@ export async function resolvePassage(
   input: string,
   translation = "BSB",
 ): Promise<ResolvedPassage | null> {
+  console.log("[RouteBible] resolvePassage:start", { input, translation });
   const result = tryParsePassage(input);
-  if (!result.ok) return null;
+  if (!result.ok) {
+    console.log("[RouteBible] resolvePassage:parse-failed", {
+      input,
+      error: result.error,
+    });
+    return null;
+  }
 
   const passage = result.value;
+  console.log("[RouteBible] resolvePassage:parsed", passage);
   const osisBook = passage.start.book as OsisBookCode;
   const chapter = passage.start.chapter;
   const verseStart = passage.start.verse;
@@ -68,6 +76,11 @@ export async function resolvePassage(
     let verses: Verse[] = [];
 
     const chapterVerses = await getChapterVerses(osisBook, chapter);
+    console.log("[RouteBible] resolvePassage:chapter-verses", {
+      osisBook,
+      chapter,
+      count: chapterVerses.length,
+    });
 
     if (verseStart != null) {
       const endVerse = verseEnd ?? verseStart;
@@ -94,6 +107,12 @@ export async function resolvePassage(
       displayRef = `${bookName} ${chapter}`;
     }
 
+    console.log("[RouteBible] resolvePassage:done", {
+      canonical: passage.canonical,
+      displayRef,
+      verseCount: verses.length,
+      routeUrl,
+    });
     return {
       ref: passage.canonical,
       displayRef,
@@ -101,14 +120,21 @@ export async function resolvePassage(
       verses,
       routeUrl,
     };
-  } catch {
+  } catch (error) {
+    console.error("[RouteBible] resolvePassage:exception", {
+      input,
+      canonical: passage.canonical,
+      error,
+    });
     const bookName = OSIS_BOOK_NAMES[osisBook] ?? osisBook;
-    return {
+    const fallback = {
       ref: passage.canonical,
       displayRef: `${bookName} ${chapter}`,
       translation,
       verses: [],
       routeUrl,
     };
+    console.log("[RouteBible] resolvePassage:fallback-empty", fallback);
+    return fallback;
   }
 }

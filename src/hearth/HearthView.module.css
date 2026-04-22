@@ -1,25 +1,43 @@
-.addBtn {
-  color: var(--color-growth);
-  min-width: 48px;
-  min-height: 48px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-field);
-  transition: color var(--ease-ui), background var(--ease-ui);
+/* ── Hearth-specific styles ── */
+
+@media (min-width: 521px) and (max-width: 799px) {
+  .hearthHeader {
+    border-bottom: none;
+  }
 }
 
-.addBtn:hover {
-  color: var(--color-fire);
-  background: var(--color-bg-elevated);
+.hearthCount {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
 }
+
+/* Sync status color overrides */
+.syncBtnIdle { color: var(--color-text-tertiary); }
+.syncBtnAttached { color: var(--color-growth); }
+.syncBtnNeedsPermission { color: var(--color-ember); }
+.syncBtnSyncing { color: var(--color-fire); }
+
+/* ── Search ── */
 
 .search {
   position: relative;
-  padding: 8px 0 8px;
   display: flex;
   align-items: center;
+  width: 100%;
+}
+
+.hearthContent {
+  padding-top: 0;
+  overflow-y: auto;
+}
+
+@media (max-width: 520px) {
+  .hearthContent {
+    padding-bottom: 0;
+  }
 }
 
 .searchIcon {
@@ -30,17 +48,34 @@
 }
 
 .searchInput {
-  padding-left: 38px;
+  padding: 10px 14px 10px 38px;
   font-size: 14px;
   background: var(--color-bg);
-  border-radius: 3px;
+  border: 2px solid var(--color-line);
+  border-radius: var(--radius-field);
+}
+
+@media (max-width: 520px) {
+  .search {
+    order: 1;
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    background: var(--color-bg);
+    border-top: 1px solid var(--color-line);
+    padding: var(--space-sm) 0 max(var(--space-sm), env(safe-area-inset-bottom));
+  }
+
+  .list {
+    padding-bottom: 8px;
+  }
 }
 
 .list {
   padding: 8px 0 24px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
   flex: 1;
   width: 100%;
 }
@@ -62,14 +97,20 @@
   opacity: 0.45;
 }
 
+/* ── Cards ── */
+
+.cardWrap { position: relative; }
+.cardWrapEditable {}
+
 .card {
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
   background: var(--color-bg);
-  border-radius: 3px;
-  border: 2px solid var(--color-line);
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid var(--color-line);
   min-height: 52px;
   cursor: pointer;
   text-align: left;
@@ -77,9 +118,11 @@
   transition: background var(--ease-ui), border-color var(--ease-ui);
 }
 
+.cardEditable { padding-right: 3.6rem; }
+
 .card:hover {
   background: var(--color-bg-card);
-  border-color: var(--color-line-active);
+  border-bottom-color: var(--color-line-active);
 }
 
 .cardIcon {
@@ -124,9 +167,298 @@
   line-height: 1.4;
 }
 
-@media (max-width: 480px) {
+.cardEditBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  background: color-mix(in srgb, var(--color-bg) 90%, var(--color-bg-warm));
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-2px);
+  transition:
+    opacity var(--ease-ui),
+    transform var(--ease-ui),
+    color var(--ease-ui),
+    border-color var(--ease-ui),
+    background var(--ease-ui);
+}
+
+.cardWrapEditable:hover .cardEditBtn,
+.cardWrapEditable:focus-within .cardEditBtn {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.cardEditBtn:hover,
+.cardEditBtn:focus-visible {
+  color: var(--color-fire);
+  border-color: color-mix(in srgb, var(--color-fire) 35%, var(--color-line));
+  background: var(--color-bg-warm);
+}
+
+/* ── Edit modal ── */
+
+.editOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(38, 35, 31, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.editPanel {
+  width: min(92vw, 44rem);
+  max-height: min(88vh, 48rem);
+  overflow-y: auto;
+  background: var(--color-bg);
+  border: 2px solid var(--color-line);
+  border-radius: 4px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.editHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.2rem 1rem;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.editEyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.editTitle {
+  margin: 0;
+  font-family: var(--font-scripture);
+  font-size: 1.35rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
+.editCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  color: var(--color-text-tertiary);
+  border-radius: 999px;
+  transition: color var(--ease-ui), background var(--ease-ui);
+}
+
+.editCloseBtn:hover,
+.editCloseBtn:focus-visible {
+  color: var(--color-text);
+  background: var(--color-bg-warm);
+}
+
+.editBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.2rem;
+}
+
+.editHint { margin: 0; font-size: 13px; line-height: 1.5; color: var(--color-text-secondary); }
+.editStatus { margin: 0; font-size: 13px; font-weight: 600; color: var(--color-fire); }
+.editError { margin: 0; font-size: 13px; color: var(--color-ember); }
+
+.editMetaGrid {
+  display: grid;
+  grid-template-columns: 1.65fr minmax(6rem, 0.75fr);
+  gap: 0.8rem;
+}
+
+.editField { display: flex; flex-direction: column; gap: 0.35rem; }
+.editLabel { font-size: 12px; font-weight: 700; letter-spacing: 0.03em; color: var(--color-text-secondary); }
+.editVerseList { display: flex; flex-direction: column; gap: 0.75rem; }
+.editVerseRow { display: flex; flex-direction: column; gap: 0.35rem; }
+.editVerseNumber { font-size: 12px; font-weight: 700; letter-spacing: 0.03em; color: var(--color-text-secondary); }
+.editTextarea { min-height: 6rem; font-family: var(--font-scripture); font-size: 17px; line-height: 1.7; }
+
+.editFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0 1.2rem 1.2rem;
+}
+
+.editSecondaryBtn,
+.editPrimaryBtn {
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border-radius: 3px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  transition:
+    background var(--ease-ui),
+    border-color var(--ease-ui),
+    color var(--ease-ui),
+    opacity var(--ease-ui);
+}
+
+.editSecondaryBtn {
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+}
+
+.editSecondaryBtn:hover,
+.editSecondaryBtn:focus-visible {
+  color: var(--color-text);
+  background: var(--color-bg-warm);
+}
+
+.editPrimaryBtn {
+  color: #fffef9;
+  border: 1px solid var(--color-fire);
+  background: var(--color-fire);
+}
+
+.editPrimaryBtn:hover,
+.editPrimaryBtn:focus-visible {
+  background: var(--color-fire-dim);
+  border-color: var(--color-fire-dim);
+}
+
+.editPrimaryBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Export menu ── */
+
+.exportWrap {
+  position: relative;
+}
+
+.exportMenu {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 0;
+  z-index: 120;
+  min-width: 200px;
+  padding: 4px 0;
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.exportMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--ease-ui);
+}
+
+.exportMenuItem:hover,
+.exportMenuItem:focus-visible {
+  background: var(--color-bg-warm);
+}
+
+.exportMenuIcon {
+  display: flex;
+  color: var(--color-text-tertiary);
+}
+
+.exportMenuLabel {
+  flex: 1;
+}
+
+.exportMenuHint {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.exportMenuDivider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--color-line);
+}
+
+/* ── Desktop (≥ 800px): full-width library grid ── */
+
+@media (min-width: 800px) {
+  .hearthContent {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding-top: clamp(2rem, 6vh, 4rem);
+  }
+
+  .list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+    align-content: start;
+    flex: 0 1 auto;
+    overflow-y: auto;
+  }
+
+  .card {
+    padding: 14px 16px;
+    min-height: unset;
+    border: 1px solid var(--color-line);
+    border-radius: 4px;
+  }
+
+  .cardEditable { padding-right: 4rem; }
+  .cardTitle { font-size: 17px; }
+
   .searchInput {
-    font-size: 16px;
+    font-size: 15px;
+    padding: 12px 14px 12px 40px;
   }
 }
 
+@media (hover: none) {
+  .cardEditBtn {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .searchInput { font-size: 16px; }
+
+  .editOverlay { padding: 12px; align-items: flex-end; }
+  .editPanel { width: 100%; max-height: 92vh; }
+  .editMetaGrid { grid-template-columns: 1fr; }
+  .editFooter { flex-direction: column; }
+}

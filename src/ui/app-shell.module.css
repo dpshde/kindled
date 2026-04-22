@@ -1,21 +1,26 @@
 /**
- * Shared full-screen chrome (matches PassageView / capture flow).
- * Use for any screen with the sticky header bar + max-width column.
+ * Shared full-screen chrome.
+ *
+ * On mobile: header + main are capped at --page-shell-max (34rem) and centered.
+ * On desktop (≥ 800px): header + main span full width. Each view sets its own
+ * content max-width so reading stays narrow while grids spread wide.
+ *
+ * Header supports two layouts:
+ *   Root screens  — no back button.  headerCenter + headerActions.
+ *   Drill-in      — back button.     headerNav + headerCenter + headerActions.
  */
 
 .view {
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: var(--viewport-block-size);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
 .shell {
   width: 100%;
-  max-width: var(--page-shell-max);
   margin: 0 auto;
-  padding-inline: max(var(--space-lg), env(safe-area-inset-left))
-    max(var(--space-lg), env(safe-area-inset-right));
+  padding-top: env(safe-area-inset-top);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -23,51 +28,38 @@
   min-height: 0;
 }
 
+/* ── Shared header bar ── */
+
 .header {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 8px;
-  padding: 12px 0;
+  gap: 4px;
+  padding: 10px max(var(--space-md), env(safe-area-inset-right));
+  padding-left: max(var(--space-md), env(safe-area-inset-left));
   position: sticky;
   top: 0;
   background: var(--color-bg);
   z-index: 10;
-  border-bottom: 2px solid var(--color-line-active);
+  border-bottom: 1px solid var(--color-line);
+  max-width: var(--page-shell-max);
+  width: 100%;
+  margin: 0 auto;
 }
 
-.headerLeading,
-.headerTrailing {
-  flex: 1 1 0;
+/* ── Header slot: brand logo (navigates home) ── */
+
+.headerNav {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 2px;
-  min-width: 0;
 }
 
-.headerLeading {
-  justify-content: flex-start;
-}
-
-.headerTrailing {
-  justify-content: flex-end;
-}
-
-.headerCenter {
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: min(100%, 22rem);
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-}
-
-.backBtn {
-  color: var(--color-text-tertiary);
-  min-width: 48px;
-  min-height: 48px;
-  padding: 12px;
+.logoBtn {
+  color: var(--color-fire);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -75,42 +67,35 @@
   transition: color var(--ease-ui), background var(--ease-ui);
 }
 
-.backBtn:hover {
-  color: var(--color-text);
-  background: var(--color-bg-elevated);
+.logoBtn:hover {
+  color: var(--color-fire-dim);
+  background: color-mix(in srgb, var(--color-fire) 8%, transparent);
 }
 
-.main {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
+/* ── Header slot: center content ── */
 
-.shellContent {
-  flex: 1;
-  min-height: 0;
-  padding: 24px 0 max(20px, env(safe-area-inset-bottom));
+.headerCenter {
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  width: 100%;
-  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
 }
 
 .headerTitle {
   margin: 0;
   width: 100%;
   font-family: var(--font-scripture);
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 500;
   letter-spacing: -0.02em;
   text-align: center;
   line-height: 1.2;
   min-width: 0;
+  color: var(--color-text-secondary);
 }
 
-/** Single-line titles that must not overflow the header (e.g. reflection). */
 .headerTitleEllipsis {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -118,3 +103,141 @@
   font-size: 1.05rem;
 }
 
+/* ── Header slot: right-side actions ── */
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Shared header button styles ── */
+
+.headerBtn {
+  color: var(--color-text-tertiary);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-field);
+  transition: color var(--ease-ui), background var(--ease-ui);
+}
+
+.headerBtn:hover {
+  color: var(--color-text-secondary);
+  background: var(--color-bg-elevated);
+}
+
+.headerBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.headerBtnPrimary {
+  color: var(--color-text);
+  background: transparent;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-field);
+  transition: background var(--ease-ui), color var(--ease-ui), opacity var(--ease-ui);
+}
+
+.headerBtnPrimary:hover {
+  background: var(--color-bg-warm);
+}
+
+.headerBtnPrimary:active {
+  opacity: 0.9;
+}
+
+.headerBtnDanger:hover {
+  color: #a33;
+  background: color-mix(in srgb, #c44 8%, transparent);
+}
+
+/* ── Main content area ── */
+
+.main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  max-width: var(--page-shell-max);
+  width: 100%;
+  margin: 0 auto;
+  padding-inline: max(var(--space-md), env(safe-area-inset-left))
+    max(var(--space-md), env(safe-area-inset-right));
+}
+
+.shellContent {
+  flex: 1;
+  min-height: 0;
+  padding: 20px 0 max(20px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Desktop (≥ 800px): full-width shell, views own their max-width ── */
+
+@media (min-width: 800px) {
+  .header {
+    padding: 10px clamp(2rem, 5vw, 4rem);
+    border-bottom: none;
+  }
+
+  .headerTitle {
+    font-size: 1.25rem;
+    color: var(--color-text);
+  }
+
+  .main {
+    max-width: none;
+    padding-inline: clamp(2rem, 5vw, 4rem);
+  }
+
+  .shellContent {
+    padding: clamp(2rem, 6vh, 4rem) 0 max(32px, env(safe-area-inset-bottom));
+  }
+
+  /* macOS overlay title bar: traffic lights occupy the top-left corner.
+     The brand logo button intentionally sits under the traffic lights,
+     so we only need enough left padding for the other header content
+     to clear the lights (green button ends ~72px). */
+  html[data-platform="macos"] .header {
+    padding-left: 84px;
+  }
+}
+
+/* ── Title bar integration for Tauri overlay mode ── */
+
+.withTitleBar {
+  padding-top: 0;
+}
+
+.withTitleBar .header {
+  position: relative;
+  top: auto;
+  border-bottom: none;
+  padding: 8px clamp(2rem, 5vw, 4rem);
+}
+
+/* Also apply macOS traffic light clearance to titlebar mode */
+@media (min-width: 800px) {
+  html[data-platform="macos"] .withTitleBar .header {
+    padding-left: 84px;
+  }
+}
+
+.withTitleBar .shell {
+  padding-top: env(safe-area-inset-top);
+}

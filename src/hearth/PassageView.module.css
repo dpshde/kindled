@@ -1,12 +1,4 @@
-.blockHeaderCenterInner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  width: 100%;
-  min-width: 0;
-}
+/* ── Passage-specific header content ── */
 
 .headerMetaRow {
   display: inline-flex;
@@ -37,56 +29,21 @@
   text-transform: uppercase;
 }
 
-.deleteBtn {
-  color: var(--color-text-tertiary);
-  min-width: 48px;
-  min-height: 48px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-field);
-  transition: color var(--ease-ui), background var(--ease-ui);
-}
-
-.deleteBtn:hover {
-  color: #a33;
-  background: color-mix(in srgb, #c44 8%, transparent);
-}
-
-.infoBtn {
-  color: var(--color-text-tertiary);
-  min-width: 48px;
-  min-height: 48px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-field);
-  transition: color var(--ease-ui), background var(--ease-ui);
-}
-
-.infoBtn:hover:not(:disabled) {
-  color: var(--color-text);
-  background: var(--color-bg-elevated);
-}
-
-.infoBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
+/* ── Review details modal ── */
 
 .reviewDetailsRoot {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 100;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   padding: max(16px, env(safe-area-inset-bottom))
     max(16px, env(safe-area-inset-right))
     max(16px, env(safe-area-inset-left));
-  background: color-mix(in srgb, var(--color-text) 14%, var(--color-bg-warm));
+  background: rgba(38, 35, 31, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 @media (min-width: 520px) {
@@ -101,11 +58,12 @@
   max-width: 22rem;
   max-height: min(78vh, 36rem);
   overflow-y: auto;
-  background: var(--color-bg-card);
-  border: 2px solid var(--color-text-tertiary);
-  border-radius: var(--radius-field);
+  background: var(--color-bg);
+  border: 2px solid var(--color-line);
+  border-radius: 4px;
   padding: clamp(1rem, 3vw, 1.25rem) clamp(1rem, 3.5vw, 1.35rem) clamp(1.1rem, 3.5vw, 1.4rem);
   box-sizing: border-box;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   color: var(--color-text);
 }
 
@@ -140,22 +98,21 @@
 }
 
 .reviewDetailsClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
   color: var(--color-text-tertiary);
-  padding: 8px;
-  display: flex;
-  border-radius: var(--radius-field);
-  border: 2px solid transparent;
-  transition:
-    color var(--ease-ui),
-    background var(--ease-ui),
-    border-color var(--ease-ui);
+  border-radius: 999px;
   flex-shrink: 0;
+  transition: color var(--ease-ui), background var(--ease-ui);
 }
 
-.reviewDetailsClose:hover {
+.reviewDetailsClose:hover,
+.reviewDetailsClose:focus-visible {
   color: var(--color-text);
   background: var(--color-bg-warm);
-  border-color: var(--color-line);
 }
 
 .reviewDetailsList {
@@ -206,9 +163,16 @@
   word-break: break-word;
 }
 
+.passageContent {
+  width: 100%;
+  max-width: 40rem;
+  margin-inline: auto;
+  gap: 1.25rem;
+}
+
 /*
  * Reading column grows to fill space above the decision panel; passage is vertically centered.
- * (Decision panel must not use margin-top: auto — it steals free space from flex-grow.)
+ * Decision panel uses margin-top: auto to pin to the bottom.
  */
 .readingStack {
   flex: 1 1 auto;
@@ -235,7 +199,7 @@
 .ref {
   margin: 0;
   font-family: var(--font-scripture);
-  font-size: 1.5rem;
+  font-size: 1.65rem;
   font-weight: 500;
   line-height: 1.25;
   letter-spacing: -0.02em;
@@ -250,6 +214,17 @@
   color: inherit;
   text-decoration: none;
   font-weight: inherit;
+  /* button reset (was <a>, now <button> for Tauri shell.open) */
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  text-align: inherit;
+  border-radius: 0;
 }
 
 .refLink .translation {
@@ -302,10 +277,12 @@
 
 .textBlock {
   font-family: var(--font-scripture);
-  font-size: 17px;
-  line-height: 1.75;
+  font-size: 18px;
+  line-height: 1.8;
   color: var(--color-text);
   white-space: pre-wrap;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .verse {
@@ -399,6 +376,8 @@
 .decisionPanel {
   width: 100%;
   flex: 0 0 auto;
+  flex-shrink: 0;
+  margin-top: auto;
   padding-top: 1.35rem;
   border-top: 1px solid var(--color-line);
   display: flex;
@@ -406,6 +385,7 @@
   align-items: stretch;
   gap: 0;
 }
+
 
 .decisionPanel > .tertiaryRow:first-child {
   margin-top: 0;
@@ -490,7 +470,7 @@
 .actionBtnSecondary {
   background: var(--color-bg);
   color: var(--color-text);
-  border-color: var(--color-line);
+  border: 1px solid var(--color-line);
 }
 
 .actionBtnSecondary:hover {
@@ -635,12 +615,13 @@
   border: 1px solid var(--color-line);
   border-radius: 3px;
   background: var(--color-bg-warm);
+  list-style: none;
 }
 
 .reflectionMeta {
   font-size: 12px;
   color: var(--color-text-tertiary);
-  margin: 0 0 8px;
+  margin: 0;
 }
 
 .reflectionActions {
@@ -728,92 +709,162 @@
   color: var(--color-text);
 }
 
-.confirmRow {
+/* ─── Full-screen delete overlay ─────────────────────────────── */
+
+.deleteOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  background: color-mix(in srgb, #c44 6%, var(--color-bg));
-  border-radius: 3px;
-  border: 1px solid color-mix(in srgb, #c44 18%, var(--color-line));
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-left));
+  background: rgba(38, 35, 31, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-.confirmText {
-  font-size: 13px;
-  color: #8a3333;
-  flex: 1;
+.deleteCard {
+  width: 100%;
+  max-width: 26rem;
+  background: var(--color-bg);
+  border-radius: 4px;
+  border: 2px solid var(--color-line);
+  padding: 1.75rem 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-.confirmYes {
+.deleteTitle {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.deleteBody {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.deleteActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.deleteBtnNo {
   font-size: 13px;
   font-weight: 600;
-  color: #fffef9;
-  background: #b33;
-  border-radius: var(--radius-field);
-  padding: 8px 14px;
-  min-height: 48px;
-  border: 2px solid #822;
-  transition: background var(--ease-ui), opacity var(--ease-ui);
-}
-
-.confirmYes:hover {
-  background: #922;
-}
-
-.confirmNo {
-  font-size: 13px;
   color: var(--color-text-secondary);
   background: var(--color-bg);
   border-radius: var(--radius-field);
-  padding: 8px 14px;
+  padding: 12px 14px;
   min-height: 48px;
   border: 2px solid var(--color-line);
   transition: background var(--ease-ui);
 }
 
-.confirmNo:hover {
+.deleteBtnNo:hover {
   background: var(--color-bg-elevated);
+  border-color: var(--color-line-active);
 }
 
-.confirmYes:focus-visible,
-.confirmNo:focus-visible {
+.deleteBtnYes {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fffef9;
+  background: #b33;
+  border-radius: var(--radius-field);
+  padding: 12px 14px;
+  min-height: 48px;
+  border: 2px solid #822;
+  transition: background var(--ease-ui), opacity var(--ease-ui);
+}
+
+.deleteBtnYes:hover {
+  background: #922;
+}
+
+.deleteBtnYes:focus-visible,
+.deleteBtnNo:focus-visible {
   outline: 2px solid var(--color-fire);
   outline-offset: 2px;
 }
 
 @media (max-width: 34rem) {
-  .actions {
-    gap: 6px;
-    grid-template-columns: 1fr;
-  }
-
-  .actionBtn {
-    flex-direction: row;
-    justify-content: center;
-    min-height: 48px;
-    padding: 0.75rem 0.85rem;
-    text-align: center;
-  }
-
-  .tertiaryBtn {
-    justify-content: center;
-  }
-
   .readingStack {
-    justify-content: flex-start;
+    justify-content: center;
     gap: 0.75rem;
   }
 
   .ref {
-    font-size: 1.25rem;
+    font-size: 1.4rem;
   }
 
   .textBlock {
-    font-size: 15px;
-    line-height: 1.6;
+    font-size: 16px;
+    line-height: 1.65;
   }
 
   .verse {
     padding: 1px 0;
+  }
+}
+
+/* ── Desktop (≥ 800px) ── */
+
+@media (min-width: 800px) {
+  .passageContent {
+    max-width: 48rem;
+    padding-top: clamp(1.75rem, 6vh, 4rem);
+    gap: 1.5rem;
+  }
+
+  .ref {
+    font-size: 1.9rem;
+  }
+
+  .textBlock {
+    font-size: 19px;
+    line-height: 1.9;
+  }
+
+  .verseNum {
+    font-size: 0.72em;
+  }
+
+  .readingStack {
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    gap: 1.5rem;
+    overflow: visible;
+  }
+
+  .decisionPanel {
+    padding-top: 1.5rem;
+  }
+
+  .decisionPanelActions {
+    margin-top: 0.15rem;
+    padding-top: 1.1rem;
+    border-top: none;
+  }
+
+  .actions {
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 1000px) {
+  .decisionPanel {
+    padding-top: 1.35rem;
+    border-top: 1px solid var(--color-line);
   }
 }

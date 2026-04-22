@@ -1,4 +1,4 @@
-import type { ArrowTemplate } from "@arrow-js/core";
+import type { JSX } from "solid-js";
 import {
   IconBookOpen,
   IconMapPin,
@@ -8,7 +8,7 @@ import {
   type IconProps,
 } from "../ui/icons/icons";
 
-const TYPE_ICON: Record<string, (p?: IconProps) => ArrowTemplate> = {
+const TYPE_ICON: Record<string, (p?: IconProps) => JSX.Element> = {
   scripture: IconBookOpen,
   person: IconUser,
   place: IconMapPin,
@@ -16,6 +16,6 @@ const TYPE_ICON: Record<string, (p?: IconProps) => ArrowTemplate> = {
   note: IconNotePencil,
 };
 
-export function hearthTypeIcon(type: string): (p?: IconProps) => ArrowTemplate {
+export function hearthTypeIcon(type: string): (p?: IconProps) => JSX.Element {
   return TYPE_ICON[type] ?? IconBookOpen;
 }

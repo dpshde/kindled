@@ -7,12 +7,13 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: var(--viewport-block-size);
+  overflow: hidden;
   min-width: 0;
   max-width: var(--page-shell-max);
   margin: 0 auto;
   padding: clamp(var(--space-xl), 8vh, 5.5rem) var(--space-lg);
+  padding-top: calc(clamp(var(--space-xl), 8vh, 5.5rem) + env(safe-area-inset-top));
   padding-inline: max(var(--space-lg), env(safe-area-inset-left))
     max(var(--space-lg), env(safe-area-inset-right));
   padding-bottom: max(var(--space-lg), env(safe-area-inset-bottom));
@@ -40,17 +41,16 @@
 
 /* Grows with .ctaColumn; count + Begin sit at bottom, flush above .actions. */
 .kindlingFocus {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: stretch;
   gap: var(--space-lg);
   min-height: 0;
 }
 
 .thresholdKindling .actions {
-  margin-top: 0;
 }
 
 .title {
@@ -101,7 +101,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: var(--space-lg);
+  gap: var(--space-sm);
   min-width: 0;
 }
 
@@ -109,7 +109,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: var(--space-md);
+  gap: var(--space-sm);
   width: 100%;
   min-width: 0;
 }
@@ -196,11 +196,9 @@
   align-items: stretch;
   gap: var(--space-sm);
   flex-shrink: 0;
-  margin-top: auto;
+  margin-top: 0;
   margin-inline: 0;
   margin-bottom: 0;
-  padding-top: var(--space-lg);
-  border-top: 2px solid var(--color-line);
   width: 100%;
   box-sizing: border-box;
   background: transparent;
@@ -263,6 +261,83 @@
   }
 }
 
+/* ── Desktop (≥ 800px): horizontal composition ── */
+
+@media (min-width: 800px) {
+  .threshold {
+    padding-inline: clamp(2rem, 5vw, 4rem);
+  }
+
+  /* Empty state: generous, editorial */
+  .thresholdEmpty {
+    max-width: 52rem;
+  }
+
+  .thresholdEmpty .title {
+    font-size: clamp(2.35rem, 6.5vw, 4rem);
+  }
+
+  .thresholdEmpty .ctaColumn {
+    max-width: 26rem;
+  }
+
+  /* Kindling state: two-column grid — branding left, actions right */
+  .thresholdKindling {
+    display: grid;
+    grid-template-columns: 1fr minmax(240px, 22rem);
+    grid-template-rows: auto auto auto;
+    row-gap: 0;
+    column-gap: clamp(3rem, 8vw, 6rem);
+    align-content: center;
+    align-items: center;
+    max-width: 52rem;
+    padding-inline: clamp(2rem, 5vw, 4rem);
+    text-align: left;
+    padding-bottom: max(var(--space-lg), env(safe-area-inset-bottom));
+  }
+
+  .thresholdKindling > .title {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: clamp(3rem, 6vw, 4.5rem);
+    letter-spacing: -0.04em;
+  }
+
+  .thresholdKindling > .divider {
+    grid-column: 1;
+    grid-row: 2;
+    width: 3.5rem;
+    height: 3px;
+    opacity: 0.7;
+  }
+
+  .thresholdKindling > .tagline {
+    grid-column: 1;
+    grid-row: 3;
+    font-size: 1.15rem;
+    max-width: 36ch;
+  }
+
+  .thresholdKindling > .error {
+    grid-column: 1;
+    grid-row: 4;
+  }
+
+  .thresholdKindling > .ctaColumn {
+    grid-column: 2;
+    grid-row: 1 / 4;
+    align-self: center;
+    flex: 0 0 auto;
+    max-width: 17.5rem;
+    margin-top: 0;
+  }
+
+  .thresholdKindling .kindlingFocus {
+    justify-content: center;
+    flex: 0 0 auto;
+  }
+}
+
 @media (max-width: 520px) {
   .threshold {
     align-items: center;
@@ -276,13 +351,23 @@
   }
 
   .thresholdKindling {
-    align-items: stretch;
-    text-align: center;
-    justify-content: flex-end;
+    align-items: flex-start;
+    text-align: left;
+    justify-content: flex-start;
+    padding-top: 25vh;
   }
 
   .thresholdKindling .ctaColumn {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
+    margin-top: auto;
+  }
+
+  .thresholdKindling .actions {
+    order: 1;
+  }
+
+  .thresholdKindling .kindlingFocus {
+    order: 2;
     margin-top: auto;
   }
 
@@ -295,11 +380,12 @@
   .thresholdKindling .sub,
   .thresholdKindling .tagline,
   .thresholdKindling .count {
-    margin-inline: auto;
+    margin-inline: 0;
+    text-align: left;
   }
 
   .thresholdKindling .count {
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .primaryButton,
@@ -309,7 +395,11 @@
     padding-inline: 1.1rem;
   }
 
+  .thresholdKindling .primaryButton {
+    min-height: 54px;
+  }
+
   .actions {
-    margin-top: var(--space-lg);
+    margin-top: 0;
   }
 }
