@@ -116,6 +116,32 @@ export const IconDownload = (p: IconProps = {}) => phosphorIcon(paths.DOWNLOAD, 
 export const IconFileText = (p: IconProps = {}) => phosphorIcon(paths.FILE_TEXT, p);
 export const IconCopy = (p: IconProps = {}) => phosphorIcon(paths.COPY, p);
 
+/** Phosphor regular sun (stroke icon) */
+export function IconSun(props: IconProps = {}): JSX.Element {
+  return phosphorStrokeIcon(
+    <>
+      <circle cx="128" cy="128" r="56" />
+      <line x1="128" y1="40" x2="128" y2="16" />
+      <line x1="128" y1="240" x2="128" y2="216" />
+      <line x1="16" y1="128" x2="40" y2="128" />
+      <line x1="216" y1="128" x2="240" y2="128" />
+      <line x1="48" y1="48" x2="64" y2="64" />
+      <line x1="192" y1="192" x2="208" y2="208" />
+      <line x1="48" y1="208" x2="64" y2="192" />
+      <line x1="192" y1="64" x2="208" y2="48" />
+    </>,
+    props,
+  );
+}
+
+/** Phosphor regular moon (stroke icon) */
+export function IconMoon(props: IconProps = {}): JSX.Element {
+  return phosphorStrokeIcon(
+    <path d="M108.11,28.11A96.09,96.09,0,0,0,227.89,147.89,96,96,0,1,1,108.11,28.11Z" />,
+    props,
+  );
+}
+
 /** File + cloud stroke icon (from file-cloud.svg). Multi-element, stroke-based. */
 export function IconFileCloud(props: IconProps = {}): JSX.Element {
   const size = () => props.size ?? 20;
