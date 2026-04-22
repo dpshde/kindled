@@ -414,8 +414,11 @@
     padding-top: 25vh;
   }
 
-  .thresholdKindling .ctaColumn {
+  .ctaColumn {
     flex: 1 1 auto;
+    align-self: stretch;
+    max-width: none;
+    margin-inline: 0;
     margin-top: 0;
   }
 
@@ -427,19 +430,15 @@
     margin-bottom: var(--space-md);
   }
 
-  .thresholdKindling .actions {
-    order: 1;
+  .actions {
     margin-top: auto;
   }
 
-  .thresholdKindling .primaryButton {
-    order: 2;
-  }
-
-  .ctaColumn {
-    align-self: stretch;
-    max-width: none;
-    margin-inline: 0;
+  .primaryButton,
+  .button,
+  .secondaryButton {
+    justify-content: flex-start;
+    padding-inline: 1.1rem;
   }
 
   .thresholdKindling .sub,
@@ -453,19 +452,13 @@
     justify-content: flex-start;
   }
 
-  .primaryButton,
-  .button,
-  .secondaryButton {
-    justify-content: flex-start;
-    padding-inline: 1.1rem;
+  .thresholdKindling .actions {
+    order: 1;
   }
 
   .thresholdKindling .primaryButton {
+    order: 2;
     min-height: 54px;
-  }
-
-  .actions {
-    margin-top: 0;
   }
 }
 
