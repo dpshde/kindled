@@ -854,7 +854,7 @@
   }
 
   .decisionPanel {
-    padding-top: 1.5rem;
+    padding-top: 0.75rem;
   }
 
   .decisionPanelActions {
@@ -870,7 +870,7 @@
 
 @media (min-width: 1000px) {
   .decisionPanel {
-    padding-top: 1.35rem;
+    padding-top: 0.75rem;
     border-top: 1px solid var(--color-line);
   }
 }
