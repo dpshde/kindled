@@ -15,6 +15,19 @@ export async function createLink(link: {
   reflection_id?: string | null;
 }): Promise<string> {
   const db = await getDb();
+
+  // Idempotent: skip if an identical link already exists for this reflection
+  if (link.reflection_id) {
+    const safeReflection = link.reflection_id.replace(/'/g, "''");
+    const safeFrom = link.from_block.replace(/'/g, "''");
+    const safeTo = link.to_block.replace(/'/g, "''");
+    const safeLinkText = link.link_text.replace(/'/g, "''");
+    const existing = await db.query<{ id: string }>(
+      `SELECT id FROM links WHERE reflection_id = '${safeReflection}' AND from_block = '${safeFrom}' AND to_block = '${safeTo}' AND link_text = '${safeLinkText}' LIMIT 1`,
+    );
+    if (existing.length > 0) return existing[0]!.id;
+  }
+
   const id = generateId();
 
   await db.run(

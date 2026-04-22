@@ -1,4 +1,5 @@
 import {
+  For,
   Show,
   createEffect,
   createSignal,
@@ -19,6 +20,8 @@ import { resolvePassage } from "../scripture/RouteBibleClient";
 import { parseInputToPassage } from "../capture/scripture-capture-helpers";
 import { nextReviewPresentation } from "../ui/helpers";
 import {
+  IconArrowSquareUpRight,
+  IconBookOpen,
   IconCopy,
   IconDownload,
   IconFileCloud,
@@ -35,7 +38,7 @@ import {
 } from "../ui/icons/icons";
 import shell from "../ui/app-shell.module.css";
 import styles from "./HearthView.module.css";
-import { hapticLight, hapticMedium, hapticSave } from "../haptics";
+import { hapticLight, hapticMedium, hapticSave, hapticSelection } from "../haptics";
 import { hearthTypeIcon } from "./hearth-type-icon";
 import { downloadExport, exportAllData, type ExportFormat } from "../db/export";
 import { getSyncState, onSyncStateChange, onSyncDataApplied, type SyncState } from "../sync/hosted-sync";
@@ -56,6 +59,9 @@ export function HearthView(props: {
   const [loading, setLoading] = createSignal(true);
   const [showSync, setShowSync] = createSignal(false);
   const [showSettingsMenu, setShowSettingsMenu] = createSignal(false);
+  const [showExportSubmenu, setShowExportSubmenu] = createSignal(false);
+  const [showBookFilter, setShowBookFilter] = createSignal(false);
+  const [selectedBook, setSelectedBook] = createSignal<string | null>(null);
   const [editingPassage, setEditingPassage] = createSignal<Block | null>(null);
   const [syncState, setSyncState] = createSignal<SyncState>(getSyncState());
   const [theme, setTheme] = createSignal<"light" | "dark">(getCurrentTheme());
@@ -70,6 +76,28 @@ export function HearthView(props: {
     unsub();
     unsubDataApplied();
   });
+
+  const uniqueBooks = () => {
+    const bookSet = new Set<string>();
+    for (const b of blocks()) {
+      if (b.scripture_display_ref) {
+        // Extract book name (everything before the last number)
+        const match = b.scripture_display_ref.match(/^(.+?)\s*\d/);
+        if (match) bookSet.add(match[1]!.trim());
+      }
+    }
+    return [...bookSet].sort();
+  };
+
+  const displayBlocks = () => {
+    const allBlocks = blocks();
+    const book = selectedBook();
+    if (!book) return allBlocks;
+    return allBlocks.filter((b) => {
+      if (!b.scripture_display_ref) return false;
+      return b.scripture_display_ref.startsWith(book);
+    });
+  };
 
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -114,10 +142,30 @@ export function HearthView(props: {
   }
 
   let settingsMenuRef: HTMLDivElement | undefined;
+  let bookFilterRef: HTMLDivElement | undefined;
 
   function closeSettingsMenu() {
     setShowSettingsMenu(false);
+    setShowExportSubmenu(false);
   }
+
+  createEffect(() => {
+    if (!showBookFilter()) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (bookFilterRef && !bookFilterRef.contains(e.target as Node)) {
+        setShowBookFilter(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowBookFilter(false);
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKey);
+    onCleanup(() => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKey);
+    });
+  });
 
   createEffect(() => {
     if (!showSettingsMenu()) return;
@@ -168,7 +216,7 @@ export function HearthView(props: {
     if (loading()) {
       return <p class={styles.empty}>Loading...</p>;
     }
-    const currentBlocks = blocks();
+    const currentBlocks = displayBlocks();
     if (currentBlocks.length === 0) {
       return (
         <div class={styles.empty}>
@@ -176,7 +224,7 @@ export function HearthView(props: {
             <IconFire size={ICON_PX.hero} />
           </span>
           <p>
-            {query()
+            {query() || selectedBook()
               ? "No results found."
               : "Your hearth is empty—capture a passage to kindle a flame."}
           </p>
@@ -293,67 +341,86 @@ export function HearthView(props: {
                     type="button"
                     class={styles.settingsMenuItem}
                     role="menuitem"
+                    aria-expanded={showExportSubmenu()}
                     onClick={() => {
                       hapticLight();
-                      void handleExportFormat("json");
+                      setShowExportSubmenu((v) => !v);
                     }}
                   >
-                    <span class={styles.settingsMenuIcon}><IconFileText size={ICON_PX.inline} /></span>
-                    <span class={styles.settingsMenuLabel}>Export JSON</span>
-                    <span class={styles.settingsMenuHint}>Full data</span>
+                    <span class={styles.settingsMenuIcon}><IconArrowSquareUpRight size={ICON_PX.inline} /></span>
+                    <span class={styles.settingsMenuLabel}>Export</span>
+                    <span class={styles.settingsMenuChevron}>{showExportSubmenu() ? "▴" : "▾"}</span>
                   </button>
-                  <button
-                    type="button"
-                    class={styles.settingsMenuItem}
-                    role="menuitem"
-                    onClick={() => {
-                      hapticLight();
-                      void handleExportFormat("csv");
-                    }}
-                  >
-                    <span class={styles.settingsMenuIcon}><IconDownload size={ICON_PX.inline} /></span>
-                    <span class={styles.settingsMenuLabel}>Export CSV</span>
-                    <span class={styles.settingsMenuHint}>Spreadsheet</span>
-                  </button>
-                  <button
-                    type="button"
-                    class={styles.settingsMenuItem}
-                    role="menuitem"
-                    onClick={() => {
-                      hapticLight();
-                      void handleExportFormat("markdown");
-                    }}
-                  >
-                    <span class={styles.settingsMenuIcon}><IconFileText size={ICON_PX.inline} /></span>
-                    <span class={styles.settingsMenuLabel}>Export Markdown</span>
-                    <span class={styles.settingsMenuHint}>Readable</span>
-                  </button>
-                  <button
-                    type="button"
-                    class={styles.settingsMenuItem}
-                    role="menuitem"
-                    onClick={() => {
-                      hapticLight();
-                      void handleExportFormat("text");
-                    }}
-                  >
-                    <span class={styles.settingsMenuIcon}><IconDownload size={ICON_PX.inline} /></span>
-                    <span class={styles.settingsMenuLabel}>Export text</span>
-                    <span class={styles.settingsMenuHint}>Simple list</span>
-                  </button>
-                  <button
-                    type="button"
-                    class={styles.settingsMenuItem}
-                    role="menuitem"
-                    onClick={() => {
-                      hapticLight();
-                      void handleExportCopyText();
-                    }}
-                  >
-                    <span class={styles.settingsMenuIcon}><IconCopy size={ICON_PX.inline} /></span>
-                    <span class={styles.settingsMenuLabel}>Copy all text</span>
-                    <span class={styles.settingsMenuHint}>Clipboard</span>
-                  </button>
+                  <Show when={showExportSubmenu()}>
+                    <div class={styles.settingsSubmenu} role="menu">
+                      <button
+                        type="button"
+                        class={styles.settingsMenuItem}
+                        role="menuitem"
+                        onClick={() => {
+                          hapticLight();
+                          void handleExportFormat("json");
+                        }}
+                      >
+                        <span class={styles.settingsMenuIcon}><IconFileText size={ICON_PX.inline} /></span>
+                        <span class={styles.settingsMenuLabel}>JSON</span>
+                        <span class={styles.settingsMenuHint}>Full data</span>
+                      </button>
+                      <button
+                        type="button"
+                        class={styles.settingsMenuItem}
+                        role="menuitem"
+                        onClick={() => {
+                          hapticLight();
+                          void handleExportFormat("csv");
+                        }}
+                      >
+                        <span class={styles.settingsMenuIcon}><IconDownload size={ICON_PX.inline} /></span>
+                        <span class={styles.settingsMenuLabel}>CSV</span>
+                        <span class={styles.settingsMenuHint}>Spreadsheet</span>
+                      </button>
+                      <button
+                        type="button"
+                        class={styles.settingsMenuItem}
+                        role="menuitem"
+                        onClick={() => {
+                          hapticLight();
+                          void handleExportFormat("markdown");
+                        }}
+                      >
+                        <span class={styles.settingsMenuIcon}><IconFileText size={ICON_PX.inline} /></span>
+                        <span class={styles.settingsMenuLabel}>Markdown</span>
+                        <span class={styles.settingsMenuHint}>Readable</span>
+                      </button>
+                      <button
+                        type="button"
+                        class={styles.settingsMenuItem}
+                        role="menuitem"
+                        onClick={() => {
+                          hapticLight();
+                          void handleExportFormat("text");
+                        }}
+                      >
+                        <span class={styles.settingsMenuIcon}><IconDownload size={ICON_PX.inline} /></span>
+                        <span class={styles.settingsMenuLabel}>Plain text</span>
+                        <span class={styles.settingsMenuHint}>Simple list</span>
+                      </button>
+                      <div class={styles.settingsMenuDivider} />
+                      <button
+                        type="button"
+                        class={styles.settingsMenuItem}
+                        role="menuitem"
+                        onClick={() => {
+                          hapticLight();
+                          void handleExportCopyText();
+                        }}
+                      >
+                        <span class={styles.settingsMenuIcon}><IconCopy size={ICON_PX.inline} /></span>
+                        <span class={styles.settingsMenuLabel}>Copy all text</span>
+                        <span class={styles.settingsMenuHint}>Clipboard</span>
+                      </button>
+                    </div>
+                  </Show>
                 </div>
               </Show>
             </div>
@@ -372,17 +439,71 @@ export function HearthView(props: {
         </header>
         <div class={shell.main}>
           <div class={`${shell.shellContent} ${styles.hearthContent}`}>
-            <div class={styles.search}>
-              <span class={styles.searchIcon}>
-                <IconMagnifyingGlass size={ICON_PX.inline} />
-              </span>
-              <input
-                type="text"
-                placeholder="Search what you've kindled..."
-                class={styles.searchInput}
-                value={query()}
-                onInput={(e) => handleSearch(e.currentTarget.value)}
-              />
+            <div class={styles.searchRow}>
+              <div class={styles.search}>
+                <span class={styles.searchIcon}>
+                  <IconMagnifyingGlass size={ICON_PX.inline} />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search what you've kindled..."
+                  class={styles.searchInput}
+                  value={query()}
+                  onInput={(e) => handleSearch(e.currentTarget.value)}
+                />
+              </div>
+              <Show when={uniqueBooks().length > 1}>
+                <div class={styles.bookFilterWrap} ref={(el) => { bookFilterRef = el; }}>
+                  <button
+                    type="button"
+                    class={`${styles.bookFilterBtn}${selectedBook() ? ` ${styles.bookFilterBtnActive}` : ""}`}
+                    onClick={() => {
+                      hapticLight();
+                      if (selectedBook()) {
+                        setSelectedBook(null);
+                      } else {
+                        setShowBookFilter((v) => !v);
+                      }
+                    }}
+                    aria-label="Filter by book"
+                    aria-expanded={showBookFilter()}
+                  >
+                    <IconBookOpen size={ICON_PX.inline} />
+                  </button>
+                  <Show when={showBookFilter()}>
+                    <div class={styles.bookFilterMenu} role="menu">
+                      <button
+                        type="button"
+                        class={styles.bookFilterItem}
+                        role="menuitem"
+                        onClick={() => {
+                          hapticLight();
+                          setSelectedBook(null);
+                          setShowBookFilter(false);
+                        }}
+                      >
+                        All books
+                      </button>
+                      <For each={uniqueBooks()}>
+                        {(book) => (
+                          <button
+                            type="button"
+                            class={`${styles.bookFilterItem}${selectedBook() === book ? ` ${styles.bookFilterItemActive}` : ""}`}
+                            role="menuitem"
+                            onClick={() => {
+                              hapticSelection();
+                              setSelectedBook(book);
+                              setShowBookFilter(false);
+                            }}
+                          >
+                            {book}
+                          </button>
+                        )}
+                      </For>
+                    </div>
+                  </Show>
+                </div>
+              </Show>
             </div>
             <div class={styles.list}>{listContent()}</div>
           </div>

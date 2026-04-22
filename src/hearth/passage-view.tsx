@@ -321,7 +321,7 @@ function PassageMain(props: {
     }
 
     // Only enter focus from taps on the reading stack area (scripture text)
-    if (target?.closest(".readingStack, .textBlock, .verse, .refHead")) {
+    if (target?.closest(`.${styles.readingStack}, .${styles.textBlock}, .${styles.verse}, .${styles.refHead}`)) {
       hapticSelection();
       props.onToggleReadingFocus(true);
     }
@@ -424,19 +424,23 @@ function ScriptureRefHead(props: { block: Block }): JSX.Element {
   async function openRouteBible(url: string) {
     hapticLight();
     if (isTauriRuntime()) {
-      const { open } = await import("@tauri-apps/plugin-shell");
-      await open(url);
-    } else {
-      // Use an anchor element for reliable mobile navigation
-      // (window.open is blocked as popup on many mobile browsers)
-      const a = document.createElement("a");
-      a.href = url;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      try {
+        const { open } = await import("@tauri-apps/plugin-shell");
+        await open(url);
+        return;
+      } catch {
+        // shell.open may fail on some mobile runtimes; fall through
+      }
     }
+    // Fallback: use an anchor element for reliable mobile navigation
+    // (window.open is blocked as popup on many mobile browsers)
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   const titleInner = handoff ? (
