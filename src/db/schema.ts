@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export const MIGRATIONS: Record<number, string[]> = {
   1: [
@@ -115,6 +115,19 @@ CREATE TABLE IF NOT EXISTS reflections (
       PRIMARY KEY (table_name, record_id)
     );`,
     `CREATE INDEX IF NOT EXISTS idx_deleted_records_deleted_at ON deleted_records(deleted_at DESC);`,
+  ],
+
+  /** Deduplicate scripture blocks by scripture_ref, then enforce uniqueness. */
+  5: [
+    `DELETE FROM blocks WHERE id IN (
+      SELECT b2.id FROM blocks b1
+        JOIN blocks b2
+          ON b1.scripture_ref = b2.scripture_ref
+          AND b1.type = 'scripture'
+          AND b2.type = 'scripture'
+          AND b1.id < b2.id
+    );`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_blocks_scripture_ref_unique ON blocks(scripture_ref) WHERE type = 'scripture' AND scripture_ref IS NOT NULL;`,
   ],
 };
 

@@ -46,6 +46,23 @@ export async function createBlock(
     Partial<Pick<Block, "id">>,
 ): Promise<string> {
   const db = await getDb();
+
+  // Deduplicate scripture blocks by canonical ref
+  if (block.type === "scripture" && block.scripture_ref) {
+    const existing = await findScriptureBlockByCanonicalRef(block.scripture_ref);
+    if (existing) {
+      // Refresh text and reprioritize instead of creating a duplicate
+      await updateScripturePassageData(existing.id, {
+        content: block.content,
+        scripture_display_ref: block.scripture_display_ref ?? block.scripture_ref,
+        scripture_translation: block.scripture_translation ?? "",
+        scripture_verses: block.scripture_verses ?? [],
+      });
+      await prioritizeBlockForReview(existing.id);
+      return existing.id;
+    }
+  }
+
   const id = block.id ?? generateId();
   const now = new Date().toISOString();
 
