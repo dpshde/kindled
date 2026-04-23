@@ -16,7 +16,6 @@ import {
   IconBookOpen,
   IconFileCloud,
   IconFire,
-  IconGear,
   IconMoon,
   IconPlus,
   IconSun,
@@ -97,17 +96,6 @@ export function ThresholdView(props: {
   return (
     <div class={stateClass()}>
       <ThemeToggle class={styles.themeToggleCorner} />
-      <button
-        type="button"
-        class={styles.settingsGearCorner}
-        onClick={() => {
-          hapticLight();
-          setShowSettings(true);
-        }}
-        aria-label="Settings"
-      >
-        <IconGear size={ICON_PX.inline} />
-      </button>
       <h1 class={styles.title}>Kindled</h1>
       <div class={styles.divider} aria-hidden="true" />
       <p class={styles.tagline}>Spark scripture into an eternal, internal flame.</p>
@@ -167,6 +155,16 @@ function ThresholdContent(props: {
       </Show>
       <div class={styles.ctaColumn}>
         <div class={styles.actions} role="group" aria-label="Actions">
+          <button
+            type="button"
+            class={styles.secondaryButton}
+            onClick={() => {
+              hapticLight();
+              props.onLibrary();
+            }}
+          >
+            <IconBookOpen size={ICON_PX.inline} /> Hearth
+          </button>
           <Show when={hasKindling()}>
             <button
               type="button"
@@ -179,16 +177,6 @@ function ThresholdContent(props: {
               <IconPlus size={ICON_PX.inline} /> Add
             </button>
           </Show>
-          <button
-            type="button"
-            class={styles.secondaryButton}
-            onClick={() => {
-              hapticLight();
-              props.onLibrary();
-            }}
-          >
-            <IconBookOpen size={ICON_PX.inline} /> Hearth
-          </button>
         </div>
         <Show when={hasKindling()} fallback={
           <button

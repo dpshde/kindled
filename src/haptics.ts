@@ -18,6 +18,8 @@ export type HapticStyle = "light" | "medium" | "heavy" | "selection" | "warning"
 type Platform = "ios" | "macos" | "web";
 
 let cachedPlatform: Platform | null = null;
+/** Promise so concurrent calls share the same detection flight. */
+let platformPromise: Promise<Platform> | null = null;
 let instance: WebHaptics | null = null;
 
 function isTauriEnvironment(): boolean {
@@ -49,26 +51,46 @@ export function hapticTrigger(
 async function detectPlatform(): Promise<Platform> {
   if (cachedPlatform) return cachedPlatform;
 
-  if (!isTauriEnvironment()) {
-    cachedPlatform = "web";
-    return "web";
-  }
+  // Deduplicate: if a detection is already in flight, piggyback on it.
+  if (platformPromise) return platformPromise;
 
-  try {
-    const { platform } = await import("@tauri-apps/plugin-os");
-    const os = await platform();
-    if (os === "ios") {
-      cachedPlatform = "ios";
-    } else if (os === "macos") {
-      cachedPlatform = "macos";
-    } else {
+  platformPromise = (async () => {
+    if (!isTauriEnvironment()) {
+      cachedPlatform = "web";
+      return "web";
+    }
+
+    try {
+      const { platform } = await import("@tauri-apps/plugin-os");
+      const os = await platform();
+      if (os === "ios") {
+        cachedPlatform = "ios";
+      } else if (os === "macos") {
+        cachedPlatform = "macos";
+      } else {
+        cachedPlatform = "web";
+      }
+    } catch {
       cachedPlatform = "web";
     }
-  } catch {
-    cachedPlatform = "web";
-  }
 
-  return cachedPlatform;
+    return cachedPlatform;
+  })();
+
+  return platformPromise;
+}
+
+/**
+ * Warm up platform detection + WebHaptics instance at app boot.
+ *
+ * Call once early (e.g. from main.ts) so the first user-triggered haptic
+ * doesn't have to await a dynamic import before firing — which would miss
+ * the browser's user-activation window and silently fail.
+ */
+export function initHaptics(): void {
+  void detectPlatform();
+  // Eagerly construct the WebHaptics instance (cheap; no side effects).
+  getWebHaptics();
 }
 
 async function triggerIosImpact(style: "light" | "medium" | "heavy"): Promise<void> {
@@ -124,50 +146,46 @@ function mapStyleToWebPreset(style: HapticStyle | "success"): HapticInput {
 }
 
 async function triggerFeedback(style: HapticStyle | "success"): Promise<void> {
-  const platform = await detectPlatform();
+  // Fire the web-haptics path *immediately* (synchronous) so it lands inside
+  // the browser's user-activation window.  The native Tauri path is async and
+  // runs in parallel — if the platform hasn't been detected yet we fire the
+  // web fallback first and let the native path catch up on the next call.
+  const preset = mapStyleToWebPreset(style);
+  const webP = hapticTrigger(preset);
 
-  try {
-    if (platform === "ios") {
-      if (style === "warning") {
-        await Promise.allSettled([
-          triggerIosNotification("warning"),
-          hapticTrigger(mapStyleToWebPreset(style)),
-        ]);
+  // Kick off native haptics alongside web.  Even if detectPlatform is still
+  // resolving for the very first call, the web path above already fired.
+  const nativeP = (async () => {
+    try {
+      const platform = await detectPlatform();
+
+      if (platform === "ios") {
+        if (style === "warning") {
+          await triggerIosNotification("warning");
+          return;
+        }
+        if (style === "success") {
+          await triggerIosNotification("success");
+          return;
+        }
+        if (style === "selection") {
+          await triggerIosImpact("light");
+          return;
+        }
+        await triggerIosImpact(style);
         return;
       }
-      if (style === "success") {
-        await Promise.allSettled([
-          triggerIosNotification("success"),
-          hapticTrigger(mapStyleToWebPreset(style)),
-        ]);
+
+      if (platform === "macos") {
+        await triggerMacosHaptic(style);
         return;
       }
-      if (style === "selection") {
-        await Promise.allSettled([
-          triggerIosImpact("light"),
-          hapticTrigger(mapStyleToWebPreset(style)),
-        ]);
-        return;
-      }
-      await Promise.allSettled([
-        triggerIosImpact(style),
-        hapticTrigger(mapStyleToWebPreset(style)),
-      ]);
-      return;
+    } catch {
+      // Gracefully degrade
     }
+  })();
 
-    if (platform === "macos") {
-      await Promise.allSettled([
-        triggerMacosHaptic(style),
-        hapticTrigger(mapStyleToWebPreset(style)),
-      ]);
-      return;
-    }
-
-    await hapticTrigger(mapStyleToWebPreset(style));
-  } catch {
-    // Gracefully degrade
-  }
+  await Promise.allSettled([webP, nativeP]);
 }
 
 export const hapticLight = () => triggerFeedback("light");

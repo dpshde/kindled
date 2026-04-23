@@ -57,12 +57,29 @@ export class Database {
     }
   }
 
+  private isDuplicateColumnError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /duplicate column|duplicate column name/i.test(message);
+  }
+
+  private async execMigration(sql: string): Promise<void> {
+    try {
+      await this.sqlite3.exec(this.db, sql);
+    } catch (error) {
+      // Ignore duplicate column errors - column already exists
+      if (this.isDuplicateColumnError(error)) {
+        return;
+      }
+      throw error;
+    }
+  }
+
   private async runMigrations(): Promise<void> {
     const currentVersion = await this.getUserVersion();
     if (currentVersion >= SCHEMA_VERSION) return;
 
     for (const sql of allMigrations()) {
-      await this.sqlite3.exec(this.db, sql);
+      await this.execMigration(sql);
     }
     await this.setUserVersion(SCHEMA_VERSION);
   }

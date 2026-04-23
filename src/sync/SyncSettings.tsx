@@ -9,12 +9,20 @@ import {
   verifyEmailCode,
 } from "./hosted-sync";
 import { isSupabaseConfigured } from "../auth/supabase-client";
-import { IconCheck, IconFileCloud, IconPlus, IconUser, IconX } from "../ui/icons/icons";
+import {
+  IconArrowLeft,
+  IconCheck,
+  IconFileCloud,
+  IconPlus,
+  IconUser,
+  IconX,
+} from "../ui/icons/icons";
 import { ICON_PX } from "../ui/icon-sizes";
 import { hapticLight, hapticMedium, hapticWarning } from "../haptics";
 import styles from "./SyncSettings.module.css";
 
 type BusyAction = "send" | "verify" | "signout" | null;
+type SignInPhase = "email" | "code";
 
 function isSignedIn(status: SyncState["status"]): boolean {
   return (
@@ -51,6 +59,7 @@ export function SyncSettingsView(props: {
   const [sync, setSync] = createSignal<SyncState>(initial);
   const [email, setEmail] = createSignal(initial.email ?? "");
   const [code, setCode] = createSignal("");
+  const [phase, setPhase] = createSignal<SignInPhase>("email");
   const [busy, setBusy] = createSignal<BusyAction>(null);
   const [localMessage, setLocalMessage] = createSignal<string | null>(null);
   const [localError, setLocalError] = createSignal<string | null>(null);
@@ -71,12 +80,19 @@ export function SyncSettingsView(props: {
     setLocalMessage(null);
   }
 
+  function goToEmailPhase() {
+    hapticLight();
+    setPhase("email");
+    clearFeedback();
+  }
+
   async function handleSendCode() {
     hapticLight();
     setBusy("send");
     clearFeedback();
     try {
       await requestEmailCode(email().trim());
+      setPhase("code");
       setLocalMessage(`We sent a 6-digit code to ${email().trim()}.`);
     } catch (error) {
       setLocalError(
@@ -114,6 +130,7 @@ export function SyncSettingsView(props: {
       await signOutHostedSync();
       setCode("");
       setLocalMessage(null);
+      setPhase("email");
     } catch (error) {
       setLocalError(
         error instanceof Error ? error.message : "Could not sign out.",
@@ -125,14 +142,135 @@ export function SyncSettingsView(props: {
 
   const detail = () => localError() ?? localMessage() ?? sync().error;
 
+  // Phase 1: Email input screen
+  const EmailPhase = () => (
+    <>
+      <div class={styles.statusBlock}>
+        <p class={styles.hint}>
+          Sign in with your email to keep Kindled synced across devices. Hosted
+          sync is automatic after sign-in.
+        </p>
+        {detail() && <span class={styles.statusMeta}>{detail()}</span>}
+      </div>
+
+      <div class={styles.actionsRow}>
+        <label class={styles.field}>
+          <span class={styles.label}>Email</span>
+          <input
+            class={styles.input}
+            type="email"
+            placeholder="you@example.com"
+            value={email()}
+            onInput={(event) => setEmail(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && email().trim()) {
+                event.preventDefault();
+                void handleSendCode();
+              }
+            }}
+          />
+        </label>
+
+        <button
+          type="button"
+          class={styles.actionBtn}
+          onClick={() => void handleSendCode()}
+          disabled={!email().trim() || busy() === "send"}
+        >
+          <IconPlus size={ICON_PX.inline} />
+          {busy() === "send" ? "Sending code…" : "Email me a code"}
+        </button>
+      </div>
+    </>
+  );
+
+  // Phase 2: Verification code screen
+  const CodePhase = () => (
+    <>
+      <div class={styles.statusBlock}>
+        <p class={styles.hint}>
+          Check your inbox for a 6-digit verification code from Kindled.
+        </p>
+        {detail() && <span class={styles.statusMeta}>{detail()}</span>}
+      </div>
+
+      <div class={styles.actionsRow}>
+        <div class={styles.emailDisplay}>
+          <span class={styles.emailLabel}>Sent to</span>
+          <span class={styles.emailValue}>{email()}</span>
+        </div>
+
+        <label class={styles.field}>
+          <span class={styles.label}>6-digit code</span>
+          <input
+            class={styles.input}
+            type="text"
+            inputMode="numeric"
+            autocomplete="one-time-code"
+            placeholder="123456"
+            value={code()}
+            onInput={(event) => setCode(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && code().trim() && email().trim()) {
+                event.preventDefault();
+                void handleVerify();
+              }
+            }}
+          />
+        </label>
+
+        <button
+          type="button"
+          class={styles.actionBtn}
+          onClick={() => void handleVerify()}
+          disabled={!code().trim() || !email().trim() || busy() === "verify"}
+        >
+          <IconCheck size={ICON_PX.inline} />
+          {busy() === "verify" ? "Verifying…" : "Verify & sync"}
+        </button>
+
+        <button
+          type="button"
+          class={styles.textLink}
+          onClick={() => void handleSendCode()}
+          disabled={busy() === "send"}
+        >
+          {busy() === "send" ? "Resending…" : "Resend code"}
+        </button>
+      </div>
+    </>
+  );
+
   return (
-    <div class={styles.overlay} onClick={close} role="dialog" aria-label="Sync settings">
+    <div
+      class={styles.overlay}
+      onClick={close}
+      role="dialog"
+      aria-label="Sync settings"
+    >
       <div class={styles.panel} onClick={(event) => event.stopPropagation()}>
         <header class={styles.header}>
-          <div class={styles.headerTitle}>
-            <IconFileCloud size={ICON_PX.inline} /> Sync
+          <div class={styles.headerLeft}>
+            {phase() === "code" && !isSignedIn(sync().status) ? (
+              <button
+                type="button"
+                class={styles.backBtn}
+                onClick={goToEmailPhase}
+                aria-label="Back to email"
+              >
+                <IconArrowLeft size={ICON_PX.inline} />
+              </button>
+            ) : null}
+            <div class={styles.headerTitle}>
+              <IconFileCloud size={ICON_PX.inline} /> Sync
+            </div>
           </div>
-          <button type="button" class={styles.closeBtn} onClick={close} aria-label="Close">
+          <button
+            type="button"
+            class={styles.closeBtn}
+            onClick={close}
+            aria-label="Close"
+          >
             <IconX size={ICON_PX.inline} />
           </button>
         </header>
@@ -140,66 +278,11 @@ export function SyncSettingsView(props: {
         <div class={styles.body}>
           {!isSupabaseConfigured() || sync().status === "disabled" ? (
             <p class={styles.hint}>
-              Hosted sync isn't configured in this build yet. Set the Supabase public URL and publishable key to enable account sync.
+              Hosted sync isn't configured in this build yet. Set the Supabase
+              public URL and publishable key to enable account sync.
             </p>
           ) : !isSignedIn(sync().status) ? (
-            <>
-              <div class={styles.statusBlock}>
-                <p class={styles.hint}>
-                  Sign in with your email to keep Kindled synced across devices. Hosted sync is automatic after sign-in.
-                </p>
-                <div class={styles.callout}>
-                  1. Enter your email and send a code. 2. Paste the 6-digit code below. You never need to wait for the UI to advance.
-                </div>
-                {detail() && <span class={styles.statusMeta}>{detail()}</span>}
-              </div>
-
-              <div class={styles.actionsRow}>
-                <label class={styles.field}>
-                  <span class={styles.label}>Email</span>
-                  <input
-                    class={styles.input}
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email()}
-                    onInput={(event) => setEmail(event.currentTarget.value)}
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  class={styles.actionBtn}
-                  onClick={() => void handleSendCode()}
-                  disabled={!email().trim() || busy() === "send"}
-                >
-                  <IconPlus size={ICON_PX.inline} />
-                  {busy() === "send" ? "Sending code…" : "Email me a code"}
-                </button>
-
-                <label class={styles.field}>
-                  <span class={styles.label}>6-digit code</span>
-                  <input
-                    class={styles.input}
-                    type="text"
-                    inputMode="numeric"
-                    autocomplete="one-time-code"
-                    placeholder="123456"
-                    value={code()}
-                    onInput={(event) => setCode(event.currentTarget.value)}
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  class={styles.actionBtn}
-                  onClick={() => void handleVerify()}
-                  disabled={!email().trim() || !code().trim() || busy() === "verify"}
-                >
-                  <IconCheck size={ICON_PX.inline} />
-                  {busy() === "verify" ? "Verifying…" : "Verify & sync"}
-                </button>
-              </div>
-            </>
+            <>{phase() === "email" ? <EmailPhase /> : <CodePhase />}</>
           ) : (
             <>
               <div class={styles.statusBlock}>
@@ -221,7 +304,9 @@ export function SyncSettingsView(props: {
                 )}
                 {detail() && <span class={styles.statusMeta}>{detail()}</span>}
                 {sync().lastSyncedAt && (
-                  <span class={styles.lastSync}>Last synced {formatRelative(sync().lastSyncedAt!)}</span>
+                  <span class={styles.lastSync}>
+                    Last synced {formatRelative(sync().lastSyncedAt!)}
+                  </span>
                 )}
               </div>
 

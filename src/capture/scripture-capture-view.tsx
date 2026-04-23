@@ -792,7 +792,7 @@ function ScriptureSaved(props: {
           dismiss();
         }}
       >
-        <div class={styles.savedCard} onClick={(e) => e.stopPropagation()}>
+        <div class={styles.savedCard} onClick={dismiss}>
           <div class={styles.savedCheck}>
             <IconCheck size={ICON_PX.celebration} />
           </div>

@@ -476,13 +476,20 @@
 
   .actions {
     margin-top: auto;
+    flex-direction: row;
+    gap: var(--space-sm);
   }
 
   .primaryButton,
-  .button,
-  .secondaryButton {
+  .button {
     justify-content: flex-start;
     padding-inline: 1.1rem;
+  }
+
+  .secondaryButton {
+    justify-content: center;
+    padding-inline: 0.8rem;
+    flex: 1;
   }
 
   .thresholdKindling .sub,

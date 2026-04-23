@@ -30,6 +30,12 @@
   border-bottom: 2px solid var(--color-line);
 }
 
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .headerTitle {
   display: flex;
   align-items: center;
@@ -52,6 +58,23 @@
 
 .closeBtn:hover,
 .closeBtn:focus-visible {
+  color: var(--color-text);
+  background: var(--color-bg-warm);
+}
+
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  color: var(--color-text-tertiary);
+  border-radius: 999px;
+  transition: color var(--ease-ui), background var(--ease-ui);
+}
+
+.backBtn:hover,
+.backBtn:focus-visible {
   color: var(--color-text);
   background: var(--color-bg-warm);
 }
@@ -222,4 +245,48 @@
   font-size: 13px;
   color: var(--color-ember);
   margin: 0;
+}
+
+/* Phase 2: Email display on code screen */
+.emailDisplay {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.emailLabel {
+  color: var(--color-text-tertiary);
+}
+
+.emailValue {
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+/* Text link button for resending code */
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color var(--ease-ui);
+}
+
+.textLink:hover:not(:disabled) {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.textLink:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

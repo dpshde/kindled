@@ -12,7 +12,7 @@ import {
 } from "../db";
 import { hapticLight, hapticMedium } from "../haptics";
 import passageStyles from "../hearth/PassageView.module.css";
-import { isTauriRuntime } from "../platform/runtime";
+import { openExternalUrl } from "../platform/runtime";
 import shell from "../ui/app-shell.module.css";
 import { ICON_PX } from "../ui/icon-sizes";
 import {
@@ -90,12 +90,7 @@ export function ShareView(props: {
 
   async function openRouteBible(url: string) {
     hapticLight();
-    if (isTauriRuntime()) {
-      const { open } = await import("@tauri-apps/plugin-shell");
-      await open(url);
-    } else {
-      window.open(url, "_blank", "noopener,noreferrer");
-    }
+    await openExternalUrl(url);
   }
 
   function passageShareText(): string {

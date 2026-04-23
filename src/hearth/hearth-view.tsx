@@ -89,6 +89,19 @@ export function HearthView(props: {
     return [...bookSet].sort();
   };
 
+  const chaptersForBook = (book: string): number[] => {
+    const chapters = new Set<number>();
+    for (const b of blocks()) {
+      if (!b.scripture_display_ref || !b.scripture_display_ref.startsWith(book)) continue;
+      const rest = b.scripture_display_ref.slice(book.length).trim();
+      const m = rest.match(/^(\d+)/);
+      if (m) chapters.add(parseInt(m[1]!, 10));
+    }
+    return [...chapters].sort((a, b) => a - b);
+  };
+
+  const [expandedBook, setExpandedBook] = createSignal<string | null>(null);
+
   const displayBlocks = () => {
     const allBlocks = blocks();
     const book = selectedBook();
@@ -141,24 +154,16 @@ export function HearthView(props: {
     }, 200);
   }
 
-  let bookFilterRef: HTMLDivElement | undefined;
-
   createEffect(() => {
     if (!showBookFilter()) return;
-    const onClickOutside = (e: MouseEvent) => {
-      if (bookFilterRef && !bookFilterRef.contains(e.target as Node)) {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
         setShowBookFilter(false);
+        setExpandedBook(null);
       }
     };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowBookFilter(false);
-    };
-    document.addEventListener("mousedown", onClickOutside);
     document.addEventListener("keydown", onKey);
-    onCleanup(() => {
-      document.removeEventListener("mousedown", onClickOutside);
-      document.removeEventListener("keydown", onKey);
-    });
+    onCleanup(() => document.removeEventListener("keydown", onKey));
   });
 
   async function handleExportFormat(format: ExportFormat) {
@@ -290,62 +295,61 @@ export function HearthView(props: {
                 />
               </div>
               <Show when={uniqueBooks().length > 1}>
-                <div class={styles.bookFilterWrap} ref={(el) => { bookFilterRef = el; }}>
-                  <button
-                    type="button"
-                    class={`${styles.bookFilterBtn}${selectedBook() ? ` ${styles.bookFilterBtnActive}` : ""}`}
-                    onClick={() => {
-                      hapticLight();
-                      if (selectedBook()) {
-                        setSelectedBook(null);
-                      } else {
-                        setShowBookFilter((v) => !v);
-                      }
-                    }}
-                    aria-label="Filter by book"
-                    aria-expanded={showBookFilter()}
-                  >
-                    <IconBookOpen size={ICON_PX.inline} />
-                  </button>
-                  <Show when={showBookFilter()}>
-                    <div class={styles.bookFilterMenu} role="menu">
-                      <button
-                        type="button"
-                        class={styles.bookFilterItem}
-                        role="menuitem"
-                        onClick={() => {
-                          hapticLight();
-                          setSelectedBook(null);
-                          setShowBookFilter(false);
-                        }}
-                      >
-                        All books
-                      </button>
-                      <For each={uniqueBooks()}>
-                        {(book) => (
-                          <button
-                            type="button"
-                            class={`${styles.bookFilterItem}${selectedBook() === book ? ` ${styles.bookFilterItemActive}` : ""}`}
-                            role="menuitem"
-                            onClick={() => {
-                              hapticSelection();
-                              setSelectedBook(book);
-                              setShowBookFilter(false);
-                            }}
-                          >
-                            {book}
-                          </button>
-                        )}
-                      </For>
-                    </div>
-                  </Show>
-                </div>
+                <button
+                  type="button"
+                  class={`${styles.bookFilterBtn}${selectedBook() ? ` ${styles.bookFilterBtnActive}` : ""}`}
+                  onClick={() => {
+                    hapticLight();
+                    if (selectedBook()) {
+                      setSelectedBook(null);
+                    } else {
+                      setShowBookFilter((v) => !v);
+                    }
+                  }}
+                  aria-label="Filter by book"
+                >
+                  <IconBookOpen size={ICON_PX.inline} />
+                </button>
               </Show>
             </div>
             <div class={styles.list}>{listContent()}</div>
           </div>
         </div>
       </div>
+      {showBookFilter() && (
+        <BookFilterSheet
+          books={uniqueBooks()}
+          selectedBook={selectedBook()}
+          expandedBook={expandedBook()}
+          chaptersForBook={chaptersForBook}
+          onSelectBook={(book) => {
+            hapticSelection();
+            setSelectedBook(book);
+            setShowBookFilter(false);
+            setExpandedBook(null);
+          }}
+          onSelectChapter={(book, _chapter) => {
+            hapticSelection();
+            setSelectedBook(book);
+            setShowBookFilter(false);
+            setExpandedBook(null);
+          }}
+          onToggleExpand={(book) => {
+            hapticLight();
+            setExpandedBook((prev) => (prev === book ? null : book));
+          }}
+          onClearFilter={() => {
+            hapticLight();
+            setSelectedBook(null);
+            setShowBookFilter(false);
+            setExpandedBook(null);
+          }}
+          onClose={() => {
+            setShowBookFilter(false);
+            setExpandedBook(null);
+          }}
+        />
+      )}
       {showSync() && (
         <SyncSettingsView
           onClose={() => setShowSync(false)}
@@ -387,6 +391,99 @@ export function HearthView(props: {
           }}
         />
       )}
+    </div>
+  );
+}
+
+function BookFilterSheet(props: {
+  books: string[];
+  selectedBook: string | null;
+  expandedBook: string | null;
+  chaptersForBook: (book: string) => number[];
+  onSelectBook: (book: string) => void;
+  onSelectChapter: (book: string, chapter: number) => void;
+  onToggleExpand: (book: string) => void;
+  onClearFilter: () => void;
+  onClose: () => void;
+}): JSX.Element {
+  return (
+    <div class={styles.bookSheetOverlay} onClick={props.onClose}>
+      <div class={styles.bookSheet} onClick={(e) => e.stopPropagation()}>
+        <header class={styles.bookSheetHeader}>
+          <h2 class={styles.bookSheetTitle}>Filter by book</h2>
+          <button
+            type="button"
+            class={styles.bookSheetClose}
+            onClick={props.onClose}
+            aria-label="Close"
+          >
+            <IconX size={ICON_PX.inline} />
+          </button>
+        </header>
+        <div class={styles.bookSheetBody}>
+          <button
+            type="button"
+            class={`${styles.bookSheetItem}${!props.selectedBook ? ` ${styles.bookSheetItemActive}` : ""}`}
+            onClick={props.onClearFilter}
+          >
+            All books
+          </button>
+          <For each={props.books}>
+            {(book) => {
+              const isExpanded = () => props.expandedBook === book;
+              const chapters = () => props.chaptersForBook(book);
+              const hasChapters = () => chapters().length > 1;
+              return (
+                <div class={styles.bookSheetGroup}>
+                  <div class={styles.bookSheetBookRow}>
+                    <button
+                      type="button"
+                      class={`${styles.bookSheetItem}${props.selectedBook === book ? ` ${styles.bookSheetItemActive}` : ""}`}
+                      onClick={() => {
+                        if (hasChapters()) {
+                          props.onToggleExpand(book);
+                        } else {
+                          props.onSelectBook(book);
+                        }
+                      }}
+                    >
+                      {book}
+                    </button>
+                    {hasChapters() && (
+                      <button
+                        type="button"
+                        class={styles.bookSheetExpandBtn}
+                        onClick={() => props.onToggleExpand(book)}
+                        aria-label={isExpanded() ? `Collapse ${book}` : `Expand ${book}`}
+                        aria-expanded={isExpanded()}
+                      >
+                        <span class={`${styles.bookSheetChevron}${isExpanded() ? ` ${styles.bookSheetChevronOpen}` : ""}`}>
+                          ›
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                  <Show when={isExpanded() && hasChapters()}>
+                    <div class={styles.bookSheetChapters}>
+                      <For each={chapters()}>
+                        {(ch) => (
+                          <button
+                            type="button"
+                            class={styles.bookSheetChapter}
+                            onClick={() => props.onSelectChapter(book, ch)}
+                          >
+                            {ch}
+                          </button>
+                        )}
+                      </For>
+                    </div>
+                  </Show>
+                </div>
+              );
+            }}
+          </For>
+        </div>
+      </div>
     </div>
   );
 }

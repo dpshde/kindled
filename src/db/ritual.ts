@@ -203,6 +203,15 @@ export async function getDailyKindling(limit = 5): Promise<string[]> {
   const db = await getDb();
   const now = new Date().toISOString();
 
+  // First, ensure all blocks have life_stages entries (handles sync/legacy data)
+  await db.run(`
+    INSERT INTO life_stages (block_id, stage, kindled_at, next_review_at, updated_at)
+    SELECT b.id, 'spark', b.captured_at, b.captured_at, datetime('now')
+    FROM blocks b
+    LEFT JOIN life_stages ls ON b.id = ls.block_id
+    WHERE ls.block_id IS NULL
+  `);
+
   const rows = await db.query<Record<string, string>>(
     `SELECT b.id,
        ls.stage,

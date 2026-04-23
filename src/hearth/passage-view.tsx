@@ -37,7 +37,7 @@ import { ICON_PX } from "../ui/icon-sizes";
 import shell from "../ui/app-shell.module.css";
 import styles from "./PassageView.module.css";
 import { hapticLight, hapticMedium, hapticHeavy, hapticSelection, hapticWarning } from "../haptics";
-import { isTauriRuntime } from "../platform/runtime";
+import { openExternalUrl } from "../platform/runtime";
 import { onSyncDataApplied } from "../sync/hosted-sync";
 import { fetchPassageBundle } from "./passage-data-load";
 import { linkEndpointLabel } from "./passage-link-title";
@@ -308,7 +308,7 @@ function PassageMain(props: {
 
     // Don't toggle focus from taps on interactive elements or their children
     const target = e.target as HTMLElement | null;
-    if (target?.closest("button, a, input, textarea, select, [role='button'], .connectionChip, .connectionChipStatic, .decisionPanel, .snoozePanel, .reflectionAddRow, .reflectionCard")) {
+    if (target?.closest(`button, a, input, textarea, select, [role='button'], .${styles.connectionChip}, .${styles.connectionChipStatic}, .${styles.decisionPanel}, .${styles.snoozePanel}, .${styles.reflectionAddRow}, .${styles.reflectionCard}`)) {
       return;
     }
 
@@ -328,56 +328,67 @@ function PassageMain(props: {
   }
 
   return (
-    <div
-      class={`${shell.shellContent} ${styles.passageContent}${props.showReadingFocus ? ` ${styles.passageContentFocus}` : ""}`}
-      onClick={handleContentTap}
-    >
-      <PassageReadingStack
-        block={b}
-        outgoing={props.outgoing}
-        backlinks={props.backlinks}
-        linkedBlocks={props.linkedBlocks}
-        isKindling={props.isKindling}
-        showReadingFocus={props.showReadingFocus}
-      />
-      <Show when={!props.showReadingFocus}>
-        <PassageConnectionsLibrary
+    <>
+      <div
+        class={`${shell.shellContent} ${styles.passageContent}${props.showReadingFocus ? ` ${styles.passageContentFocus}` : ""}`}
+        onClick={handleContentTap}
+      >
+        <PassageReadingStack
+          block={b}
           outgoing={props.outgoing}
           backlinks={props.backlinks}
           linkedBlocks={props.linkedBlocks}
           isKindling={props.isKindling}
-          onNavigate={props.onNavigate}
+          showReadingFocus={props.showReadingFocus}
         />
-      </Show>
+        <Show when={!props.showReadingFocus}>
+          <PassageConnectionsLibrary
+            outgoing={props.outgoing}
+            backlinks={props.backlinks}
+            linkedBlocks={props.linkedBlocks}
+            isKindling={props.isKindling}
+            onNavigate={props.onNavigate}
+          />
+        </Show>
+        <Show when={props.lifeStage && !props.showReadingFocus}>
+          <PassageDecisionPanel
+            block={b}
+            lifeStage={props.lifeStage!}
+            reflections={props.reflections}
+            showSnooze={props.showSnooze}
+            snoozeDate={props.snoozeDate}
+            startTs={props.startTs}
+            passageId={props.passageId}
+            isKindling={props.isKindling}
+            onKindlingAdvance={props.onKindlingAdvance}
+            onNote={props.onNote}
+            setLifeStage={props.setLifeStage}
+            setShowSnooze={props.setShowSnooze}
+            setSnoozeDate={props.setSnoozeDate}
+            setReflections={props.setReflections}
+          />
+        </Show>
+        {props.confirmDelete && (
+          <PassageConfirmDelete
+            passageId={props.passageId}
+            onDeleted={props.onDeleted}
+            onCancel={() => {
+              hapticLight();
+              props.setConfirmDelete(false);
+            }}
+          />
+        )}
+      </div>
       <Show when={props.lifeStage && !props.showReadingFocus}>
-        <PassageDecisionPanel
-          block={b}
-          lifeStage={props.lifeStage!}
-          reflections={props.reflections}
-          showSnooze={props.showSnooze}
-          snoozeDate={props.snoozeDate}
+        <PassageActionBar
           startTs={props.startTs}
           passageId={props.passageId}
           isKindling={props.isKindling}
           onKindlingAdvance={props.onKindlingAdvance}
-          onNote={props.onNote}
           setLifeStage={props.setLifeStage}
-          setShowSnooze={props.setShowSnooze}
-          setSnoozeDate={props.setSnoozeDate}
-          setReflections={props.setReflections}
         />
       </Show>
-      {props.confirmDelete && (
-        <PassageConfirmDelete
-          passageId={props.passageId}
-          onDeleted={props.onDeleted}
-          onCancel={() => {
-            hapticLight();
-            props.setConfirmDelete(false);
-          }}
-        />
-      )}
-    </div>
+    </>
   );
 }
 
@@ -423,24 +434,7 @@ function ScriptureRefHead(props: { block: Block }): JSX.Element {
     : b.scripture_display_ref;
   async function openRouteBible(url: string) {
     hapticLight();
-    if (isTauriRuntime()) {
-      try {
-        const { open } = await import("@tauri-apps/plugin-shell");
-        await open(url);
-        return;
-      } catch {
-        // shell.open may fail on some mobile runtimes; fall through
-      }
-    }
-    // Fallback: use an anchor element for reliable mobile navigation
-    // (window.open is blocked as popup on many mobile browsers)
-    const a = document.createElement("a");
-    a.href = url;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    await openExternalUrl(url);
   }
 
   const titleInner = handoff ? (
@@ -632,20 +626,6 @@ function PassageDecisionPanel(props: {
   setSnoozeDate: (v: string) => void;
   setReflections: (v: Reflection[]) => void;
 }): JSX.Element {
-  async function doAction(action: "stoke" | "deepen") {
-    hapticMedium();
-    const lingerSec = (Date.now() - props.startTs) / 1000;
-    try {
-      await recordLinger(props.passageId, lingerSec);
-      if (action === "stoke") await stokeBlock(props.passageId);
-      else await deepenBlock(props.passageId);
-    } catch {
-      /* ignore */
-    }
-    props.setLifeStage(await ensureLifeStage(props.passageId));
-    props.onKindlingAdvance?.();
-  }
-
   return (
     <div class={styles.decisionPanel}>
       <ScriptureReflectionSection
@@ -666,27 +646,52 @@ function PassageDecisionPanel(props: {
         setShowSnooze={props.setShowSnooze}
         setSnoozeDate={props.setSnoozeDate}
       />
-      <div class={styles.decisionPanelActions}>
-        <div class={styles.actions}>
-          <button
-            type="button"
-            class={`${styles.actionBtn} ${styles.actionBtnSecondary}`}
-            onClick={() => void doAction("deepen")}
-          >
-            <IconCheckCircle size={ICON_PX.decisionStack} /> <span>Mastered</span>
-          </button>
-          <button
-            type="button"
-            class={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-            onClick={() => void doAction("stoke")}
-          >
-            <span class={styles.decisionArrowsOptical}>
-              <IconArrowsClockwise size={ICON_PX.decisionStack} />
-            </span>
-            <span>Review later</span>
-          </button>
-        </div>
-      </div>
+    </div>
+  );
+}
+
+// ─── Action bar (edge-to-edge bottom tabs) ────────────────────────
+
+function PassageActionBar(props: {
+  startTs: number;
+  passageId: string;
+  isKindling: boolean;
+  onKindlingAdvance?: () => void;
+  setLifeStage: (v: LifeStageRecord | null) => void;
+}): JSX.Element {
+  async function doAction(action: "stoke" | "deepen") {
+    hapticMedium();
+    const lingerSec = (Date.now() - props.startTs) / 1000;
+    try {
+      await recordLinger(props.passageId, lingerSec);
+      if (action === "stoke") await stokeBlock(props.passageId);
+      else await deepenBlock(props.passageId);
+    } catch {
+      /* ignore */
+    }
+    props.setLifeStage(await ensureLifeStage(props.passageId));
+    props.onKindlingAdvance?.();
+  }
+
+  return (
+    <div class={styles.actionBar}>
+      <button
+        type="button"
+        class={`${styles.actionTab} ${styles.actionTabSecondary}`}
+        onClick={() => void doAction("deepen")}
+      >
+        <IconCheckCircle size={ICON_PX.decisionStack} /> <span>Mastered</span>
+      </button>
+      <button
+        type="button"
+        class={`${styles.actionTab} ${styles.actionTabPrimary}`}
+        onClick={() => void doAction("stoke")}
+      >
+        <span class={styles.decisionArrowsOptical}>
+          <IconArrowsClockwise size={ICON_PX.decisionStack} />
+        </span>
+        <span>Review later</span>
+      </button>
     </div>
   );
 }

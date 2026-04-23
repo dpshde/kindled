@@ -47,13 +47,30 @@ async function getRemoteSchemaVersion(client: Client): Promise<number> {
   return parseInt(String(first?.value ?? 0), 10);
 }
 
+function isDuplicateColumnError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /duplicate column|duplicate column name/i.test(message);
+}
+
+async function executeMigrationStatement(client: Client, sql: string): Promise<void> {
+  if (!sql.trim()) return;
+  try {
+    await client.execute(sql);
+  } catch (error) {
+    // Ignore duplicate column errors - column already exists
+    if (isDuplicateColumnError(error)) {
+      return;
+    }
+    throw error;
+  }
+}
+
 export async function ensureRemoteSchema(client: Client): Promise<void> {
   const currentVersion = await getRemoteSchemaVersion(client);
   if (currentVersion >= SCHEMA_VERSION) return;
 
   for (const sql of allMigrations()) {
-    if (!sql.trim()) continue;
-    await client.executeMultiple(sql);
+    await executeMigrationStatement(client, sql);
   }
   await client.execute({
     sql: `INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('schema_version', ?)`,

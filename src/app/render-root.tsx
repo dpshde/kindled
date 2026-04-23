@@ -8,6 +8,7 @@ import { ScriptureCaptureView } from "../capture/scripture-capture-view";
 import { QuietCloseView } from "../ritual/quiet-close-view";
 import { ThresholdView } from "../ritual/threshold-view";
 import { ShareView } from "../share/share-view";
+import { SwipeHost } from "../ui/swipe-host";
 
 export type RootContext = {
   app: AppRootModel;
@@ -21,7 +22,7 @@ export function RenderRoot(props: {
   const screen = () => props.app.screen();
 
   return (
-    <>
+    <SwipeHost app={props.app} navigate={props.navigate}>
       {(() => {
         const s = screen();
         switch (s.kind) {
@@ -159,7 +160,7 @@ export function RenderRoot(props: {
             );
         }
       })()}
-    </>
+    </SwipeHost>
   );
 }
 
