@@ -58,7 +58,7 @@ export function HearthView(props: {
   const [query, setQuery] = createSignal("");
   const [loading, setLoading] = createSignal(true);
   const [showSync, setShowSync] = createSignal(false);
-  const [showSettingsMenu, setShowSettingsMenu] = createSignal(false);
+  const [showSettings, setShowSettings] = createSignal(false);
   const [showExportSubmenu, setShowExportSubmenu] = createSignal(false);
   const [showBookFilter, setShowBookFilter] = createSignal(false);
   const [selectedBook, setSelectedBook] = createSignal<string | null>(null);
@@ -141,13 +141,7 @@ export function HearthView(props: {
     }, 200);
   }
 
-  let settingsMenuRef: HTMLDivElement | undefined;
   let bookFilterRef: HTMLDivElement | undefined;
-
-  function closeSettingsMenu() {
-    setShowSettingsMenu(false);
-    setShowExportSubmenu(false);
-  }
 
   createEffect(() => {
     if (!showBookFilter()) return;
@@ -167,26 +161,9 @@ export function HearthView(props: {
     });
   });
 
-  createEffect(() => {
-    if (!showSettingsMenu()) return;
-    const onClickOutside = (e: MouseEvent) => {
-      if (settingsMenuRef && !settingsMenuRef.contains(e.target as Node)) {
-        closeSettingsMenu();
-      }
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeSettingsMenu();
-    };
-    document.addEventListener("mousedown", onClickOutside);
-    document.addEventListener("keydown", onKey);
-    onCleanup(() => {
-      document.removeEventListener("mousedown", onClickOutside);
-      document.removeEventListener("keydown", onKey);
-    });
-  });
-
   async function handleExportFormat(format: ExportFormat) {
-    closeSettingsMenu();
+    setShowSettings(false);
+    setShowExportSubmenu(false);
     try {
       const payload = await exportAllData();
       await downloadExport(payload, format);
@@ -196,7 +173,8 @@ export function HearthView(props: {
   }
 
   async function handleExportCopyText() {
-    closeSettingsMenu();
+    setShowSettings(false);
+    setShowExportSubmenu(false);
     try {
       const payload = await exportAllData();
       const text = payload.data.blocks
@@ -272,158 +250,17 @@ export function HearthView(props: {
             </Show>
           </div>
           <div class={shell.headerActions}>
-            <div class={styles.settingsWrap} ref={(el) => { settingsMenuRef = el; }}>
-              <button
-                type="button"
-                class={shell.headerBtn}
-                onClick={() => {
-                  hapticLight();
-                  setShowSettingsMenu((v) => !v);
-                }}
-                aria-label="Settings"
-                aria-expanded={showSettingsMenu()}
-              >
-                <IconGear size={ICON_PX.header} />
-              </button>
-              <Show when={showSettingsMenu()}>
-                <div class={styles.settingsMenu} role="menu">
-                  <button
-                    type="button"
-                    class={styles.settingsMenuItem}
-                    role="menuitem"
-                    onClick={() => {
-                      hapticLight();
-                      const next = toggleTheme();
-                      setTheme(next);
-                    }}
-                    aria-label={theme() === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                  >
-                    <span class={styles.settingsMenuIcon}>
-                      <Show when={theme() === "dark"} fallback={<IconMoon size={ICON_PX.inline} />}>
-                        <IconSun size={ICON_PX.inline} />
-                      </Show>
-                    </span>
-                    <span class={styles.settingsMenuLabel}>
-                      {theme() === "dark" ? "Light mode" : "Dark mode"}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    class={styles.settingsMenuItem}
-                    role="menuitem"
-                    onClick={() => {
-                      hapticLight();
-                      setShowSettingsMenu(false);
-                      setShowSync(true);
-                    }}
-                  >
-                    <span class={styles.settingsMenuIcon}>
-                      <IconFileCloud size={ICON_PX.inline} />
-                    </span>
-                    <span class={styles.settingsMenuLabel}>Sync</span>
-                    <Show when={syncState().status === "connected"}>
-                      <span class={styles.settingsMenuHint}>Connected</span>
-                    </Show>
-                    <Show when={syncState().status === "syncing" || syncState().status === "provisioning"}>
-                      <span class={styles.settingsMenuHint}>Syncing</span>
-                    </Show>
-                    <Show when={syncState().status === "offline-pending"}>
-                      <span class={styles.settingsMenuHint}>Changes waiting</span>
-                    </Show>
-                    <Show when={syncState().status === "awaiting-code"}>
-                      <span class={styles.settingsMenuHint}>Check email</span>
-                    </Show>
-                    <Show when={syncState().status === "error"}>
-                      <span class={styles.settingsMenuHint}>Needs attention</span>
-                    </Show>
-                  </button>
-                  <button
-                    type="button"
-                    class={styles.settingsMenuItem}
-                    role="menuitem"
-                    aria-expanded={showExportSubmenu()}
-                    onClick={() => {
-                      hapticLight();
-                      setShowExportSubmenu((v) => !v);
-                    }}
-                  >
-                    <span class={styles.settingsMenuIcon}><IconArrowSquareUpRight size={ICON_PX.inline} /></span>
-                    <span class={styles.settingsMenuLabel}>Export</span>
-                    <span class={styles.settingsMenuChevron}>{showExportSubmenu() ? "▴" : "▾"}</span>
-                  </button>
-                  <Show when={showExportSubmenu()}>
-                    <div class={styles.settingsSubmenu} role="menu">
-                      <button
-                        type="button"
-                        class={styles.settingsMenuItem}
-                        role="menuitem"
-                        onClick={() => {
-                          hapticLight();
-                          void handleExportFormat("json");
-                        }}
-                      >
-                        <span class={styles.settingsMenuIcon}><IconFileText size={ICON_PX.inline} /></span>
-                        <span class={styles.settingsMenuLabel}>JSON</span>
-                        <span class={styles.settingsMenuHint}>Full data</span>
-                      </button>
-                      <button
-                        type="button"
-                        class={styles.settingsMenuItem}
-                        role="menuitem"
-                        onClick={() => {
-                          hapticLight();
-                          void handleExportFormat("csv");
-                        }}
-                      >
-                        <span class={styles.settingsMenuIcon}><IconDownload size={ICON_PX.inline} /></span>
-                        <span class={styles.settingsMenuLabel}>CSV</span>
-                        <span class={styles.settingsMenuHint}>Spreadsheet</span>
-                      </button>
-                      <button
-                        type="button"
-                        class={styles.settingsMenuItem}
-                        role="menuitem"
-                        onClick={() => {
-                          hapticLight();
-                          void handleExportFormat("markdown");
-                        }}
-                      >
-                        <span class={styles.settingsMenuIcon}><IconFileText size={ICON_PX.inline} /></span>
-                        <span class={styles.settingsMenuLabel}>Markdown</span>
-                        <span class={styles.settingsMenuHint}>Readable</span>
-                      </button>
-                      <button
-                        type="button"
-                        class={styles.settingsMenuItem}
-                        role="menuitem"
-                        onClick={() => {
-                          hapticLight();
-                          void handleExportFormat("text");
-                        }}
-                      >
-                        <span class={styles.settingsMenuIcon}><IconDownload size={ICON_PX.inline} /></span>
-                        <span class={styles.settingsMenuLabel}>Plain text</span>
-                        <span class={styles.settingsMenuHint}>Simple list</span>
-                      </button>
-                      <div class={styles.settingsMenuDivider} />
-                      <button
-                        type="button"
-                        class={styles.settingsMenuItem}
-                        role="menuitem"
-                        onClick={() => {
-                          hapticLight();
-                          void handleExportCopyText();
-                        }}
-                      >
-                        <span class={styles.settingsMenuIcon}><IconCopy size={ICON_PX.inline} /></span>
-                        <span class={styles.settingsMenuLabel}>Copy all text</span>
-                        <span class={styles.settingsMenuHint}>Clipboard</span>
-                      </button>
-                    </div>
-                  </Show>
-                </div>
-              </Show>
-            </div>
+            <button
+              type="button"
+              class={shell.headerBtn}
+              onClick={() => {
+                hapticLight();
+                setShowSettings(true);
+              }}
+              aria-label="Settings"
+            >
+              <IconGear size={ICON_PX.header} />
+            </button>
             <button
               type="button"
               class={shell.headerBtnPrimary}
@@ -515,6 +352,28 @@ export function HearthView(props: {
           onSynced={() => void bootstrapHearth()}
         />
       )}
+      {showSettings() && (
+        <HearthSettingsOverlay
+          theme={theme()}
+          syncStatus={syncState().status}
+          showExportSubmenu={showExportSubmenu()}
+          onToggleTheme={() => {
+            hapticLight();
+            setTheme(toggleTheme());
+          }}
+          onOpenSync={() => {
+            setShowSettings(false);
+            setShowSync(true);
+          }}
+          onToggleExport={() => setShowExportSubmenu((v) => !v)}
+          onExport={(fmt) => void handleExportFormat(fmt)}
+          onCopyAllText={() => void handleExportCopyText()}
+          onClose={() => {
+            setShowSettings(false);
+            setShowExportSubmenu(false);
+          }}
+        />
+      )}
       {editingPassage() && (
         <HearthPassageEditModal
           block={editingPassage()!}
@@ -586,6 +445,128 @@ function HearthCard(props: {
           <IconPencilSimple size={ICON_PX.inline} />
         </button>
       )}
+    </div>
+  );
+}
+
+function HearthSettingsOverlay(props: {
+  theme: "light" | "dark";
+  syncStatus: SyncState["status"];
+  showExportSubmenu: boolean;
+  onToggleTheme: () => void;
+  onOpenSync: () => void;
+  onToggleExport: () => void;
+  onExport: (fmt: ExportFormat) => void;
+  onCopyAllText: () => void;
+  onClose: () => void;
+}): JSX.Element {
+  createEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") props.onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    onCleanup(() => document.removeEventListener("keydown", onKey));
+  });
+
+  return (
+    <div class={styles.settingsOverlay} onClick={props.onClose}>
+      <div class={styles.settingsPanel} onClick={(e) => e.stopPropagation()}>
+        <header class={styles.settingsHeader}>
+          <h2 class={styles.settingsTitle}>Settings</h2>
+          <button
+            type="button"
+            class={styles.settingsCloseBtn}
+            onClick={props.onClose}
+            aria-label="Close"
+          >
+            <IconX size={ICON_PX.inline} />
+          </button>
+        </header>
+        <div class={styles.settingsBody}>
+          <button
+            type="button"
+            class={styles.settingsRow}
+            onClick={props.onToggleTheme}
+          >
+            <span class={styles.settingsRowIcon}>
+              <Show when={props.theme === "dark"} fallback={<IconMoon size={ICON_PX.inline} />}>
+                <IconSun size={ICON_PX.inline} />
+              </Show>
+            </span>
+            <span class={styles.settingsRowLabel}>
+              {props.theme === "dark" ? "Light mode" : "Dark mode"}
+            </span>
+          </button>
+          <button
+            type="button"
+            class={styles.settingsRow}
+            onClick={props.onOpenSync}
+          >
+            <span class={styles.settingsRowIcon}>
+              <IconFileCloud size={ICON_PX.inline} />
+            </span>
+            <span class={styles.settingsRowLabel}>Sync</span>
+            <Show when={props.syncStatus === "connected"}>
+              <span class={styles.settingsRowHint}>Connected</span>
+            </Show>
+            <Show when={props.syncStatus === "syncing" || props.syncStatus === "provisioning"}>
+              <span class={styles.settingsRowHint}>Syncing</span>
+            </Show>
+            <Show when={props.syncStatus === "offline-pending"}>
+              <span class={styles.settingsRowHint}>Changes waiting</span>
+            </Show>
+            <Show when={props.syncStatus === "awaiting-code"}>
+              <span class={styles.settingsRowHint}>Check email</span>
+            </Show>
+            <Show when={props.syncStatus === "error"}>
+              <span class={styles.settingsRowHint}>Needs attention</span>
+            </Show>
+          </button>
+          <button
+            type="button"
+            class={styles.settingsRow}
+            onClick={props.onToggleExport}
+          >
+            <span class={styles.settingsRowIcon}>
+              <IconArrowSquareUpRight size={ICON_PX.inline} />
+            </span>
+            <span class={styles.settingsRowLabel}>Export</span>
+            <span class={styles.settingsRowChevron}>
+              {props.showExportSubmenu ? "▴" : "▾"}
+            </span>
+          </button>
+          <Show when={props.showExportSubmenu}>
+            <div class={styles.settingsSubmenu}>
+              <button type="button" class={styles.settingsRow} onClick={() => props.onExport("json")}>
+                <span class={styles.settingsRowIcon}><IconFileText size={ICON_PX.inline} /></span>
+                <span class={styles.settingsRowLabel}>JSON</span>
+                <span class={styles.settingsRowHint}>Full data</span>
+              </button>
+              <button type="button" class={styles.settingsRow} onClick={() => props.onExport("csv")}>
+                <span class={styles.settingsRowIcon}><IconDownload size={ICON_PX.inline} /></span>
+                <span class={styles.settingsRowLabel}>CSV</span>
+                <span class={styles.settingsRowHint}>Spreadsheet</span>
+              </button>
+              <button type="button" class={styles.settingsRow} onClick={() => props.onExport("markdown")}>
+                <span class={styles.settingsRowIcon}><IconFileText size={ICON_PX.inline} /></span>
+                <span class={styles.settingsRowLabel}>Markdown</span>
+                <span class={styles.settingsRowHint}>Readable</span>
+              </button>
+              <button type="button" class={styles.settingsRow} onClick={() => props.onExport("text")}>
+                <span class={styles.settingsRowIcon}><IconDownload size={ICON_PX.inline} /></span>
+                <span class={styles.settingsRowLabel}>Plain text</span>
+                <span class={styles.settingsRowHint}>Simple list</span>
+              </button>
+              <div class={styles.settingsDivider} />
+              <button type="button" class={styles.settingsRow} onClick={props.onCopyAllText}>
+                <span class={styles.settingsRowIcon}><IconCopy size={ICON_PX.inline} /></span>
+                <span class={styles.settingsRowLabel}>Copy all text</span>
+                <span class={styles.settingsRowHint}>Clipboard</span>
+              </button>
+            </div>
+          </Show>
+        </div>
+      </div>
     </div>
   );
 }

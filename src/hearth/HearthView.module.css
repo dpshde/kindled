@@ -433,72 +433,100 @@
   cursor: not-allowed;
 }
 
-/* ── Settings menu ── */
+/* ── Settings overlay ── */
 
-.settingsWrap {
-  position: relative;
+.settingsOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(38, 35, 31, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-.settingsMenu {
-  position: absolute;
-  top: calc(100% + 2px);
-  right: 0;
-  z-index: 120;
-  min-width: 220px;
-  padding: 4px 0;
+.settingsPanel {
   background: var(--color-bg);
   border: 1px solid var(--color-line);
-  border-radius: 4px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-sm);
+  width: min(90vw, 340px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-.settingsMenuItem {
+.settingsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.settingsTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.settingsCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  color: var(--color-text-tertiary);
+  border-radius: 999px;
+  transition: color var(--ease-ui), background var(--ease-ui);
+}
+
+.settingsCloseBtn:hover {
+  color: var(--color-text);
+  background: var(--color-bg-warm);
+}
+
+.settingsBody {
+  padding: 4px 0;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.settingsRow {
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 9px 14px;
-  font-size: 14px;
+  padding: 11px var(--space-lg);
+  font-size: 15px;
   font-weight: 500;
   color: var(--color-text);
   background: none;
   border: none;
-  cursor: pointer;
   text-align: left;
   transition: background var(--ease-ui);
 }
 
-.settingsMenuItem:hover,
-.settingsMenuItem:focus-visible {
+.settingsRow:hover {
   background: var(--color-bg-warm);
 }
 
-.settingsMenuIcon {
-  display: flex;
-  color: var(--color-text-tertiary);
+.settingsRow:active {
+  background: var(--color-bg-elevated);
 }
 
-.settingsMenuLabel {
-  flex: 1;
-}
-
-.settingsMenuHint {
-  font-size: 12px;
-  color: var(--color-text-tertiary);
-}
-
-.settingsMenuChevron {
-  font-size: 11px;
-  color: var(--color-text-tertiary);
-}
+.settingsRowIcon { display: flex; color: var(--color-text-tertiary); }
+.settingsRowLabel { flex: 1; }
+.settingsRowHint { font-size: 12px; color: var(--color-text-tertiary); }
+.settingsRowChevron { font-size: 11px; color: var(--color-text-tertiary); }
 
 .settingsSubmenu {
   padding: 2px 0 2px 1rem;
 }
 
-.settingsMenuDivider {
+.settingsDivider {
   height: 1px;
-  margin: 4px 14px;
+  margin: 4px var(--space-lg);
   background: var(--color-line);
 }
 
@@ -565,6 +593,15 @@
   .editPrimaryBtn:hover {
     background: var(--color-fire);
     border-color: var(--color-fire);
+  }
+
+  .settingsRow:hover {
+    background: none;
+  }
+
+  .settingsCloseBtn:hover {
+    color: var(--color-text-tertiary);
+    background: transparent;
   }
 }
 
