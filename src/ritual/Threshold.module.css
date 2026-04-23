@@ -39,6 +39,19 @@
   text-align: left;
 }
 
+/* Grows with .ctaColumn; count + Begin sit at bottom, flush above .actions. */
+.kindlingFocus {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: var(--space-lg);
+  min-height: 0;
+}
+
+
+
 .title {
   font-family: var(--font-scripture);
   font-size: clamp(2.35rem, 6.5vw, 3rem);
@@ -88,6 +101,15 @@
   flex-direction: column;
   align-items: stretch;
   gap: var(--space-sm);
+  min-width: 0;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-sm);
+  width: 100%;
   min-width: 0;
 }
 
@@ -254,6 +276,111 @@
   opacity: 1;
 }
 
+.settingsGearCorner {
+  position: fixed;
+  top: calc(6px + env(safe-area-inset-top));
+  right: max(52px, calc(env(safe-area-inset-right) + 44px));
+  color: var(--color-text-tertiary);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-field);
+  transition: color var(--ease-ui), background var(--ease-ui);
+  z-index: 50;
+  opacity: 0.7;
+}
+
+.settingsGearCorner:hover {
+  color: var(--color-text-secondary);
+  background: var(--color-bg-elevated);
+  opacity: 1;
+}
+
+/* ── Settings overlay ── */
+.settingsOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(38, 35, 31, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.settingsPanel {
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  width: min(90vw, 340px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.settingsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.settingsTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.settingsCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  color: var(--color-text-tertiary);
+  border-radius: 999px;
+  transition: color var(--ease-ui), background var(--ease-ui);
+}
+
+.settingsCloseBtn:hover {
+  color: var(--color-text);
+  background: var(--color-bg-warm);
+}
+
+.settingsBody {
+  padding: 4px 0;
+}
+
+.settingsRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px var(--space-lg);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text);
+  background: none;
+  border: none;
+  text-align: left;
+  transition: background var(--ease-ui);
+}
+
+.settingsRow:hover {
+  background: var(--color-bg-warm);
+}
+
+.settingsRow:active {
+  background: var(--color-bg-elevated);
+}
+
+.settingsRowIcon { display: flex; color: var(--color-text-tertiary); }
+.settingsRowLabel { flex: 1; }
+
 /* Kindling on medium+: centered like a landing page. */
 @media (min-width: 521px) {
   .thresholdKindling {
@@ -288,6 +415,10 @@
     flex: 0 0 auto;
     max-width: 22rem;
     align-self: center;
+  }
+
+  .thresholdKindling .kindlingFocus {
+    display: contents;
   }
 
   .thresholdKindling .actions {
@@ -379,8 +510,6 @@
   .thresholdEmpty {
     align-items: flex-start;
     text-align: left;
-    justify-content: flex-start;
-    padding-top: 25vh;
   }
 
   .thresholdKindling {
@@ -398,30 +527,16 @@
     margin-top: 0;
   }
 
+  .thresholdKindling .kindlingFocus {
+    display: contents;
+  }
+
   .thresholdKindling .count {
     margin-bottom: var(--space-md);
   }
 
   .actions {
     margin-top: auto;
-  }
-
-  .thresholdKindling .actions {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: var(--space-xs);
-  }
-
-  .thresholdKindling .actions .secondaryButton {
-    flex: 1 1 0;
-    min-width: 0;
-    max-width: 50%;
-    min-height: unset;
-    flex-direction: column;
-    gap: 0.2rem;
-    padding: var(--space-md) var(--space-sm);
-    font-size: 12px;
-    justify-content: center;
   }
 
   .primaryButton,
@@ -448,8 +563,7 @@
 
   .thresholdKindling .primaryButton {
     order: 2;
-    min-height: 60px;
-    font-size: 16px;
+    min-height: 54px;
   }
 }
 
@@ -467,5 +581,14 @@
     background: var(--color-bg);
     border-color: var(--color-text-tertiary);
     color: var(--color-text);
+  }
+
+  .settingsRow:hover {
+    background: none;
+  }
+
+  .settingsCloseBtn:hover {
+    color: var(--color-text-tertiary);
+    background: transparent;
   }
 }
