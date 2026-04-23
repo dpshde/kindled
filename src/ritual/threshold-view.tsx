@@ -128,23 +128,22 @@ function ThresholdContent(props: {
   setShowSync: (v: boolean) => void;
   showSyncButton: boolean;
 }): JSX.Element {
-  if (props.kindlingIds.length === 0) {
-    return (
+  const hasKindling = () => props.kindlingIds.length > 0;
+
+  return (
+    <>
+      <Show when={hasKindling()}>
+        <p class={styles.count}>
+          <span class={styles.countIcon}>
+            <IconFire size={ICON_PX.inline} />
+          </span>
+          {props.kindlingIds.length}{" "}
+          {props.kindlingIds.length === 1 ? "spark" : "sparks"} to tend today
+        </p>
+      </Show>
       <div class={styles.ctaColumn}>
-        <div class={styles.empty}>
-          <button
-            type="button"
-            class={styles.primaryButton}
-            onClick={() => {
-              hapticMedium();
-              props.onCapture();
-            }}
-          >
-            <IconPlus size={ICON_PX.inline} /> Capture a Passage
-          </button>
-        </div>
         <div class={styles.actions} role="group" aria-label="More actions">
-          <Show when={props.totalBlocks > 0}>
+          <Show when={hasKindling()}>
             <button
               type="button"
               class={styles.secondaryButton}
@@ -156,35 +155,31 @@ function ThresholdContent(props: {
               <IconBookOpen size={ICON_PX.inline} /> Hearth
             </button>
           </Show>
-          <Show when={props.showSyncButton}>
+          <Show when={hasKindling()}>
             <button
               type="button"
               class={styles.secondaryButton}
               onClick={() => {
                 hapticLight();
-                props.setShowSync(true);
+                props.onCapture();
               }}
             >
-              <IconFileCloud size={ICON_PX.inline} /> Sync
+              <IconPlus size={ICON_PX.inline} /> Add
             </button>
           </Show>
         </div>
-      </div>
-    );
-  }
-
-  // Kindling state
-  return (
-    <>
-      <p class={styles.count}>
-        <span class={styles.countIcon}>
-          <IconFire size={ICON_PX.inline} />
-        </span>
-        {props.kindlingIds.length}{" "}
-        {props.kindlingIds.length === 1 ? "spark" : "sparks"} to tend today
-      </p>
-      <div class={styles.ctaColumn}>
-        <div class={styles.kindlingFocus}>
+        <Show when={hasKindling()} fallback={
+          <button
+            type="button"
+            class={styles.primaryButton}
+            onClick={() => {
+              hapticMedium();
+              props.onCapture();
+            }}
+          >
+            <IconPlus size={ICON_PX.inline} /> Capture a Passage
+          </button>
+        }>
           <button
             type="button"
             class={styles.primaryButton}
@@ -195,42 +190,36 @@ function ThresholdContent(props: {
           >
             <BeginFireIcon size={ICON_PX.actionPrimary} /> Begin
           </button>
-        </div>
-        <div class={styles.actions} role="group" aria-label="More actions">
-        <button
-          type="button"
-          class={styles.secondaryButton}
-          onClick={() => {
-            hapticLight();
-            props.onCapture();
-          }}
-        >
-          <IconPlus size={ICON_PX.inline} /> Add
-        </button>
-        <button
-          type="button"
-          class={styles.secondaryButton}
-          onClick={() => {
-            hapticLight();
-            props.onLibrary();
-          }}
-        >
-          <IconBookOpen size={ICON_PX.inline} /> Hearth
-        </button>
-        <Show when={props.showSyncButton}>
-          <button
-            type="button"
-            class={styles.secondaryButton}
-            onClick={() => {
-              hapticLight();
-              props.setShowSync(true);
-            }}
-          >
-            <IconFileCloud size={ICON_PX.inline} /> Sync
-          </button>
+        </Show>
+        <Show when={!hasKindling()}>
+          <div class={styles.actions} role="group" aria-label="More actions">
+            <Show when={props.totalBlocks > 0}>
+              <button
+                type="button"
+                class={styles.secondaryButton}
+                onClick={() => {
+                  hapticLight();
+                  props.onLibrary();
+                }}
+              >
+                <IconBookOpen size={ICON_PX.inline} /> Hearth
+              </button>
+            </Show>
+            <Show when={props.showSyncButton}>
+              <button
+                type="button"
+                class={styles.secondaryButton}
+                onClick={() => {
+                  hapticLight();
+                  props.setShowSync(true);
+                }}
+              >
+                <IconFileCloud size={ICON_PX.inline} /> Sync
+              </button>
+            </Show>
+          </div>
         </Show>
       </div>
-    </div>
     </>
   );
 }

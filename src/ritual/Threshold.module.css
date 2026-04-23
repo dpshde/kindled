@@ -39,19 +39,6 @@
   text-align: left;
 }
 
-/* Grows with .ctaColumn; count + Begin sit at bottom, flush above .actions. */
-.kindlingFocus {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: stretch;
-  gap: var(--space-lg);
-  min-height: 0;
-}
-
-
-
 .title {
   font-family: var(--font-scripture);
   font-size: clamp(2.35rem, 6.5vw, 3rem);
@@ -101,15 +88,6 @@
   flex-direction: column;
   align-items: stretch;
   gap: var(--space-sm);
-  min-width: 0;
-}
-
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--space-sm);
-  width: 100%;
   min-width: 0;
 }
 
@@ -312,10 +290,6 @@
     align-self: center;
   }
 
-  .thresholdKindling .kindlingFocus {
-    display: contents;
-  }
-
   .thresholdKindling .actions {
     order: 2;
     flex-direction: row;
@@ -405,6 +379,8 @@
   .thresholdEmpty {
     align-items: flex-start;
     text-align: left;
+    justify-content: flex-start;
+    padding-top: 25vh;
   }
 
   .thresholdKindling {
@@ -422,16 +398,30 @@
     margin-top: 0;
   }
 
-  .thresholdKindling .kindlingFocus {
-    display: contents;
-  }
-
   .thresholdKindling .count {
     margin-bottom: var(--space-md);
   }
 
   .actions {
     margin-top: auto;
+  }
+
+  .thresholdKindling .actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .thresholdKindling .actions .secondaryButton {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 50%;
+    min-height: unset;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: var(--space-md) var(--space-sm);
+    font-size: 12px;
+    justify-content: center;
   }
 
   .primaryButton,
@@ -458,7 +448,8 @@
 
   .thresholdKindling .primaryButton {
     order: 2;
-    min-height: 54px;
+    min-height: 60px;
+    font-size: 16px;
   }
 }
 
