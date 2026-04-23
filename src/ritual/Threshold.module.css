@@ -21,36 +21,12 @@
   background: transparent;
 }
 
-/* No sparks yet — vertical center; copy and controls stay left-justified. */
-.thresholdEmpty {
-  justify-content: center;
-  align-items: flex-start;
-  text-align: left;
-}
-
-.thresholdEmpty .ctaColumn {
-  flex: 0 1 auto;
-}
-
 /* Daily kindling — count leads, secondary actions follow, primary CTA anchors the stack. */
 .thresholdKindling {
   justify-content: flex-start;
   align-items: flex-start;
   text-align: left;
 }
-
-/* Grows with .ctaColumn; count + Begin sit at bottom, flush above .actions. */
-.kindlingFocus {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: stretch;
-  gap: var(--space-lg);
-  min-height: 0;
-}
-
-
 
 .title {
   font-family: var(--font-scripture);
@@ -101,15 +77,6 @@
   flex-direction: column;
   align-items: stretch;
   gap: var(--space-sm);
-  min-width: 0;
-}
-
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--space-sm);
-  width: 100%;
   min-width: 0;
 }
 
@@ -417,10 +384,6 @@
     align-self: center;
   }
 
-  .thresholdKindling .kindlingFocus {
-    display: contents;
-  }
-
   .thresholdKindling .actions {
     order: 2;
     flex-direction: row;
@@ -459,19 +422,6 @@
     padding-inline: clamp(2rem, 5vw, 4rem);
   }
 
-  /* Empty state: generous, editorial */
-  .thresholdEmpty {
-    max-width: 52rem;
-  }
-
-  .thresholdEmpty .title {
-    font-size: clamp(2.35rem, 6.5vw, 4rem);
-  }
-
-  .thresholdEmpty .ctaColumn {
-    max-width: 26rem;
-  }
-
   /* Kindling state: bigger title, wider action column */
   .thresholdKindling > .title {
     font-size: clamp(3rem, 6vw, 4.5rem);
@@ -505,13 +455,6 @@
     max-width: none;
   }
 
-  /* empty — fixed position works at all sizes */
-
-  .thresholdEmpty {
-    align-items: flex-start;
-    text-align: left;
-  }
-
   .thresholdKindling {
     align-items: flex-start;
     text-align: left;
@@ -525,10 +468,6 @@
     max-width: none;
     margin-inline: 0;
     margin-top: 0;
-  }
-
-  .thresholdKindling .kindlingFocus {
-    display: contents;
   }
 
   .thresholdKindling .count {
