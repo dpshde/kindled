@@ -7,6 +7,12 @@ const devPort = isReplit ? 5000 : 3001;
 
 export default defineConfig({
   plugins: [solidPlugin()],
+  resolve: {
+    dedupe: ["react", "react-dom"],
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom", "agentation"],
+  },
   clearScreen: false,
   build: {
     target: "esnext",

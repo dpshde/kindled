@@ -36,6 +36,9 @@ skills-lock.json
 .pi/skills/
 .windsurf/skills/
 
+# Solo terminal config (local dev tool)
+solo.yml
+
 # Local/generated
 coverage/
 .superset/

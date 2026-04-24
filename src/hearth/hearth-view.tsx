@@ -201,11 +201,9 @@ export function HearthView(props: {
     }
     const currentBlocks = displayBlocks();
     if (currentBlocks.length === 0) {
+      const isEmptyState = !query() && !selectedBook();
       return (
-        <div class={styles.empty}>
-          <span class={styles.emptyIcon}>
-            <IconFire size={ICON_PX.hero} />
-          </span>
+        <div class={isEmptyState ? styles.emptyState : styles.empty}>
           <p>
             {query() || selectedBook()
               ? "No results found."
@@ -246,18 +244,14 @@ export function HearthView(props: {
               <IconFire size={ICON_PX.header} />
             </button>
           </div>
-          <div class={shell.headerCenter}>
-            <h1 class={shell.headerTitle}>Hearth</h1>
-            <Show when={!loading() && blocks().length > 0}>
-              <span class={styles.hearthCount}>
-                {blocks().length} {blocks().length === 1 ? "passage" : "passages"}
-              </span>
-            </Show>
-          </div>
+          <div class={styles.headerSpacer} />
           <div class={shell.headerActions}>
+            <Show when={syncState().status === "syncing" || syncState().status === "provisioning"}>
+              <div class={styles.syncDot} aria-label="Syncing" />
+            </Show>
             <button
               type="button"
-              class={shell.headerBtn}
+              class={styles.headerBtnSecondary}
               onClick={() => {
                 hapticLight();
                 setShowSettings(true);
@@ -268,7 +262,7 @@ export function HearthView(props: {
             </button>
             <button
               type="button"
-              class={shell.headerBtnPrimary}
+              class={styles.headerBtnPrimary}
               onClick={() => {
                 hapticMedium();
                 props.onCapture();
@@ -281,37 +275,52 @@ export function HearthView(props: {
         </header>
         <div class={shell.main}>
           <div class={`${shell.shellContent} ${styles.hearthContent}`}>
-            <div class={styles.searchRow}>
-              <div class={styles.search}>
-                <span class={styles.searchIcon}>
-                  <IconMagnifyingGlass size={ICON_PX.inline} />
-                </span>
-                <input
-                  type="text"
-                  placeholder="Search what you've kindled..."
-                  class={styles.searchInput}
-                  value={query()}
-                  onInput={(e) => handleSearch(e.currentTarget.value)}
-                />
+            <Show when={!loading() && blocks().length === 0 && !query() && !selectedBook()}>
+              <button
+                type="button"
+                class={styles.emptyStateCta}
+                onClick={() => {
+                  hapticMedium();
+                  props.onCapture();
+                }}
+              >
+                <IconPlus size={ICON_PX.inline} />
+                Capture a passage
+              </button>
+            </Show>
+            <Show when={blocks().length > 0 || query() || selectedBook()}>
+              <div class={styles.searchRow}>
+                <div class={styles.search}>
+                  <span class={styles.searchIcon}>
+                    <IconMagnifyingGlass size={ICON_PX.inline} />
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Search passages..."
+                    class={styles.searchInput}
+                    value={query()}
+                    onInput={(e) => handleSearch(e.currentTarget.value)}
+                  />
+                </div>
+                <Show when={uniqueBooks().length > 1}>
+                  <button
+                    type="button"
+                    class={`${styles.bookFilterBtn}${selectedBook() ? ` ${styles.bookFilterBtnActive}` : ""}`}
+                    onClick={() => {
+                      hapticLight();
+                      if (selectedBook()) {
+                        setSelectedBook(null);
+                      } else {
+                        setShowBookFilter((v) => !v);
+                      }
+                    }}
+                    aria-label="Filter by book"
+                  >
+                    <IconBookOpen size={ICON_PX.inline} />
+                  </button>
+                </Show>
               </div>
-              <Show when={uniqueBooks().length > 1}>
-                <button
-                  type="button"
-                  class={`${styles.bookFilterBtn}${selectedBook() ? ` ${styles.bookFilterBtnActive}` : ""}`}
-                  onClick={() => {
-                    hapticLight();
-                    if (selectedBook()) {
-                      setSelectedBook(null);
-                    } else {
-                      setShowBookFilter((v) => !v);
-                    }
-                  }}
-                  aria-label="Filter by book"
-                >
-                  <IconBookOpen size={ICON_PX.inline} />
-                </button>
-              </Show>
-            </div>
+            </Show>
             <div class={styles.list}>{listContent()}</div>
           </div>
         </div>
@@ -498,11 +507,18 @@ function HearthCard(props: {
   const rhythm = () => (ls() ? nextReviewPresentation(ls()!.next_review_at) : null);
   const TypeIcon = hearthTypeIcon(props.block.type);
   const title = props.block.scripture_display_ref ?? props.block.entity_name ?? "Note";
-  const sub =
-    props.block.content.slice(0, 80) +
-    (props.block.content.length > 80 ? "..." : "");
 
   const editable = props.block.type === "scripture";
+
+  /** Rhythm pill color based on life stage. */
+  const rhythmClass = (): string => {
+    const r = rhythm();
+    if (!r) return "";
+    if (r.pastSuggested) return styles.cardRhythmReady;
+    const s = ls()?.stage;
+    if (s === "steady" || s === "ember") return styles.cardRhythmMature;
+    return styles.cardRhythmGrowing;
+  };
 
   return (
     <div class={`${styles.cardWrap}${editable ? ` ${styles.cardWrapEditable}` : ""}`}>
@@ -520,11 +536,11 @@ function HearthCard(props: {
         <div class={styles.cardContent}>
           <span class={styles.cardTitle}>{title}</span>
           {rhythm() && (
-            <span class={styles.cardRhythm}>
+            <span class={`${styles.cardRhythm} ${rhythmClass()}`}>
               {rhythm()!.dateMedium}
             </span>
           )}
-          <span class={styles.cardSub}>{sub}</span>
+          <span class={styles.cardSub}>{props.block.content}</span>
         </div>
       </button>
       {editable && (

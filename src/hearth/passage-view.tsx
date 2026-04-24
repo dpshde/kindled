@@ -20,9 +20,6 @@ import {
 import type { PassageNoteAction } from "../app/app-screen";
 import type { AppRootModel } from "../app/app-model";
 import {
-  nextReviewPresentation,
-} from "../ui/helpers";
-import {
   IconArrowSquareUpRight,
   IconArrowsClockwise,
   IconCheckCircle,
@@ -31,7 +28,6 @@ import {
   IconInfo,
   IconLink,
   IconNotePencil,
-  IconTrash,
 } from "../ui/icons/icons";
 import { ICON_PX } from "../ui/icon-sizes";
 import shell from "../ui/app-shell.module.css";
@@ -106,6 +102,16 @@ export function PassageView(props: {
   });
   onCleanup(() => unsubDataApplied());
 
+  function handleViewTap(e: MouseEvent) {
+    const target = e.target as HTMLElement | null;
+    if (target?.closest("button, a, input, textarea, select, [role='button']")) return;
+    if (showReadingFocus()) {
+      e.preventDefault();
+      hapticLight();
+      setShowReadingFocus(false);
+    }
+  }
+
   // Escape key for review details modal
   createEffect(() => {
     if (!showReviewDetails()) return;
@@ -117,24 +123,21 @@ export function PassageView(props: {
   });
 
   return (
-    <div class={shell.view}>
+    <div class={shell.view} onClick={block() && block()!.type === "scripture" ? handleViewTap : undefined}>
       <div class={shell.shell}>
         <Show when={!showReadingFocus()}>
           <PassageHeader
             loading={loading()}
             block={block()}
-            lifeStage={lifeStage()}
-            kindlingProgress={props.kindlingProgress}
-            onBack={props.onBack}
             onHome={props.onNavigateHome}
             onInfo={() => {
               hapticLight();
               setShowReviewDetails(true);
             }}
-            onDelete={() => {
-              hapticWarning();
-              setConfirmDelete(true);
-            }}
+            onOpenRouteBible={block() && routeBibleHandoffUrl(block()!) ? () => {
+              hapticLight();
+              void openExternalUrl(routeBibleHandoffUrl(block()!)!);
+            } : undefined}
           />
         </Show>
         <div class={shell.main}>
@@ -180,6 +183,11 @@ export function PassageView(props: {
           block={block()!}
           lifeStage={lifeStage()}
           onClose={() => setShowReviewDetails(false)}
+          onDelete={() => {
+            hapticWarning();
+            setConfirmDelete(true);
+            setShowReviewDetails(false);
+          }}
         />
       </Show>
     </div>
@@ -191,12 +199,9 @@ export function PassageView(props: {
 function PassageHeader(props: {
   loading: boolean;
   block: Block | null;
-  lifeStage: LifeStageRecord | null;
-  kindlingProgress?: { index: number; total: number };
-  onBack: () => void;
   onHome: () => void;
   onInfo: () => void;
-  onDelete: () => void;
+  onOpenRouteBible?: () => void;
 }): JSX.Element {
   return (
     <header class={shell.header}>
@@ -213,14 +218,18 @@ function PassageHeader(props: {
           <IconFire size={ICON_PX.header} />
         </button>
       </div>
-      <div class={shell.headerCenter}>
-        <PassageHeaderMeta
-          block={props.block}
-          lifeStage={props.lifeStage}
-          kindlingProgress={props.kindlingProgress}
-        />
-      </div>
       <div class={shell.headerActions}>
+        {props.onOpenRouteBible && (
+          <button
+            type="button"
+            class={shell.headerBtn}
+            onClick={props.onOpenRouteBible}
+            aria-label="Open on route.bible"
+            title="Open on route.bible"
+          >
+            <IconArrowSquareUpRight size={ICON_PX.header} />
+          </button>
+        )}
         <button
           type="button"
           class={shell.headerBtn}
@@ -231,44 +240,8 @@ function PassageHeader(props: {
         >
           <IconInfo size={ICON_PX.header} />
         </button>
-        <button
-          type="button"
-          class={`${shell.headerBtn} ${shell.headerBtnDanger}`}
-          onClick={props.onDelete}
-          aria-label="Delete"
-        >
-          <IconTrash size={ICON_PX.header} />
-        </button>
       </div>
     </header>
-  );
-}
-
-function PassageHeaderMeta(props: {
-  block: Block | null;
-  lifeStage: LifeStageRecord | null;
-  kindlingProgress?: { index: number; total: number };
-}): JSX.Element {
-  return (
-    <Show when={props.block && (props.lifeStage || props.kindlingProgress)}>
-      <p class={styles.headerMetaRow}>
-        {props.lifeStage && (
-          <span class={styles.rhythmDate}>
-            {nextReviewPresentation(props.lifeStage.next_review_at).dateMedium}
-          </span>
-        )}
-        {props.lifeStage && props.kindlingProgress && (
-          <span class={styles.headerMetaSep} aria-hidden="true">
-            ·
-          </span>
-        )}
-        {props.kindlingProgress && (
-          <span class={styles.kindlingStep}>
-            {props.kindlingProgress.index + 1} of {props.kindlingProgress.total}
-          </span>
-        )}
-      </p>
-    </Show>
   );
 }
 
@@ -301,37 +274,11 @@ function PassageMain(props: {
   setReflections: (v: Reflection[]) => void;
 }): JSX.Element {
   const b = props.block;
-  const canToggleReadingFocus = () => b.type === "scripture";
-
-  function handleContentTap(e: MouseEvent) {
-    if (!canToggleReadingFocus()) return;
-
-    // Don't toggle focus from taps on interactive elements or their children
-    const target = e.target as HTMLElement | null;
-    if (target?.closest(`button, a, input, textarea, select, [role='button'], .${styles.connectionChip}, .${styles.connectionChipStatic}, .${styles.decisionPanel}, .${styles.snoozePanel}, .${styles.reflectionAddRow}, .${styles.reflectionCard}`)) {
-      return;
-    }
-
-    if (props.showReadingFocus) {
-      e.preventDefault();
-      e.stopPropagation();
-      hapticLight();
-      props.onToggleReadingFocus(false);
-      return;
-    }
-
-    // Only enter focus from taps on the reading stack area (scripture text)
-    if (target?.closest(`.${styles.readingStack}, .${styles.textBlock}, .${styles.verse}, .${styles.refHead}`)) {
-      hapticSelection();
-      props.onToggleReadingFocus(true);
-    }
-  }
 
   return (
     <>
       <div
         class={`${shell.shellContent} ${styles.passageContent}${props.showReadingFocus ? ` ${styles.passageContentFocus}` : ""}`}
-        onClick={handleContentTap}
       >
         <PassageReadingStack
           block={b}
@@ -428,37 +375,11 @@ function PassageReadingStack(props: {
 function ScriptureRefHead(props: { block: Block }): JSX.Element {
   const b = props.block;
   if (b.type !== "scripture" || !b.scripture_display_ref) return <></>;
-  const handoff = routeBibleHandoffUrl(b);
-  const ariaRef = b.scripture_translation
-    ? `${b.scripture_display_ref} (${b.scripture_translation})`
-    : b.scripture_display_ref;
-  async function openRouteBible(url: string) {
-    hapticLight();
-    await openExternalUrl(url);
-  }
 
-  const titleInner = handoff ? (
-    <button
-      type="button"
-      class={styles.refLink}
-      aria-label={`Open ${ariaRef} on route.bible`}
-      onClick={() => void openRouteBible(handoff)}
-    >
-      <span class={styles.refLinkText}>{b.scripture_display_ref}</span>
-      {b.scripture_translation && (
-        <span class={styles.translation}>{b.scripture_translation}</span>
-      )}
-      <span class={styles.refLinkIcon} aria-hidden="true">
-        <IconArrowSquareUpRight size={ICON_PX.compact} />
-      </span>
-    </button>
-  ) : (
-    <>{b.scripture_display_ref}</>
-  );
   return (
     <div class={styles.refHead}>
-      <h2 class={styles.ref}>{titleInner}</h2>
-      {!handoff && b.scripture_translation && (
+      <h2 class={styles.ref}>{b.scripture_display_ref}</h2>
+      {b.scripture_translation && (
         <span class={styles.translation}>{b.scripture_translation}</span>
       )}
     </div>
@@ -481,11 +402,14 @@ function EntityRefHead(props: { block: Block }): JSX.Element {
 function VerseOrContent(props: { block: Block }): JSX.Element {
   const b = props.block;
   if (b.scripture_verses && b.scripture_verses.length > 0) {
+    const singleVerse = b.scripture_verses.length === 1;
     return (
       <>
         {b.scripture_verses.map((v) => (
           <p class={styles.verse}>
-            <span class={styles.verseNum}>{v.number}</span>
+            {!singleVerse && (
+              <span class={styles.verseNum}>{v.number}</span>
+            )}
             <span class={styles.verseText}>{v.text}</span>
           </p>
         ))}
@@ -628,24 +552,26 @@ function PassageDecisionPanel(props: {
 }): JSX.Element {
   return (
     <div class={styles.decisionPanel}>
-      <ScriptureReflectionSection
-        block={props.block}
-        reflections={props.reflections}
-        passageId={props.passageId}
-        onNote={props.onNote}
-        setReflections={props.setReflections}
-      />
-      <SnoozeSection
-        showSnooze={props.showSnooze}
-        snoozeDate={props.snoozeDate}
-        startTs={props.startTs}
-        lifeStage={props.lifeStage}
-        passageId={props.passageId}
-        onKindlingAdvance={props.onKindlingAdvance}
-        setLifeStage={props.setLifeStage}
-        setShowSnooze={props.setShowSnooze}
-        setSnoozeDate={props.setSnoozeDate}
-      />
+      <div class={styles.decisionTools}>
+        <ScriptureReflectionSection
+          block={props.block}
+          reflections={props.reflections}
+          passageId={props.passageId}
+          onNote={props.onNote}
+          setReflections={props.setReflections}
+        />
+        <SnoozeSection
+          showSnooze={props.showSnooze}
+          snoozeDate={props.snoozeDate}
+          startTs={props.startTs}
+          lifeStage={props.lifeStage}
+          passageId={props.passageId}
+          onKindlingAdvance={props.onKindlingAdvance}
+          setLifeStage={props.setLifeStage}
+          setShowSnooze={props.setShowSnooze}
+          setSnoozeDate={props.setSnoozeDate}
+        />
+      </div>
     </div>
   );
 }
@@ -722,7 +648,7 @@ function ScriptureReflectionSection(props: {
         }}
       >
         <IconNotePencil size={ICON_PX.decisionPanel} />
-        <span class={styles.tertiaryBtnLabel}>Add reflection</span>
+        <span class={styles.tertiaryBtnLabel}>Reflection</span>
       </button>
     </div>
   );

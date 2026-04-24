@@ -51,12 +51,14 @@ export function ThresholdView(props: {
   const [loading, setLoading] = createSignal(true);
   const [error, setError] = createSignal<string | null>(null);
   const [showSync, setShowSync] = createSignal(false);
+  const [syncState, setSyncState] = createSignal<SyncState>(getSyncState());
   const [signedInSync, setSignedInSync] = createSignal(
     isSignedInSyncState(getSyncState().status),
   );
   const [showSettings, setShowSettings] = createSignal(false);
 
   const unsubSyncState = onSyncStateChange((sync) => {
+    setSyncState(sync);
     setSignedInSync(isSignedInSyncState(sync.status));
   });
   const unsubDataApplied = onSyncDataApplied(() => {
@@ -96,6 +98,11 @@ export function ThresholdView(props: {
   return (
     <div class={stateClass()}>
       <ThemeToggle class={styles.themeToggleCorner} />
+      <Show when={syncState().status === "syncing" || syncState().status === "provisioning"}>
+        <div class={styles.syncIndicator} aria-label="Syncing">
+          <div class={styles.syncDot} />
+        </div>
+      </Show>
       <h1 class={styles.title}>Kindled</h1>
       <div class={styles.divider} aria-hidden="true" />
       <p class={styles.tagline}>Spark scripture into an eternal, internal flame.</p>
@@ -174,7 +181,7 @@ function ThresholdContent(props: {
                 props.onCapture();
               }}
             >
-              <IconPlus size={ICON_PX.inline} /> Add
+              <IconPlus size={ICON_PX.inline} /> Capture
             </button>
           </Show>
         </div>

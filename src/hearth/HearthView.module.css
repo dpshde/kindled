@@ -6,12 +6,80 @@
     }
 }
 
-.hearthCount {
+/* ── Header: passage count integrated into nav ── */
+
+.syncDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-fire);
+    opacity: 0.8;
+    align-self: center;
+    animation: syncPulse 1.8s ease-in-out infinite;
+    flex-shrink: 0;
+    margin-right: 4px;
+}
+
+@keyframes syncPulse {
+    0%, 100% { opacity: 0.4; transform: scale(0.9); }
+    50% { opacity: 1; transform: scale(1.1); }
+}
+
+.headerCount {
     font-family: var(--font-ui);
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 500;
+    color: var(--color-text-secondary);
+    margin-left: 12px;
+    padding-left: 12px;
+    border-left: 1px solid var(--color-line);
+}
+
+/* Push actions further from the passage count */
+.headerSpacer {
+    flex: 1;
+    min-width: 16px;
+}
+
+.hearthHeader .headerActions {
+    gap: 4px;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.headerBtnSecondary {
     color: var(--color-text-tertiary);
-    white-space: nowrap;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-field);
+    transition: color var(--ease-ui), background var(--ease-ui);
+    margin-right: 8px;
+}
+
+.headerBtnSecondary:hover {
+    color: var(--color-text-secondary);
+    background: var(--color-bg-elevated);
+}
+
+.headerBtnPrimary {
+    color: var(--color-fire);
+    background: color-mix(in srgb, var(--color-fire) 10%, transparent);
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-field);
+    transition: background var(--ease-ui), color var(--ease-ui);
+}
+
+.headerBtnPrimary:hover {
+    background: color-mix(in srgb, var(--color-fire) 18%, transparent);
 }
 
 /* ── Search ── */
@@ -72,11 +140,13 @@
     }
 }
 
+/* ── List: continuous manuscript, minimal separation ── */
+
 .list {
-    padding: 8px 0 40px;
+    padding: 4px 0 40px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0;
     flex: 1;
     width: 100%;
 }
@@ -85,17 +155,53 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 56px 0;
+    padding: 48px 0;
     color: var(--color-text-secondary);
     font-size: 15px;
-    line-height: 1.5;
+    line-height: 1.6;
     width: 100%;
 }
 
-.emptyIcon {
-    color: var(--color-growth);
-    opacity: 0.45;
+/* Full empty state — no search, centered message */
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 32px;
+    color: var(--color-text-secondary);
+    font-size: 17px;
+    line-height: 1.6;
+    text-align: center;
+}
+
+.emptyState p {
+    max-width: 280px;
+}
+
+/* Empty state CTA */
+.emptyStateCta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 32px auto;
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fffef9;
+    background: var(--color-fire);
+    border-radius: var(--radius-field);
+    transition: background var(--ease-ui), transform var(--ease-ui);
+}
+
+.emptyStateCta:hover {
+    background: var(--color-fire-dim);
+}
+
+.emptyStateCta:active {
+    transform: scale(0.98);
 }
 
 /* ── Book filter ── */
@@ -157,21 +263,22 @@
     align-items: flex-end;
     justify-content: center;
     background: rgba(38, 35, 31, 0.25);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .bookSheet {
-    width: min(100vw, 28rem);
+    width: 100%;
     max-height: 72vh;
     display: flex;
     flex-direction: column;
     background: var(--color-bg);
     border-top-left-radius: var(--radius-sm);
     border-top-right-radius: var(--radius-sm);
-    border: 1px solid var(--color-line);
+    border: 2px solid var(--color-line);
     border-bottom: none;
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
+    animation: sheetSlideUp 250ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .bookSheetHeader {
@@ -315,52 +422,45 @@
     background: var(--color-bg-warm);
 }
 
-/* ── Cards ── */
+/* ── Cards: clean list items, no backgrounds, sharp edges ── */
 
 .cardWrap {
     position: relative;
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-}
-.cardWrapEditable {
 }
 
 .card {
     display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
-    background: var(--color-bg);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--color-line);
-    min-height: 56px;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--color-line);
+    border-radius: 0;
+    min-height: unset;
     cursor: pointer;
     text-align: left;
     width: 100%;
-    transition:
-        background var(--ease-ui),
-        border-color var(--ease-ui),
-        box-shadow var(--ease-ui);
+    transition: background var(--ease-ui);
 }
 
 .cardEditable {
-    padding-right: 3.6rem;
+    padding-right: 2.5rem;
 }
 
 .card:hover {
-    background: var(--color-bg-card);
-    border-color: var(--color-line-active);
+    background: var(--color-bg-warm);
 }
 
 .card:active {
-    background: var(--color-bg-card-hover);
+    background: var(--color-bg-card);
 }
 
 .cardIcon {
-    color: var(--color-text-tertiary);
     display: flex;
     flex-shrink: 0;
-    opacity: 0.65;
+    color: var(--color-text-secondary);
+    margin-top: 2px;
 }
 
 .cardContent {
@@ -368,7 +468,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .cardTitle {
@@ -379,62 +479,78 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.35;
+    line-height: 1.4;
 }
 
 .cardRhythm {
     font-family: var(--font-ui);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 2px;
+    align-self: flex-start;
+    margin-top: 2px;
+}
+
+.cardRhythmReady {
+    color: var(--color-fire-dim);
+    background: color-mix(in srgb, var(--color-fire) 12%, transparent);
+}
+
+.cardRhythmGrowing {
+    color: var(--color-growth-dim);
+    background: color-mix(in srgb, var(--color-growth) 10%, transparent);
+}
+
+.cardRhythmMature {
     color: var(--color-text-tertiary);
+    background: var(--color-bg-elevated);
 }
 
 .cardSub {
     font-size: 13px;
-    color: var(--color-text-tertiary);
+    color: var(--color-text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.4;
+    line-height: 1.5;
+    margin-top: 1px;
 }
+
+/* ── Edit button: inline with card, no circle ── */
 
 .cardEditBtn {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
     width: 2rem;
-    height: 2rem;
+    height: 2.5rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     color: var(--color-text-tertiary);
-    background: color-mix(in srgb, var(--color-bg) 90%, var(--color-bg-warm));
-    border: 1px solid var(--color-line);
-    border-radius: 999px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
     opacity: 0;
     pointer-events: none;
-    transform: translateY(-2px);
     transition:
         opacity var(--ease-ui),
-        transform var(--ease-ui),
-        color var(--ease-ui),
-        border-color var(--ease-ui),
-        background var(--ease-ui);
+        color var(--ease-ui);
 }
 
 .cardWrapEditable:hover .cardEditBtn,
 .cardWrapEditable:focus-within .cardEditBtn {
     opacity: 1;
     pointer-events: auto;
-    transform: translateY(0);
 }
 
 .cardEditBtn:hover,
 .cardEditBtn:focus-visible {
     color: var(--color-fire);
-    border-color: color-mix(in srgb, var(--color-fire) 35%, var(--color-line));
-    background: var(--color-bg-warm);
 }
 
 /* ── Edit modal ── */
@@ -444,22 +560,22 @@
     inset: 0;
     z-index: 110;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
-    padding: 20px;
     background: rgba(38, 35, 31, 0.25);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
 }
 
 .editPanel {
-    width: min(92vw, 44rem);
-    max-height: min(88vh, 48rem);
+    width: 100%;
+    max-height: 85vh;
     overflow-y: auto;
     background: var(--color-bg);
-    border: 2px solid var(--color-line);
-    border-radius: 4px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border-top: 2px solid var(--color-line);
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
+    animation: sheetSlideUp 250ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .editHeader {
@@ -630,23 +746,39 @@
 /* ── Settings overlay ── */
 
 .settingsOverlay {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(38, 35, 31, 0.25);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(38, 35, 31, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .settingsPanel {
-    background: var(--color-bg);
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-sm);
-    width: min(90vw, 340px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-line);
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: var(--radius-sm);
+  border-top-right-radius: var(--radius-sm);
+  width: 100%;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
+  animation: sheetSlideUp 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes sheetSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .settingsHeader {
@@ -683,9 +815,10 @@
 }
 
 .settingsBody {
-    padding: 4px 0;
-    max-height: 60vh;
-    overflow-y: auto;
+  padding: 4px 0 max(var(--space-md), env(safe-area-inset-bottom));
+  max-height: 70vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .settingsRow {
@@ -737,13 +870,72 @@
     background: var(--color-line);
 }
 
-/* ── Desktop (≥ 800px): full-width library grid ── */
+/* ── Desktop (≥ 800px): centered bookshelf layout ── */
 
 @media (min-width: 800px) {
-    .hearthContent {
-        max-width: 56rem;
-        margin: 0 auto;
-        padding-top: clamp(2rem, 6vh, 4rem);
+  .settingsOverlay {
+    align-items: center;
+    padding: 20px;
+  }
+
+  .settingsPanel {
+    max-width: min(90vw, 340px);
+    border: 2px solid var(--color-line);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    animation: modalFadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .editOverlay {
+    align-items: center;
+    padding: 20px;
+  }
+
+  .editPanel {
+    max-width: min(92vw, 44rem);
+    max-height: min(88vh, 48rem);
+    border: 2px solid var(--color-line);
+    border-radius: 4px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    animation: modalFadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes modalFadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .hearthContent {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding-top: clamp(1.5rem, 4vh, 3rem);
+  }
+
+    /* Consolidate search into the header area */
+    .searchRow {
+        order: -1;
+    }
+
+    .searchInput {
+        font-size: 15px;
+        padding: 10px 14px 10px 40px;
+        background: var(--color-bg-warm);
+        border-color: var(--color-line);
+    }
+
+    .searchInput:focus {
+        background: var(--color-bg);
+        border-color: var(--color-fire-dim);
+    }
+
+    .bookFilterBtn {
+        padding: 10px;
     }
 
     .bookSheetOverlay {
@@ -751,47 +943,47 @@
     }
 
     .bookSheet {
+        max-width: min(92vw, 28rem);
         max-height: 70vh;
+        border: 2px solid var(--color-line);
         border-bottom-left-radius: var(--radius-sm);
         border-bottom-right-radius: var(--radius-sm);
         border-bottom: 1px solid var(--color-line);
     }
 
+    /* Single-column bookshelf — continuous manuscript flow */
     .list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
         align-content: start;
         flex: 0 1 auto;
         overflow-y: auto;
     }
 
     .card {
-        padding: 14px 16px;
-        min-height: unset;
+        padding: 14px 0;
     }
 
     .cardEditable {
-        padding-right: 4rem;
+        padding-right: 2.5rem;
     }
+
     .cardTitle {
         font-size: 17px;
     }
 
-    .searchInput {
-        font-size: 15px;
-        padding: 12px 14px 12px 40px;
-    }
-
-    .bookFilterBtn {
-        padding: 12px;
+    .cardIcon {
+        /* Slightly larger icons on desktop for better type differentiation */
+        transform: scale(1.15);
+        transform-origin: center;
+        margin-top: 3px;
     }
 }
 
 @media (hover: none) {
     .card:hover {
-        background: var(--color-bg);
-        border-color: var(--color-line);
+        background: transparent;
     }
 
     .cardEditBtn {
@@ -856,12 +1048,7 @@
         font-size: 16px;
     }
 
-    .editOverlay {
-        padding: 12px;
-        align-items: flex-end;
-    }
     .editPanel {
-        width: 100%;
         max-height: 92vh;
     }
     .editMetaGrid {
@@ -869,5 +1056,17 @@
     }
     .editFooter {
         flex-direction: column;
+    }
+}
+
+/* ── Mobile: keep + button in header, no FAB ── */
+
+@media (max-width: 799px) {
+    .headerBtnPrimary {
+        /* Always visible in header on mobile too */
+    }
+
+    .fab {
+        display: none;
     }
 }

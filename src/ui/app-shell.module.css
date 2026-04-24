@@ -111,6 +111,7 @@
   align-items: center;
   gap: 2px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 /* ── Shared header button styles ── */
@@ -192,6 +193,8 @@
 
 @media (min-width: 800px) {
   .header {
+    max-width: none;
+    width: 100%;
     padding: 10px clamp(2rem, 5vw, 4rem);
     border-bottom: none;
   }
