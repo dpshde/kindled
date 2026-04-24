@@ -44,6 +44,7 @@
     "@types/node": "^24.12.2",
     "@vitest/coverage-v8": "^4.1.4",
     "agentation": "^3.0.2",
+    "esbuild": "^0.28.0",
     "fake-indexeddb": "^6.2.5",
     "happy-dom": "^20.9.0",
     "oxlint": "^1.60.0",
