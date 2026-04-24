@@ -1,3 +1,5 @@
+// @ts-nocheck — dev-only module using dynamic React imports; type resolution
+// for react/react-dom is not worth adding @types to a SolidJS project.
 import { onCleanup, onMount, type JSX } from "solid-js";
 
 /**
@@ -11,7 +13,7 @@ export function AgentationHost(): JSX.Element {
   const setContainer = (el: HTMLDivElement) => {
     container = el;
   };
-  let root: ReturnType<typeof import("react-dom/client")["createRoot"]> | undefined;
+  let root: any;
 
   onMount(() => {
     if (!container || !import.meta.env.DEV) return;

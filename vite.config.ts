@@ -18,6 +18,7 @@ export default defineConfig({
     target: "esnext",
     minify: process.env.TAURI_ENV_DEBUG === "true" ? false : "esbuild",
     sourcemap: process.env.TAURI_ENV_DEBUG === "true",
+    outDir: process.env.VERCEL ? ".vercel/output/static" : "dist",
   },
   envPrefix: ["VITE_", "TAURI_ENV_"],
   server: {

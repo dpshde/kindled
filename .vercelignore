@@ -1,0 +1,15 @@
+node_modules
+src-tauri
+.agents
+.claude
+.crush
+.factory
+.junie
+.kiro
+.pi
+.windsurf
+coverage
+data
+.superset
+*.log
+solo.yml
