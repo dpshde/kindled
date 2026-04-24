@@ -162,16 +162,32 @@ function ThresholdContent(props: {
       </Show>
       <div class={styles.ctaColumn}>
         <div class={styles.actions} role="group" aria-label="Actions">
-          <button
-            type="button"
-            class={styles.secondaryButton}
-            onClick={() => {
-              hapticLight();
-              props.onLibrary();
-            }}
+          <Show
+            when={!props.showSyncButton || props.totalBlocks > 0}
+            fallback={
+              <button
+                type="button"
+                class={styles.secondaryButton}
+                onClick={() => {
+                  hapticLight();
+                  props.setShowSync(true);
+                }}
+              >
+                <IconFileCloud size={ICON_PX.inline} /> Sign in
+              </button>
+            }
           >
-            <IconBookOpen size={ICON_PX.inline} /> Hearth
-          </button>
+            <button
+              type="button"
+              class={styles.secondaryButton}
+              onClick={() => {
+                hapticLight();
+                props.onLibrary();
+              }}
+            >
+              <IconBookOpen size={ICON_PX.inline} /> Hearth
+            </button>
+          </Show>
           <Show when={hasKindling()}>
             <button
               type="button"
