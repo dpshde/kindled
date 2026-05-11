@@ -4,14 +4,24 @@ export {
   getBlock,
   getAllBlocks,
   updateBlockContent,
-  deleteBlock,
+  archiveBlock,
+  restoreBlock,
+  getArchivedBlocks,
   searchBlocks,
   findScriptureBlockByCanonicalRef,
+  findAnyBlockByCanonicalRef,
   updateScripturePassageData,
   saveScripturePassageFromCapture,
   getTotalBlockCount,
 } from "./blocks";
-export { createEntity, getEntity, getAllEntities, findEntityByName, addBlockMention, updateEntityFamiliarity } from "./entities";
+export {
+  createEntity,
+  getEntity,
+  getAllEntities,
+  findEntityByName,
+  addBlockMention,
+  updateEntityFamiliarity,
+} from "./entities";
 export {
   createLink,
   getOutgoingLinks,
@@ -46,4 +56,14 @@ export {
   ensureLegacyReflectionsMigrated,
 } from "./reflections";
 export { splitLegacyReflectionBodiesFromContent } from "./reflections";
-export type { Block, BlockType, Entity, EntityType, LifeStage, LifeStageRecord, Link, Verse, Reflection } from "./types";
+export type {
+  Block,
+  BlockType,
+  Entity,
+  EntityType,
+  LifeStage,
+  LifeStageRecord,
+  Link,
+  Verse,
+  Reflection,
+} from "./types";

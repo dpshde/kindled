@@ -6,7 +6,7 @@ import {
   type JSX,
 } from "solid-js";
 import {
-  deleteBlock,
+  archiveBlock,
   deepenBlock,
   ensureLifeStage,
   recordLinger,
@@ -17,6 +17,7 @@ import {
   type Link,
   type Reflection,
 } from "../db";
+import { formatTranslationId } from "../scripture/HelloAOBibleClient";
 import type { PassageNoteAction } from "../app/app-screen";
 import type { AppRootModel } from "../app/app-model";
 import {
@@ -32,7 +33,13 @@ import {
 import { ICON_PX } from "../ui/icon-sizes";
 import shell from "../ui/app-shell.module.css";
 import styles from "./PassageView.module.css";
-import { hapticLight, hapticMedium, hapticHeavy, hapticSelection, hapticWarning } from "../haptics";
+import {
+  hapticLight,
+  hapticMedium,
+  hapticHeavy,
+  hapticSelection,
+  hapticWarning,
+} from "../haptics";
 import { openExternalUrl } from "../platform/runtime";
 import { onSyncDataApplied } from "../sync/hosted-sync";
 import { fetchPassageBundle } from "./passage-data-load";
@@ -57,7 +64,9 @@ export function PassageView(props: {
   const [lifeStage, setLifeStage] = createSignal<LifeStageRecord | null>(null);
   const [outgoing, setOutgoing] = createSignal<Link[]>([]);
   const [backlinks, setBacklinks] = createSignal<Link[]>([]);
-  const [linkedBlocks, setLinkedBlocks] = createSignal<Record<string, Block>>({});
+  const [linkedBlocks, setLinkedBlocks] = createSignal<Record<string, Block>>(
+    {},
+  );
   const [loading, setLoading] = createSignal(true);
   const [confirmDelete, setConfirmDelete] = createSignal(false);
   const [startTs, setStartTs] = createSignal(Date.now());
@@ -104,7 +113,8 @@ export function PassageView(props: {
 
   function handleViewTap(e: MouseEvent) {
     const target = e.target as HTMLElement | null;
-    if (target?.closest("button, a, input, textarea, select, [role='button']")) return;
+    if (target?.closest("button, a, input, textarea, select, [role='button']"))
+      return;
     if (showReadingFocus()) {
       e.preventDefault();
       hapticLight();
@@ -123,7 +133,12 @@ export function PassageView(props: {
   });
 
   return (
-    <div class={shell.view} onClick={block() && block()!.type === "scripture" ? handleViewTap : undefined}>
+    <div
+      class={shell.view}
+      onClick={
+        block() && block()!.type === "scripture" ? handleViewTap : undefined
+      }
+    >
       <div class={shell.shell}>
         <Show when={!showReadingFocus()}>
           <PassageHeader
@@ -134,17 +149,26 @@ export function PassageView(props: {
               hapticLight();
               setShowReviewDetails(true);
             }}
-            onOpenRouteBible={block() && routeBibleHandoffUrl(block()!) ? () => {
-              hapticLight();
-              void openExternalUrl(routeBibleHandoffUrl(block()!)!);
-            } : undefined}
+            onOpenRouteBible={
+              block() && routeBibleHandoffUrl(block()!)
+                ? () => {
+                    hapticLight();
+                    void openExternalUrl(routeBibleHandoffUrl(block()!)!);
+                  }
+                : undefined
+            }
           />
         </Show>
         <div class={shell.main}>
           <Show
             when={!loading() && block()}
             fallback={
-              <p style={{ padding: "40px 0", color: "var(--color-text-tertiary)" }}>
+              <p
+                style={{
+                  padding: "40px 0",
+                  color: "var(--color-text-tertiary)",
+                }}
+              >
                 {loading() ? "Loading..." : "Block not found"}
               </p>
             }
@@ -354,9 +378,7 @@ function PassageReadingStack(props: {
     <div class={styles.readingStack}>
       <ScriptureRefHead block={b} />
       <EntityRefHead block={b} />
-      {b.type === "note" && (
-        <h2 class={styles.ref}>Your Reflection</h2>
-      )}
+      {b.type === "note" && <h2 class={styles.ref}>Your Reflection</h2>}
       <div class={styles.textBlock}>
         <VerseOrContent block={b} />
       </div>
@@ -380,7 +402,9 @@ function ScriptureRefHead(props: { block: Block }): JSX.Element {
     <div class={styles.refHead}>
       <h2 class={styles.ref}>{b.scripture_display_ref}</h2>
       {b.scripture_translation && (
-        <span class={styles.translation}>{b.scripture_translation}</span>
+        <span class={styles.translation}>
+          {formatTranslationId(b.scripture_translation)}
+        </span>
       )}
     </div>
   );
@@ -392,9 +416,7 @@ function EntityRefHead(props: { block: Block }): JSX.Element {
   return (
     <div class={styles.refHead}>
       <h2 class={styles.ref}>{b.entity_name}</h2>
-      {b.entity_type && (
-        <span class={styles.translation}>{b.entity_type}</span>
-      )}
+      {b.entity_type && <span class={styles.translation}>{b.entity_type}</span>}
     </div>
   );
 }
@@ -407,9 +429,7 @@ function VerseOrContent(props: { block: Block }): JSX.Element {
       <>
         {b.scripture_verses.map((v) => (
           <p class={styles.verse}>
-            {!singleVerse && (
-              <span class={styles.verseNum}>{v.number}</span>
-            )}
+            {!singleVerse && <span class={styles.verseNum}>{v.number}</span>}
             <span class={styles.verseText}>{v.text}</span>
           </p>
         ))}
@@ -752,16 +772,18 @@ function PassageConfirmDelete(props: {
   onDeleted: () => void;
   onCancel: () => void;
 }): JSX.Element {
-  async function doDelete() {
+  async function doArchive() {
     hapticHeavy();
-    await deleteBlock(props.passageId);
+    await archiveBlock(props.passageId);
     props.onDeleted();
   }
   return (
     <div class={styles.deleteOverlay} onClick={props.onCancel}>
       <div class={styles.deleteCard} onClick={(e) => e.stopPropagation()}>
-        <h2 class={styles.deleteTitle}>Delete this passage?</h2>
-        <p class={styles.deleteBody}>This can't be undone.</p>
+        <h2 class={styles.deleteTitle}>Archive this passage?</h2>
+        <p class={styles.deleteBody}>
+          It will move to Trash and can be restored later.
+        </p>
         <div class={styles.deleteActions}>
           <button
             type="button"
@@ -773,9 +795,9 @@ function PassageConfirmDelete(props: {
           <button
             type="button"
             class={styles.deleteBtnYes}
-            onClick={() => void doDelete()}
+            onClick={() => void doArchive()}
           >
-            Yes, delete
+            Yes, archive
           </button>
         </div>
       </div>

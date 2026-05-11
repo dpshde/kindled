@@ -13,7 +13,7 @@ export interface TitleBarProps {
   onBack?: () => void;
   leading?: JSX.Element;
   trailing?: JSX.Element;
-  isTauri?: boolean;
+  isNative?: boolean;
   platform?: "macos" | "windows" | "linux" | "web" | "ios" | "android";
 }
 
@@ -25,17 +25,17 @@ export function titleBar(props: TitleBarProps): JSX.Element {
     onBack,
     leading,
     trailing,
-    isTauri = false,
+    isNative = false,
     platform = "web",
   } = props;
 
   const isMacOS = platform === "macos";
-  const isTauriDesktop = isTauri && platform !== "web";
+  const isNativeDesktop = isNative && platform !== "web";
 
   return (
     <div
       class={`${styles.titleBar} ${styles[variant]} ${isMacOS ? styles.macos : ""}`}
-      data-tauri-drag-region={isTauri ? "true" : "false"}
+      data-drag-region={isNative ? "true" : "false"}
     >
       <div class={styles.leading}>
         {leading ??
@@ -66,7 +66,7 @@ export function titleBar(props: TitleBarProps): JSX.Element {
 
       <div class={styles.trailing}>
         {trailing ??
-          (isTauriDesktop && !isMacOS ? (
+          (isNativeDesktop && !isMacOS ? (
             <div class={styles.windowControls}>
               <button
                 type="button"
@@ -102,29 +102,25 @@ export function titleBar(props: TitleBarProps): JSX.Element {
 }
 
 async function minimizeWindow() {
-  if ("__TAURI_INTERNALS__" in window) {
-    const mod = await import("@tauri-apps/api/window");
-    await mod.getCurrentWindow().minimize();
+  if (window.zero) {
+    await window.zero.windows.minimize();
   }
 }
 
 async function maximizeWindow() {
-  if ("__TAURI_INTERNALS__" in window) {
-    const mod = await import("@tauri-apps/api/window");
-    const w = mod.getCurrentWindow();
-    const isMaximized = await w.isMaximized();
-    if (isMaximized) {
-      await w.unmaximize();
+  if (window.zero) {
+    const maximized = await window.zero.windows.isMaximized();
+    if (maximized) {
+      await window.zero.windows.unmaximize();
     } else {
-      await w.maximize();
+      await window.zero.windows.maximize();
     }
   }
 }
 
 async function closeWindow() {
-  if ("__TAURI_INTERNALS__" in window) {
-    const mod = await import("@tauri-apps/api/window");
-    await mod.getCurrentWindow().close();
+  if (window.zero) {
+    await window.zero.windows.close("main");
   }
 }
 
@@ -133,7 +129,7 @@ export function detectPlatform(): TitleBarProps["platform"] {
 
   if (/iphone|ipad|ipod/.test(ua)) return "ios";
   if (/android/.test(ua)) return "android";
-  if ("__TAURI_INTERNALS__" in window) {
+  if (window.zero !== undefined) {
     if (ua.includes("macintosh") || ua.includes("mac os")) return "macos";
     if (ua.includes("windows")) return "windows";
     return "linux";

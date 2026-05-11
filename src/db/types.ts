@@ -35,6 +35,7 @@ export interface Block {
   source?: string;
   captured_at: string;
   modified_at: string;
+  archived_at?: string;
   tags: string[];
 }
 

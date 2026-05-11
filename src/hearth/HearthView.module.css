@@ -21,8 +21,15 @@
 }
 
 @keyframes syncPulse {
-    0%, 100% { opacity: 0.4; transform: scale(0.9); }
-    50% { opacity: 1; transform: scale(1.1); }
+    0%,
+    100% {
+        opacity: 0.4;
+        transform: scale(0.9);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
 }
 
 .headerCount {
@@ -56,7 +63,9 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-field);
-    transition: color var(--ease-ui), background var(--ease-ui);
+    transition:
+        color var(--ease-ui),
+        background var(--ease-ui);
     margin-right: 8px;
 }
 
@@ -75,7 +84,9 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-field);
-    transition: background var(--ease-ui), color var(--ease-ui);
+    transition:
+        background var(--ease-ui),
+        color var(--ease-ui);
 }
 
 .headerBtnPrimary:hover {
@@ -193,7 +204,9 @@
     color: #fffef9;
     background: var(--color-fire);
     border-radius: var(--radius-field);
-    transition: background var(--ease-ui), transform var(--ease-ui);
+    transition:
+        background var(--ease-ui),
+        transform var(--ease-ui);
 }
 
 .emptyStateCta:hover {
@@ -432,11 +445,11 @@
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    padding: 12px 0;
+    padding: 12px 10px;
     background: transparent;
     border: none;
     border-bottom: 1px solid var(--color-line);
-    border-radius: 0;
+    border-radius: 6px;
     min-height: unset;
     cursor: pointer;
     text-align: left;
@@ -523,9 +536,9 @@
 
 .cardEditBtn {
     position: absolute;
-    right: 0;
+    right: 6px;
     top: 50%;
-    transform: translateY(-50%) translateX(4px);
+    transform: translateY(-50%);
     width: 2rem;
     height: 2.5rem;
     display: inline-flex;
@@ -551,6 +564,38 @@
 .cardEditBtn:hover,
 .cardEditBtn:focus-visible {
     color: var(--color-fire);
+}
+
+.cardArchiveBtn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2rem;
+    height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-tertiary);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+        opacity var(--ease-ui),
+        color var(--ease-ui);
+}
+
+.cardWrapEditable:hover .cardArchiveBtn,
+.cardWrapEditable:focus-within .cardArchiveBtn {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.cardArchiveBtn:hover,
+.cardArchiveBtn:focus-visible {
+    color: var(--color-ember, #a33);
 }
 
 /* ── Edit modal ── */
@@ -689,6 +734,45 @@
     line-height: 1.7;
 }
 
+.editSelect {
+    padding: 10px 14px;
+    font-size: 14px;
+    background: var(--color-bg);
+    border: 2px solid var(--color-line);
+    border-radius: var(--radius-field);
+    color: var(--color-text);
+    cursor: pointer;
+    width: 100%;
+}
+
+.editPassagePreview {
+    font-family: var(--font-scripture);
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--color-text);
+    max-height: 16rem;
+    overflow-y: auto;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-field);
+    background: var(--color-bg-warm);
+}
+
+.editPreviewVerse {
+    margin: 0 0 0.5rem 0;
+}
+
+.editPreviewVerse:last-child {
+    margin-bottom: 0;
+}
+
+.editPreviewNumber {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    margin-right: 0.25rem;
+}
+
 .editFooter {
     display: flex;
     justify-content: flex-end;
@@ -746,39 +830,39 @@
 /* ── Settings overlay ── */
 
 .settingsOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: rgba(38, 35, 31, 0.25);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(38, 35, 31, 0.25);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .settingsPanel {
-  background: var(--color-bg);
-  border-top: 1px solid var(--color-line);
-  border-left: none;
-  border-right: none;
-  border-bottom: none;
-  border-top-left-radius: var(--radius-sm);
-  border-top-right-radius: var(--radius-sm);
-  width: 100%;
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
-  animation: sheetSlideUp 250ms cubic-bezier(0.16, 1, 0.3, 1);
+    background: var(--color-bg);
+    border-top: 1px solid var(--color-line);
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    border-top-left-radius: var(--radius-sm);
+    border-top-right-radius: var(--radius-sm);
+    width: 100%;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
+    animation: sheetSlideUp 250ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes sheetSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .settingsHeader {
@@ -815,10 +899,10 @@
 }
 
 .settingsBody {
-  padding: 4px 0 max(var(--space-md), env(safe-area-inset-bottom));
-  max-height: 70vh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+    padding: 4px 0 max(var(--space-md), env(safe-area-inset-bottom));
+    max-height: 70vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .settingsRow {
@@ -864,6 +948,14 @@
     padding: 2px 0 2px 1rem;
 }
 
+.walletIcon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    object-fit: contain;
+}
+
 .settingsDivider {
     height: 1px;
     margin: 4px var(--space-lg);
@@ -873,49 +965,49 @@
 /* ── Desktop (≥ 800px): centered bookshelf layout ── */
 
 @media (min-width: 800px) {
-  .settingsOverlay {
-    align-items: center;
-    padding: 20px;
-  }
-
-  .settingsPanel {
-    max-width: min(90vw, 340px);
-    border: 2px solid var(--color-line);
-    border-radius: var(--radius-sm);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    animation: modalFadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .editOverlay {
-    align-items: center;
-    padding: 20px;
-  }
-
-  .editPanel {
-    max-width: min(92vw, 44rem);
-    max-height: min(88vh, 48rem);
-    border: 2px solid var(--color-line);
-    border-radius: 4px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    animation: modalFadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes modalFadeIn {
-    from {
-      opacity: 0;
-      transform: scale(0.98);
+    .settingsOverlay {
+        align-items: center;
+        padding: 20px;
     }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
 
-  .hearthContent {
-    max-width: 42rem;
-    margin: 0 auto;
-    padding-top: clamp(1.5rem, 4vh, 3rem);
-  }
+    .settingsPanel {
+        max-width: min(90vw, 340px);
+        border: 2px solid var(--color-line);
+        border-radius: var(--radius-sm);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        animation: modalFadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .editOverlay {
+        align-items: center;
+        padding: 20px;
+    }
+
+    .editPanel {
+        max-width: min(92vw, 44rem);
+        max-height: min(88vh, 48rem);
+        border: 2px solid var(--color-line);
+        border-radius: 4px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        animation: modalFadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .hearthContent {
+        max-width: 42rem;
+        margin: 0 auto;
+        padding-top: clamp(1.5rem, 4vh, 3rem);
+    }
 
     /* Consolidate search into the header area */
     .searchRow {
@@ -962,7 +1054,7 @@
     }
 
     .card {
-        padding: 14px 0;
+        padding: 14px 10px;
     }
 
     .cardEditable {
@@ -992,7 +1084,23 @@
         transform: none;
     }
 
+    .cardArchiveBtn {
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+    }
+
     .cardEditBtn:hover {
+        color: var(--color-text-tertiary);
+        border-color: var(--color-line);
+        background: color-mix(
+            in srgb,
+            var(--color-bg) 90%,
+            var(--color-bg-warm)
+        );
+    }
+
+    .cardArchiveBtn:hover {
         color: var(--color-text-tertiary);
         border-color: var(--color-line);
         background: color-mix(

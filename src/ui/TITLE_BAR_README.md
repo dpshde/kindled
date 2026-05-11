@@ -10,17 +10,9 @@ An in-style title bar component following Kindled's design system (warm, paper-l
 - **Spacing**: Respects `env(safe-area-inset-top)` for mobile notches
 - **Colors**: Uses paper-based solid color tokens (no alpha stacks)
 
-## Tauri Configuration
+## Native Shell Configuration
 
-The title bar is designed for macOS overlay mode:
-
-```json
-{
-  "titleBarStyle": "Overlay",
-  "trafficLightPosition": { "x": 16, "y": 16 },
-  "decorations": true
-}
-```
+The title bar is designed for macOS overlay mode. The zero-native `app.zon` configures the window with title bar overlay support.
 
 ## Usage
 
@@ -33,7 +25,7 @@ const tb = titleBar({
   title: "Kindled",
   variant: "default",
   platform: detectPlatform(),
-  isTauri: "__TAURI_INTERNALS__" in window,
+  isNative: window.zero !== undefined,
 });
 ```
 
@@ -46,21 +38,8 @@ const tb = titleBar({
   showBack: true,
   onBack: () => navigateBack(),
   platform: detectPlatform(),
-  isTauri: true,
+  isNative: true,
 });
-```
-
-### Integration with App Shell
-
-```typescript
-import shell from "../ui/app-shell.module.css";
-
-html`<div class="${shell.view}">
-  ${titleBar({...})}
-  <div class="${shell.withTitleBar} ${shell.shell}">
-    <!-- Content here -->
-  </div>
-</div>`;
 ```
 
 ## Variants
@@ -74,48 +53,32 @@ html`<div class="${shell.view}">
 
 | Platform | Behavior |
 |----------|----------|
-| macOS (Tauri) | Native traffic lights, draggable region, 68px left spacing |
+| macOS (native) | Native traffic lights, draggable region, 68px left spacing |
 | Windows/Linux | Custom window controls (min/max/close), draggable region |
 | Web/Mobile | No title bar (immersive experience) |
 
 ## Window Controls
 
 On non-macOS platforms, the title bar provides custom window controls:
-- Minimize: `-`
-- Maximize: `⛶` (toggles with restore)
-- Close: `×`
+- Minimize
+- Maximize (toggles with restore)
+- Close
 
-These use Phosphor icons and match Kindled's color system.
+These use `window.zero.windows.*` APIs and Phosphor icons matching Kindled's color system.
 
 ## Platform Detection
 
-The app now sets `data-platform` on the HTML element:
-- `macos` - macOS with Tauri
-- `windows` - Windows with Tauri
-- `linux` - Linux with Tauri
+The app sets `data-platform` on the HTML element:
+- `macos` - macOS native shell
+- `windows` - Windows native shell
+- `linux` - Linux native shell
 - `ios` - iOS web/PWA
 - `android` - Android web/PWA
 - `web` - Standard web
 
-Use this for platform-specific CSS:
-
-```css
-html[data-platform="macos"] .my-element {
-  padding-left: 80px; /* Account for traffic lights */
-}
-```
-
-## Files
-
-- `title-bar.ts` - Component implementation
-- `TitleBar.module.css` - Component styles
-- `title-bar-usage-example.ts` - Integration examples
-- `icons/icons.ts` - Added minimize/maximize/close icons
-- `icons/paths.ts` - Added icon paths for window controls
-
 ## Notes
 
-- Uses `data-tauri-drag-region` attribute for draggable window
+- Uses `data-drag-region` attribute for draggable window
 - Respects `prefers-reduced-motion` for accessibility
 - Handles safe area insets for notched devices
 - Back button includes haptic feedback via `hapticTrigger()`

@@ -17,7 +17,9 @@ function addDays(date: Date, days: number): string {
   return d.toISOString();
 }
 
-export async function getLifeStage(blockId: string): Promise<LifeStageRecord | null> {
+export async function getLifeStage(
+  blockId: string,
+): Promise<LifeStageRecord | null> {
   const db = await getDb();
   const safeId = blockId.replace(/'/g, "''");
   const rows = await db.query<Record<string, string>>(
@@ -41,7 +43,9 @@ export async function getLifeStage(blockId: string): Promise<LifeStageRecord | n
 }
 
 /** Ensures a `life_stages` row exists (e.g. older blocks created without rhythm data). */
-export async function ensureLifeStage(blockId: string): Promise<LifeStageRecord> {
+export async function ensureLifeStage(
+  blockId: string,
+): Promise<LifeStageRecord> {
   const existing = await getLifeStage(blockId);
   if (existing) return existing;
 
@@ -162,7 +166,10 @@ export async function incrementNotes(blockId: string): Promise<void> {
   );
 }
 
-export async function snoozeBlock(blockId: string, untilDate: Date): Promise<void> {
+export async function snoozeBlock(
+  blockId: string,
+  untilDate: Date,
+): Promise<void> {
   const db = await getDb();
   await db.run(
     `UPDATE life_stages SET next_review_at = ?, updated_at = ? WHERE block_id = ?`,
@@ -221,7 +228,8 @@ export async function getDailyKindling(limit = 5): Promise<string[]> {
        (SELECT COUNT(*) FROM links l WHERE l.from_block = b.id) as link_count
      FROM blocks b
      JOIN life_stages ls ON b.id = ls.block_id
-     WHERE ls.stage != 'ember'
+     WHERE b.archived_at IS NULL
+       AND ls.stage != 'ember'
        AND ls.next_review_at <= '${now}'
      ORDER BY
        CASE ls.stage

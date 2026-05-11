@@ -42,7 +42,7 @@
 
 /* Allow interactive elements to receive events */
 .titleBar button,
-.titleBar [data-tauri-drag-region="false"] {
+.titleBar [data-drag-region="false"] {
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }

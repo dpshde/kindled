@@ -2,9 +2,14 @@ import {
   Show,
   createEffect,
   createSignal,
+  onCleanup,
   type JSX,
 } from "solid-js";
-import { invalidateClientKindlingIdsCache, saveScripturePassageFromCapture } from "../db";
+import {
+  invalidateClientKindlingIdsCache,
+  saveScripturePassageFromCapture,
+} from "../db";
+import { isWalletAvailable, broadcastScriptureMemo } from "../solana";
 import { resolvePassage } from "../scripture/RouteBibleClient";
 import {
   resolveBookAlias,
@@ -35,7 +40,12 @@ import { ICON_PX } from "../ui/icon-sizes";
 import { pickerLabelForOsisBook } from "../scripture/book-picker-labels";
 import shell from "../ui/app-shell.module.css";
 import styles from "./ScriptureCapture.module.css";
-import { hapticLight, hapticMedium, hapticSave, hapticSelection } from "../haptics";
+import {
+  hapticLight,
+  hapticMedium,
+  hapticSave,
+  hapticSelection,
+} from "../haptics";
 import {
   buildNumericOptions,
   buildRefString,
@@ -52,7 +62,13 @@ import {
 
 const PASSAGE_INPUT_ID = "scripture-passage-input";
 
-type CaptureStatus = "idle" | "resolving" | "preview" | "saving" | "saved" | "error";
+type CaptureStatus =
+  | "idle"
+  | "resolving"
+  | "preview"
+  | "saving"
+  | "saved"
+  | "error";
 
 function topicSectionFollowsPreview(status: CaptureStatus): boolean {
   return status === "preview" || status === "saving" || status === "saved";
@@ -78,12 +94,37 @@ export function ScriptureCaptureView(props: {
     text: string;
   } | null>(null);
   const [errorMsg, setErrorMsg] = createSignal("");
-  const [canonicalTopics, setCanonicalTopics] = createSignal<CanonicalTopic[]>([]);
-  const [topicsLoadError, setTopicsLoadError] = createSignal<string | null>(null);
+  const [canonicalTopics, setCanonicalTopics] = createSignal<CanonicalTopic[]>(
+    [],
+  );
+  const [topicsLoadError, setTopicsLoadError] = createSignal<string | null>(
+    null,
+  );
   const [topicQuery, setTopicQuery] = createSignal("");
-  const [activeTopic, setActiveTopic] = createSignal<CanonicalTopic | null>(null);
+  const [activeTopic, setActiveTopic] = createSignal<CanonicalTopic | null>(
+    null,
+  );
   const [topicListCollapsed, setTopicListCollapsed] = createSignal(false);
   const [topicSectionCollapsed, setTopicSectionCollapsed] = createSignal(false);
+  const [storeToChain, setStoreToChain] = createSignal(false);
+  const [walletAvailable, setWalletAvailable] =
+    createSignal(isWalletAvailable());
+
+  createEffect(() => {
+    // Wallet extensions inject asynchronously after page load.
+    // Poll briefly until one appears or we give up after ~5s.
+    const interval = setInterval(() => {
+      if (isWalletAvailable()) {
+        setWalletAvailable(true);
+        clearInterval(interval);
+      }
+    }, 400);
+    const timeout = setTimeout(() => clearInterval(interval), 5200);
+    onCleanup(() => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    });
+  });
 
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -97,7 +138,11 @@ export function ScriptureCaptureView(props: {
     }
     void loadCanonicalTopics()
       .then((topics) => setCanonicalTopics(topics))
-      .catch(() => setTopicsLoadError("Topic suggestions unavailable (could not load list)."));
+      .catch(() =>
+        setTopicsLoadError(
+          "Topic suggestions unavailable (could not load list).",
+        ),
+      );
   });
 
   function syncDraftFromInput(val: string, instantResolve = false) {
@@ -203,12 +248,16 @@ export function ScriptureCaptureView(props: {
       if (!passage) {
         setStatus("error");
         setErrorMsg("Could not resolve that passage.");
-        console.log("[Capture] handleResolve:error-null", { canonical: parsed.canonical });
+        console.log("[Capture] handleResolve:error-null", {
+          canonical: parsed.canonical,
+        });
         return;
       }
       if (passage.verses.length === 0) {
         setStatus("error");
-        setErrorMsg(`No verse text available for ${passage.displayRef}. Check your connection and try again.`);
+        setErrorMsg(
+          `No verse text available for ${passage.displayRef}. Check your connection and try again.`,
+        );
         console.log("[Capture] handleResolve:error-empty-verses", {
           canonical: parsed.canonical,
           displayRef: passage.displayRef,
@@ -256,7 +305,7 @@ export function ScriptureCaptureView(props: {
         canonical: parsed.canonical,
         verseCount: passage?.verses.length ?? 0,
       });
-      await saveScripturePassageFromCapture({
+      const { alreadyExisted } = await saveScripturePassageFromCapture({
         content: pv.text,
         scripture_ref: parsed.canonical,
         scripture_display_ref: pv.displayRef,
@@ -266,6 +315,36 @@ export function ScriptureCaptureView(props: {
         tags: [],
       });
       invalidateClientKindlingIdsCache();
+
+      if (storeToChain() && !alreadyExisted) {
+        try {
+          const signature = await Promise.race([
+            broadcastScriptureMemo(parsed.canonical),
+            new Promise<never>((_, reject) =>
+              setTimeout(
+                () =>
+                  reject(new Error("Wallet confirmation timed out after 30s")),
+                30_000,
+              ),
+            ),
+          ]);
+          console.log("[Capture] Permanent backup succeeded:", signature);
+        } catch (chainErr) {
+          console.error("[Capture] Permanent backup failed:", chainErr);
+          // Local save is already persisted; show a non-blocking warning.
+          setErrorMsg(
+            chainErr instanceof Error
+              ? `Saved locally, but permanent backup failed: ${chainErr.message}`
+              : "Saved locally, but permanent backup failed.",
+          );
+        }
+      } else if (storeToChain() && alreadyExisted) {
+        console.log(
+          "[Capture] Skipped permanent backup — already saved locally:",
+          parsed.canonical,
+        );
+      }
+
       setStatus("saved");
       console.log("[Capture] handleSave:saved", {
         canonical: parsed.canonical,
@@ -347,7 +426,11 @@ export function ScriptureCaptureView(props: {
                 class={styles.captureStackFlow}
                 style={{ order: topicSectionFollowsPreview(status()) ? 2 : 3 }}
               >
-                <ScriptureParsedPreview inputVal={input()} draft={draft()} status={status()} />
+                <ScriptureParsedPreview
+                  inputVal={input()}
+                  draft={draft()}
+                  status={status()}
+                />
                 <ScriptureIdleResolveBtn
                   status={status()}
                   onResolve={() => void handleResolve()}
@@ -357,6 +440,9 @@ export function ScriptureCaptureView(props: {
                   status={status()}
                   preview={preview()}
                   onSave={() => void handleSave()}
+                  storeToChain={storeToChain()}
+                  onStoreToChainChange={setStoreToChain}
+                  walletAvailable={walletAvailable()}
                 />
                 <ScriptureSaving status={status()} />
                 <ScriptureSaved
@@ -388,17 +474,23 @@ function ScriptureEditorSection(props: {
 
   const suggestions = () => {
     const q = props.input.trim();
-    if (!q || props.status !== "idle") return [] as { label: string; insertText: string; canonical: string }[];
+    if (!q || props.status !== "idle")
+      return [] as { label: string; insertText: string; canonical: string }[];
     const tf = topicPassageQueryFilter(q);
     if (tf) {
       const { book, chapter, versePrefix } = tf;
-      return getTopicPassagePicksForBook(book, 6, { chapter, versePrefix }).map((pick) => ({
-        label: pick.label,
-        insertText: pick.insertText,
-        canonical: pick.refOsis,
-      }));
+      return getTopicPassagePicksForBook(book, 6, { chapter, versePrefix }).map(
+        (pick) => ({
+          label: pick.label,
+          insertText: pick.insertText,
+          canonical: pick.refOsis,
+        }),
+      );
     }
-    return filterRedundantBookSuggestions(q, autocompletePassage(q, { limit: 6 })).map((s) => ({
+    return filterRedundantBookSuggestions(
+      q,
+      autocompletePassage(q, { limit: 6 }),
+    ).map((s) => ({
       label: s.label,
       insertText: s.insertText,
       canonical: s.canonical,
@@ -417,8 +509,15 @@ function ScriptureEditorSection(props: {
             class={styles.select}
             value={d().book}
             onChange={(e) => {
-              const v = (e.target as HTMLSelectElement).value as OsisBookCode | "";
-              props.syncInputFromDraft({ book: v, chapter: "", startVerse: "", endVerse: "" });
+              const v = (e.target as HTMLSelectElement).value as
+                | OsisBookCode
+                | "";
+              props.syncInputFromDraft({
+                book: v,
+                chapter: "",
+                startVerse: "",
+                endVerse: "",
+              });
             }}
           >
             <option value="">Choose a book</option>
@@ -429,9 +528,18 @@ function ScriptureEditorSection(props: {
             ))}
           </select>
         </label>
-        <ScriptureChapterField draft={d()} syncInputFromDraft={props.syncInputFromDraft} />
-        <ScriptureVerseField draft={d()} syncInputFromDraft={props.syncInputFromDraft} />
-        <ScriptureEndVerseField draft={d()} syncInputFromDraft={props.syncInputFromDraft} />
+        <ScriptureChapterField
+          draft={d()}
+          syncInputFromDraft={props.syncInputFromDraft}
+        />
+        <ScriptureVerseField
+          draft={d()}
+          syncInputFromDraft={props.syncInputFromDraft}
+        />
+        <ScriptureEndVerseField
+          draft={d()}
+          syncInputFromDraft={props.syncInputFromDraft}
+        />
       </div>
       <div class={styles.inputGroup}>
         <span class={styles.inputIcon}>
@@ -444,7 +552,9 @@ function ScriptureEditorSection(props: {
           class={styles.input}
           disabled={props.status === "saving"}
           value={props.input}
-          onInput={(e) => props.syncDraftFromInput((e.target as HTMLInputElement).value)}
+          onInput={(e) =>
+            props.syncDraftFromInput((e.target as HTMLInputElement).value)
+          }
           onKeyDown={(e) => {
             if (e.key === "Enter" && props.status === "idle") {
               props.handleResolve();
@@ -508,7 +618,8 @@ function ScriptureVerseField(props: {
   draft: StructuredDraft;
   syncInputFromDraft: (d: StructuredDraft) => void;
 }): JSX.Element {
-  const ready = () => !!scriptureBook(props.draft) && !!scriptureBoundedChapter(props.draft);
+  const ready = () =>
+    !!scriptureBook(props.draft) && !!scriptureBoundedChapter(props.draft);
   const opts = () => {
     const vc = scriptureVerseCount(props.draft);
     return vc > 0 ? buildNumericOptions(vc) : [];
@@ -597,7 +708,8 @@ function ScriptureTopicSection(props: {
     props.activeTopic
       ? props.activeTopic.label
       : props.topicQuery.trim() || "Choose a topic…";
-  const matches = () => searchCanonicalTopics(props.canonicalTopics, props.topicQuery, 8);
+  const matches = () =>
+    searchCanonicalTopics(props.canonicalTopics, props.topicQuery, 8);
 
   return (
     <Show
@@ -639,7 +751,9 @@ function ScriptureTopicSection(props: {
             class={styles.topicInput}
             placeholder="e.g. anxiety, marriage, forgiveness"
             value={props.topicQuery}
-            disabled={!!props.topicsLoadError || props.canonicalTopics.length === 0}
+            disabled={
+              !!props.topicsLoadError || props.canonicalTopics.length === 0
+            }
             autocomplete="off"
             onInput={(e) => {
               props.setTopicQuery((e.target as HTMLInputElement).value);
@@ -647,38 +761,42 @@ function ScriptureTopicSection(props: {
               props.setTopicListCollapsed(false);
             }}
           />
-          {props.topicQuery.trim() && matches().length > 0 && !props.topicListCollapsed && (
-            <div class={styles.topicMatches} role="listbox">
-              {matches().map((t) => (
+          {props.topicQuery.trim() &&
+            matches().length > 0 &&
+            !props.topicListCollapsed && (
+              <div class={styles.topicMatches} role="listbox">
+                {matches().map((t) => (
+                  <button
+                    type="button"
+                    role="option"
+                    class={styles.topicMatchBtn}
+                    onClick={() => {
+                      hapticSelection();
+                      props.setTopicQuery(t.label);
+                      props.setActiveTopic(t);
+                      props.setTopicListCollapsed(true);
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          {props.topicListCollapsed &&
+            props.topicQuery.trim() &&
+            matches().length > 0 && (
+              <div class={styles.topicExpandRow}>
                 <button
                   type="button"
-                  role="option"
-                  class={styles.topicMatchBtn}
-                  onClick={() => {
-                    hapticSelection();
-                    props.setTopicQuery(t.label);
-                    props.setActiveTopic(t);
-                    props.setTopicListCollapsed(true);
-                  }}
+                  class={styles.topicExpandBtn}
+                  onClick={() => props.setTopicListCollapsed(false)}
+                  aria-label="Show topic suggestions"
+                  title="Show topic suggestions"
                 >
-                  {t.label}
+                  <IconCaretDown size={ICON_PX.inline} color="currentColor" />
                 </button>
-              ))}
-            </div>
-          )}
-          {props.topicListCollapsed && props.topicQuery.trim() && matches().length > 0 && (
-            <div class={styles.topicExpandRow}>
-              <button
-                type="button"
-                class={styles.topicExpandBtn}
-                onClick={() => props.setTopicListCollapsed(false)}
-                aria-label="Show topic suggestions"
-                title="Show topic suggestions"
-              >
-                <IconCaretDown size={ICON_PX.inline} color="currentColor" />
-              </button>
-            </div>
-          )}
+              </div>
+            )}
           {props.activeTopic && (
             <div class={styles.topicRefs}>
               <span class={styles.topicRefsLabel}>Suggested passages</span>
@@ -717,7 +835,9 @@ function ScriptureParsedPreview(props: {
     return p ? displayFromParsed(p) : null;
   };
   return (
-    <Show when={props.status === "idle" && !!props.inputVal.trim() && !!display()}>
+    <Show
+      when={props.status === "idle" && !!props.inputVal.trim() && !!display()}
+    >
       <div class={styles.parsePreview} role="status">
         <strong>{display()!.display}</strong>
         <code>{display()!.canonical}</code>
@@ -740,13 +860,20 @@ function ScriptureIdleResolveBtn(props: {
 }
 
 function ScriptureResolving(props: { status: CaptureStatus }): JSX.Element {
-  return <Show when={props.status === "resolving"}><p class={styles.status}>Resolving...</p></Show>;
+  return (
+    <Show when={props.status === "resolving"}>
+      <p class={styles.status}>Resolving...</p>
+    </Show>
+  );
 }
 
 function ScripturePreviewBlock(props: {
   status: CaptureStatus;
   preview: { displayRef: string; translation: string; text: string } | null;
   onSave: () => void;
+  storeToChain: boolean;
+  onStoreToChainChange: (v: boolean) => void;
+  walletAvailable: boolean;
 }): JSX.Element {
   return (
     <Show when={props.status === "preview" && !!props.preview}>
@@ -757,6 +884,22 @@ function ScripturePreviewBlock(props: {
           {props.preview!.text.slice(0, 300)}
           {props.preview!.text.length > 300 ? "..." : ""}
         </p>
+        <label class={styles.chainToggle}>
+          <input
+            type="checkbox"
+            checked={props.storeToChain}
+            disabled={!props.walletAvailable}
+            onChange={(e) =>
+              props.onStoreToChainChange(e.currentTarget.checked)
+            }
+          />
+          <span>Save permanently</span>
+          {!props.walletAvailable && (
+            <span class={styles.chainHint}>
+              Install a Solana wallet to enable permanent backup
+            </span>
+          )}
+        </label>
         <button class={styles.saveBtn} onClick={props.onSave}>
           <IconCheck size={ICON_PX.inline} /> Kindle
         </button>
@@ -766,7 +909,11 @@ function ScripturePreviewBlock(props: {
 }
 
 function ScriptureSaving(props: { status: CaptureStatus }): JSX.Element {
-  return <Show when={props.status === "saving"}><p class={styles.status}>Saving...</p></Show>;
+  return (
+    <Show when={props.status === "saving"}>
+      <p class={styles.status}>Saving...</p>
+    </Show>
+  );
 }
 
 function ScriptureSaved(props: {
@@ -797,7 +944,9 @@ function ScriptureSaved(props: {
             <IconCheck size={ICON_PX.celebration} />
           </div>
           <h2 class={styles.savedTitle}>Kindled</h2>
-          <p class={styles.savedRef}>{props.preview?.displayRef ?? "Passage"}</p>
+          <p class={styles.savedRef}>
+            {props.preview?.displayRef ?? "Passage"}
+          </p>
           <p class={styles.savedText}>
             {(props.preview?.text ?? "").slice(0, 120)}
             {(props.preview?.text ?? "").length > 120 ? "…" : ""}

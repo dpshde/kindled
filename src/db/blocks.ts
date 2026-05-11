@@ -1,6 +1,5 @@
 import { getDb } from "./connection";
 import { ensureLifeStage, prioritizeBlockForReview } from "./ritual";
-import { recordDeletedRecords } from "./tombstones";
 import type { Block, BlockType, Verse } from "./types";
 
 function generateId(): string {
@@ -37,6 +36,7 @@ function blockFromRow(r: Record<string, string>): Block {
     source: r.source ?? undefined,
     captured_at: r.captured_at,
     modified_at: r.modified_at,
+    archived_at: r.archived_at ?? undefined,
     tags: parseJsonField<string[]>(r.tags, []),
   };
 }
@@ -49,12 +49,15 @@ export async function createBlock(
 
   // Deduplicate scripture blocks by canonical ref
   if (block.type === "scripture" && block.scripture_ref) {
-    const existing = await findScriptureBlockByCanonicalRef(block.scripture_ref);
+    const existing = await findScriptureBlockByCanonicalRef(
+      block.scripture_ref,
+    );
     if (existing) {
       // Refresh text and reprioritize instead of creating a duplicate
       await updateScripturePassageData(existing.id, {
         content: block.content,
-        scripture_display_ref: block.scripture_display_ref ?? block.scripture_ref,
+        scripture_display_ref:
+          block.scripture_display_ref ?? block.scripture_ref,
         scripture_translation: block.scripture_translation ?? "",
         scripture_verses: block.scripture_verses ?? [],
       });
@@ -116,6 +119,21 @@ export async function findScriptureBlockByCanonicalRef(
   const db = await getDb();
   const safe = trimmed.replace(/'/g, "''");
   const rows = await db.query<Record<string, string>>(
+    `SELECT * FROM blocks WHERE type = 'scripture' AND scripture_ref = '${safe}' AND archived_at IS NULL LIMIT 1`,
+  );
+  if (rows.length === 0) return null;
+  return blockFromRow(rows[0]);
+}
+
+/** Check for any block including archived (used by capture to restore previously archived passages). */
+export async function findAnyBlockByCanonicalRef(
+  canonicalRef: string,
+): Promise<Block | null> {
+  const trimmed = canonicalRef.trim();
+  if (!trimmed) return null;
+  const db = await getDb();
+  const safe = trimmed.replace(/'/g, "''");
+  const rows = await db.query<Record<string, string>>(
     `SELECT * FROM blocks WHERE type = 'scripture' AND scripture_ref = '${safe}' LIMIT 1`,
   );
   if (rows.length === 0) return null;
@@ -158,18 +176,26 @@ export async function saveScripturePassageFromCapture(params: {
   scripture_verses: Verse[];
   source?: string;
   tags?: string[];
-}): Promise<{ blockId: string; alreadyExisted: boolean }> {
-  const existing = await findScriptureBlockByCanonicalRef(params.scripture_ref);
-  if (existing) {
-    await ensureLifeStage(existing.id);
-    await updateScripturePassageData(existing.id, {
+}): Promise<{
+  blockId: string;
+  alreadyExisted: boolean;
+  wasArchived: boolean;
+}> {
+  // Look for any block including archived — if archived, restore it
+  const anyExisting = await findAnyBlockByCanonicalRef(params.scripture_ref);
+  if (anyExisting) {
+    if (anyExisting.archived_at) {
+      await restoreBlock(anyExisting.id);
+    }
+    await ensureLifeStage(anyExisting.id);
+    await updateScripturePassageData(anyExisting.id, {
       content: params.content,
       scripture_display_ref: params.scripture_display_ref,
       scripture_translation: params.scripture_translation,
       scripture_verses: params.scripture_verses,
     });
-    await prioritizeBlockForReview(existing.id);
-    return { blockId: existing.id, alreadyExisted: true };
+    await prioritizeBlockForReview(anyExisting.id);
+    return { blockId: anyExisting.id, alreadyExisted: true, wasArchived: true };
   }
 
   const id = await createBlock({
@@ -182,7 +208,7 @@ export async function saveScripturePassageFromCapture(params: {
     source: params.source ?? "manual",
     tags: params.tags ?? [],
   });
-  return { blockId: id, alreadyExisted: false };
+  return { blockId: id, alreadyExisted: false, wasArchived: false };
 }
 
 export async function getAllBlocks(): Promise<Block[]> {
@@ -190,6 +216,7 @@ export async function getAllBlocks(): Promise<Block[]> {
   const rows = await db.query<Record<string, string>>(
     `SELECT b.* FROM blocks b
      INNER JOIN life_stages ls ON b.id = ls.block_id
+     WHERE b.archived_at IS NULL
      ORDER BY ls.next_review_at ASC, b.captured_at DESC`,
   );
 
@@ -209,29 +236,40 @@ export async function updateBlockContent(
   );
 }
 
-export async function deleteBlock(id: string): Promise<void> {
+/** Soft-archive a block (move to trash). Links and reflections are preserved. */
+export async function archiveBlock(id: string): Promise<void> {
   const db = await getDb();
-  const safeId = id.replace(/'/g, "''");
-  const [linkRows, reflectionRows] = await Promise.all([
-    db.query<{ id: string }>(
-      `SELECT id FROM links WHERE from_block = '${safeId}' OR to_block = '${safeId}'`,
-    ),
-    db.query<{ id: string }>(
-      `SELECT id FROM reflections WHERE block_id = '${safeId}'`,
-    ),
-  ]);
+  const now = new Date().toISOString();
+  await db.run(
+    `UPDATE blocks SET archived_at = ?, modified_at = ? WHERE id = ?`,
+    now,
+    now,
+    id,
+  );
+}
 
-  await recordDeletedRecords([
-    { table_name: "blocks", record_id: id },
-    { table_name: "life_stages", record_id: id },
-    ...linkRows.map((row) => ({ table_name: "links" as const, record_id: row.id })),
-    ...reflectionRows.map((row) => ({ table_name: "reflections" as const, record_id: row.id })),
-  ]);
+/** Restore an archived block from trash. */
+export async function restoreBlock(id: string): Promise<void> {
+  const db = await getDb();
+  const now = new Date().toISOString();
+  await db.run(
+    `UPDATE blocks SET archived_at = NULL, modified_at = ? WHERE id = ?`,
+    now,
+    id,
+  );
+}
 
-  await db.run(`DELETE FROM reflections WHERE block_id = ?`, id);
-  await db.run(`DELETE FROM life_stages WHERE block_id = ?`, id);
-  await db.run(`DELETE FROM links WHERE from_block = ? OR to_block = ?`, id, id);
-  await db.run(`DELETE FROM blocks WHERE id = ?`, id);
+/** Permanently delete a block — only call from Trash purge. */
+/** Get all archived (trashed) passages. */
+export async function getArchivedBlocks(): Promise<Block[]> {
+  const db = await getDb();
+  const rows = await db.query<Record<string, string>>(
+    `SELECT b.* FROM blocks b
+     INNER JOIN life_stages ls ON b.id = ls.block_id
+     WHERE b.archived_at IS NOT NULL
+     ORDER BY b.archived_at DESC`,
+  );
+  return rows.map((r) => blockFromRow(r));
 }
 
 export async function searchBlocks(query: string): Promise<Block[]> {
@@ -240,10 +278,12 @@ export async function searchBlocks(query: string): Promise<Block[]> {
   const rows = await db.query<Record<string, string>>(
     `SELECT b.* FROM blocks b
      INNER JOIN life_stages ls ON b.id = ls.block_id
-     WHERE
-     b.content LIKE '%${safeQuery}%'
-     OR b.scripture_display_ref LIKE '%${safeQuery}%'
-     OR b.entity_name LIKE '%${safeQuery}%'
+     WHERE b.archived_at IS NULL
+     AND (
+       b.content LIKE '%${safeQuery}%'
+       OR b.scripture_display_ref LIKE '%${safeQuery}%'
+       OR b.entity_name LIKE '%${safeQuery}%'
+     )
      ORDER BY ls.next_review_at ASC, b.captured_at DESC`,
   );
 
@@ -252,6 +292,8 @@ export async function searchBlocks(query: string): Promise<Block[]> {
 
 export async function getTotalBlockCount(): Promise<number> {
   const db = await getDb();
-  const rows = await db.query<{ count: string }>(`SELECT COUNT(*) as count FROM blocks`);
+  const rows = await db.query<{ count: string }>(
+    `SELECT COUNT(*) as count FROM blocks WHERE archived_at IS NULL`,
+  );
   return parseInt(rows[0]?.count ?? "0", 10);
 }

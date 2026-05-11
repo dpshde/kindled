@@ -2,531 +2,568 @@
  * no gradient hero wash, no pulsing icons. i-distill: type and spacing carry hierarchy. */
 
 .threshold {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  height: var(--viewport-block-size);
-  overflow: hidden;
-  min-width: 0;
-  max-width: var(--page-shell-max);
-  margin: 0 auto;
-  padding: clamp(var(--space-xl), 8vh, 5.5rem) var(--space-lg);
-  padding-top: calc(clamp(var(--space-xl), 8vh, 5.5rem) + env(safe-area-inset-top));
-  padding-inline: max(var(--space-lg), env(safe-area-inset-left))
-    max(var(--space-lg), env(safe-area-inset-right));
-  padding-bottom: max(var(--space-lg), env(safe-area-inset-bottom));
-  text-align: left;
-  background: transparent;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    height: var(--viewport-block-size);
+    overflow: hidden;
+    min-width: 0;
+    max-width: var(--page-shell-max);
+    margin: 0 auto;
+    padding: clamp(var(--space-xl), 8vh, 5.5rem) var(--space-lg);
+    padding-top: calc(
+        clamp(var(--space-xl), 8vh, 5.5rem) + env(safe-area-inset-top)
+    );
+    padding-inline: max(var(--space-lg), env(safe-area-inset-left))
+        max(var(--space-lg), env(safe-area-inset-right));
+    padding-bottom: max(var(--space-lg), env(safe-area-inset-bottom));
+    text-align: left;
+    background: transparent;
 }
 
 /* Daily kindling — count leads, secondary actions follow, primary CTA anchors the stack. */
 .thresholdKindling {
-  justify-content: flex-start;
-  align-items: flex-start;
-  text-align: left;
+    justify-content: flex-start;
+    align-items: flex-start;
+    text-align: left;
 }
 
 .title {
-  font-family: var(--font-scripture);
-  font-size: clamp(2.35rem, 6.5vw, 3rem);
-  font-weight: 500;
-  color: var(--color-text);
-  margin: 0;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-  text-wrap: balance;
+    font-family: var(--font-scripture);
+    font-size: clamp(2.35rem, 6.5vw, 3rem);
+    font-weight: 500;
+    color: var(--color-text);
+    margin: 0;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    text-wrap: balance;
 }
 
 .divider {
-  width: 2.5rem;
-  height: 2px;
-  margin: var(--space-lg) 0 var(--space-md);
-  border: none;
-  border-radius: 0;
-  background: var(--color-fire);
-  opacity: 0.55;
+    width: 2.5rem;
+    height: 2px;
+    margin: var(--space-lg) 0 var(--space-md);
+    border: none;
+    border-radius: 0;
+    background: var(--color-fire);
+    opacity: 0.55;
 }
 
 .tagline {
-  font-size: 1.05rem;
-  color: var(--color-text-secondary);
-  margin: 0 0 var(--space-xl);
-  line-height: 1.55;
-  max-width: 34ch;
-  overflow-wrap: anywhere;
+    font-size: 1.05rem;
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-xl);
+    line-height: 1.55;
+    max-width: 34ch;
+    overflow-wrap: anywhere;
 }
 
 .sub {
-  font-size: 1.05rem;
-  color: var(--color-text-secondary);
-  margin: 0 0 var(--space-lg) 0;
-  line-height: 1.55;
-  max-width: 28ch;
-  overflow-wrap: anywhere;
+    font-size: 1.05rem;
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-lg) 0;
+    line-height: 1.55;
+    max-width: 28ch;
+    overflow-wrap: anywhere;
+}
+
+.walletStatusCorner {
+    position: fixed;
+    top: calc(6px + env(safe-area-inset-top));
+    right: max(52px, calc(env(safe-area-inset-right) + 44px));
+    color: var(--color-text-tertiary);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    min-height: 44px;
+    padding: 10px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
 }
 
 /* One column for all CTAs; pinned to viewport bottom. */
 .ctaColumn {
-  flex: 1 1 auto;
-  min-height: 0;
-  width: 100%;
-  max-width: 17.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-end;
-  gap: 1.25rem;
-  min-width: 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    max-width: 17.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-end;
+    gap: 1.25rem;
+    min-width: 0;
 }
 
 .count {
-  font-size: 1.05rem;
-  color: var(--color-text-secondary);
-  margin: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  line-height: 1.45;
+    font-size: 1.05rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    line-height: 1.45;
 }
 
 .countIcon {
-  color: var(--color-growth);
-  flex-shrink: 0;
-  position: relative;
-  top: 0.12em;
+    color: var(--color-growth);
+    flex-shrink: 0;
+    position: relative;
+    top: 0.12em;
 }
 
 .primaryButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 44px;
-  padding-inline: 1rem;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-fire);
-  background: color-mix(in srgb, var(--color-fire) 10%, var(--color-bg));
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-field);
-  letter-spacing: 0.02em;
-  transition: background var(--ease-ui), color var(--ease-ui), opacity var(--ease-ui);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 44px;
+    padding-inline: 1rem;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-fire);
+    background: color-mix(in srgb, var(--color-fire) 10%, var(--color-bg));
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-field);
+    letter-spacing: 0.02em;
+    transition:
+        background var(--ease-ui),
+        color var(--ease-ui),
+        opacity var(--ease-ui);
 }
 
 .primaryButton:hover {
-  background: color-mix(in srgb, var(--color-fire) 18%, var(--color-bg));
+    background: color-mix(in srgb, var(--color-fire) 18%, var(--color-bg));
 }
 
 .primaryButton:active {
-  opacity: 0.88;
+    opacity: 0.88;
 }
 
 .secondaryButton:focus-visible,
 .primaryButton:focus-visible,
 .secondaryButton:focus-visible {
-  outline: 2px solid var(--color-fire);
-  outline-offset: 3px;
+    outline: 2px solid var(--color-fire);
+    outline-offset: 3px;
 }
 
 .error {
-  font-size: 13px;
-  color: var(--color-ember);
-  margin-top: var(--space-md);
-  max-width: 36ch;
-  overflow-wrap: anywhere;
+    font-size: 13px;
+    color: var(--color-ember);
+    margin-top: var(--space-md);
+    max-width: 36ch;
+    overflow-wrap: anywhere;
 }
 
 /* Theme toggle — fixed top-right corner of viewport */
 .themeToggleCorner {
-  position: fixed;
-  top: calc(6px + env(safe-area-inset-top));
-  right: max(8px, env(safe-area-inset-right));
-  color: var(--color-text-tertiary);
-  min-width: 44px;
-  min-height: 44px;
-  padding: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-field);
-  transition: color var(--ease-ui), background var(--ease-ui);
-  z-index: 50;
-  opacity: 0.7;
+    position: fixed;
+    top: calc(6px + env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
+    color: var(--color-text-tertiary);
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-field);
+    transition:
+        color var(--ease-ui),
+        background var(--ease-ui);
+    z-index: 50;
+    opacity: 0.7;
 }
 
 .themeToggleCorner:hover {
-  color: var(--color-text-secondary);
-  background: var(--color-bg-elevated);
-  opacity: 1;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-elevated);
+    opacity: 1;
 }
 
 .settingsGearCorner {
-  position: fixed;
-  top: calc(6px + env(safe-area-inset-top));
-  right: max(52px, calc(env(safe-area-inset-right) + 44px));
-  color: var(--color-text-tertiary);
-  min-width: 44px;
-  min-height: 44px;
-  padding: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-field);
-  transition: color var(--ease-ui), background var(--ease-ui);
-  z-index: 50;
-  opacity: 0.7;
+    position: fixed;
+    top: calc(6px + env(safe-area-inset-top));
+    right: max(52px, calc(env(safe-area-inset-right) + 44px));
+    color: var(--color-text-tertiary);
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-field);
+    transition:
+        color var(--ease-ui),
+        background var(--ease-ui);
+    z-index: 50;
+    opacity: 0.7;
 }
 
 .settingsGearCorner:hover {
-  color: var(--color-text-secondary);
-  background: var(--color-bg-elevated);
-  opacity: 1;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-elevated);
+    opacity: 1;
 }
 
 /* Sync status indicator */
 .syncIndicator {
-  position: fixed;
-  top: calc(6px + env(safe-area-inset-top));
-  right: max(52px, calc(env(safe-area-inset-right) + 44px));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
-  z-index: 50;
+    position: fixed;
+    top: calc(6px + env(safe-area-inset-top));
+    right: max(52px, calc(env(safe-area-inset-right) + 44px));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    z-index: 50;
 }
 
 .syncDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-fire);
-  opacity: 0.8;
-  animation: syncPulse 1.8s ease-in-out infinite;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-fire);
+    opacity: 0.8;
+    animation: syncPulse 1.8s ease-in-out infinite;
 }
 
 @keyframes syncPulse {
-  0%, 100% { opacity: 0.4; transform: scale(0.9); }
-  50% { opacity: 1; transform: scale(1.1); }
+    0%,
+    100% {
+        opacity: 0.4;
+        transform: scale(0.9);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
 }
 
 /* ── Settings overlay ── */
 .settingsOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: rgba(38, 35, 31, 0.25);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(38, 35, 31, 0.25);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .settingsPanel {
-  background: var(--color-bg);
-  border-top: 2px solid var(--color-line);
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  width: 100%;
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
-  animation: sheetSlideUp 250ms cubic-bezier(0.16, 1, 0.3, 1);
+    background: var(--color-bg);
+    border-top: 2px solid var(--color-line);
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    width: 100%;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
+    animation: sheetSlideUp 250ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes sheetSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .settingsHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-md) var(--space-lg);
-  border-bottom: 1px solid var(--color-line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--color-line);
 }
 
 .settingsTitle {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-text);
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
 }
 
 .settingsCloseBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  color: var(--color-text-tertiary);
-  border-radius: 999px;
-  transition: color var(--ease-ui), background var(--ease-ui);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    color: var(--color-text-tertiary);
+    border-radius: 999px;
+    transition:
+        color var(--ease-ui),
+        background var(--ease-ui);
 }
 
 .settingsCloseBtn:hover {
-  color: var(--color-text);
-  background: var(--color-bg-warm);
+    color: var(--color-text);
+    background: var(--color-bg-warm);
 }
 
 .settingsBody {
-  padding: 4px 0 max(var(--space-md), env(safe-area-inset-bottom));
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+    padding: 4px 0 max(var(--space-md), env(safe-area-inset-bottom));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .settingsRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 11px var(--space-lg);
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--color-text);
-  background: none;
-  border: none;
-  text-align: left;
-  transition: background var(--ease-ui);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 11px var(--space-lg);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--color-text);
+    background: none;
+    border: none;
+    text-align: left;
+    transition: background var(--ease-ui);
 }
 
 .settingsRow:hover {
-  background: var(--color-bg-warm);
+    background: var(--color-bg-warm);
 }
 
 .settingsRow:active {
-  background: var(--color-bg-elevated);
+    background: var(--color-bg-elevated);
 }
 
-.settingsRowIcon { display: flex; color: var(--color-text-tertiary); }
-.settingsRowLabel { flex: 1; }
+.settingsRowIcon {
+    display: flex;
+    color: var(--color-text-tertiary);
+}
+.settingsRowLabel {
+    flex: 1;
+}
 
 /* Kindling on medium+: centered like a landing page. */
 @media (min-width: 521px) {
-  .thresholdKindling {
-    align-items: center;
-    text-align: center;
-    justify-content: center;
-  }
+    .thresholdKindling {
+        align-items: center;
+        text-align: center;
+        justify-content: center;
+    }
 
-  .thresholdKindling > .title {
-    font-size: clamp(2.75rem, 5vw, 3.5rem);
-  }
+    .thresholdKindling > .title {
+        font-size: clamp(2.75rem, 5vw, 3.5rem);
+    }
 
-  .thresholdKindling > .divider {
-    align-self: center;
-  }
+    .thresholdKindling > .divider {
+        align-self: center;
+    }
 
-  .thresholdKindling > .tagline {
-    text-align: center;
-    margin-inline: auto;
-    margin-bottom: var(--space-xl);
-  }
+    .thresholdKindling > .tagline {
+        text-align: center;
+        margin-inline: auto;
+        margin-bottom: var(--space-xl);
+    }
 
-  .thresholdKindling > .count {
-    justify-content: center;
-    font-size: 0.875rem;
-    color: var(--color-text-tertiary);
-    order: 3;
-    margin-top: var(--space-lg);
-  }
+    .thresholdKindling .count {
+        justify-content: center;
+        font-size: 0.875rem;
+        color: var(--color-text-tertiary);
+    }
 
-  .thresholdKindling > .ctaColumn {
-    flex: 0 0 auto;
-    max-width: 22rem;
-    align-self: center;
-  }
+    .thresholdKindling > .ctaColumn {
+        flex: 0 0 auto;
+        max-width: 22rem;
+        align-self: center;
+    }
 
-  .thresholdKindling .actions {
-    order: 2;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-xl);
-    margin-top: 0;
-  }
+    .thresholdKindling .actions {
+        order: 2;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--space-xl);
+        margin-top: 0;
+    }
 
-  .thresholdKindling .secondaryButton {
-    width: auto;
-    flex: 0 0 auto;
-    min-height: auto;
-    padding: 0.35rem 0.75rem;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--color-text-tertiary);
-    border: none;
-    background: transparent;
-  }
+    .thresholdKindling .secondaryButton {
+        width: auto;
+        flex: 0 0 auto;
+        min-height: auto;
+        padding: 0.35rem 0.75rem;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--color-text-tertiary);
+        border: none;
+        background: transparent;
+    }
 
-  .thresholdKindling .secondaryButton:hover {
-    color: var(--color-text-secondary);
-    background: transparent;
-  }
+    .thresholdKindling .secondaryButton:hover {
+        color: var(--color-text-secondary);
+        background: transparent;
+    }
 
-  .thresholdKindling .primaryButton {
-    order: 1;
-  }
+    .thresholdKindling .primaryButton {
+        order: 1;
+    }
 }
 
 /* ── Desktop (≥ 800px): landing page — centered, generous ── */
 
 @media (min-width: 800px) {
-  .settingsOverlay {
-    align-items: center;
-    padding: 20px;
-  }
-
-  .settingsPanel {
-    max-width: min(90vw, 340px);
-    border: 2px solid var(--color-line);
-    border-radius: 4px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    animation: modalFadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes modalFadeIn {
-    from {
-      opacity: 0;
-      transform: scale(0.98);
+    .settingsOverlay {
+        align-items: center;
+        padding: 20px;
     }
-    to {
-      opacity: 1;
-      transform: scale(1);
+
+    .settingsPanel {
+        max-width: min(90vw, 340px);
+        border: 2px solid var(--color-line);
+        border-radius: 4px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        animation: modalFadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
     }
-  }
 
-  .threshold {
-    padding-inline: clamp(2rem, 5vw, 4rem);
-  }
+    @keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
 
-  /* Kindling state: bigger title, wider action column */
-  .thresholdKindling > .title {
-    font-size: clamp(3rem, 6vw, 4.5rem);
-    letter-spacing: -0.04em;
-  }
+    .threshold {
+        padding-inline: clamp(2rem, 5vw, 4rem);
+    }
 
-  .thresholdKindling > .divider {
-    width: 3.5rem;
-    height: 3px;
-    opacity: 0.7;
-  }
+    /* Kindling state: bigger title, wider action column */
+    .thresholdKindling > .title {
+        font-size: clamp(3rem, 6vw, 4.5rem);
+        letter-spacing: -0.04em;
+    }
 
-  .thresholdKindling > .tagline {
-    font-size: 1.15rem;
-    max-width: 42ch;
-  }
+    .thresholdKindling > .divider {
+        width: 3.5rem;
+        height: 3px;
+        opacity: 0.7;
+    }
 
-  .thresholdKindling > .ctaColumn {
-    max-width: 26rem;
-  }
+    .thresholdKindling > .tagline {
+        font-size: 1.15rem;
+        max-width: 42ch;
+    }
 
-  .thresholdKindling .primaryButton {
-    min-height: 54px;
-  }
+    .thresholdKindling > .ctaColumn {
+        max-width: 26rem;
+    }
+
+    .thresholdKindling .primaryButton {
+        min-height: 54px;
+    }
 }
 
 @media (max-width: 520px) {
-  .threshold {
-    align-items: center;
-    text-align: center;
-    max-width: none;
-  }
+    .threshold {
+        align-items: center;
+        text-align: center;
+        max-width: none;
+    }
 
-  .thresholdKindling {
-    align-items: flex-start;
-    text-align: left;
-    justify-content: flex-start;
-    padding-top: 25vh;
-  }
+    .thresholdKindling {
+        align-items: flex-start;
+        text-align: left;
+        justify-content: flex-start;
+        padding-top: 25vh;
+    }
 
-  .ctaColumn {
-    flex: 1 1 auto;
-    align-self: stretch;
-    max-width: none;
-    margin-inline: 0;
-    margin-top: 0;
-  }
+    .ctaColumn {
+        flex: 1 1 auto;
+        align-self: stretch;
+        max-width: none;
+        margin-inline: 0;
+        margin-top: 0;
+    }
 
-  .thresholdKindling .count {
-    margin-bottom: var(--space-md);
-  }
+    .thresholdKindling .count {
+        order: 2;
+    }
 
-.actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.5rem;
-  flex-shrink: 0;
-  margin: 0;
-  width: 100%;
-  box-sizing: border-box;
-  background: transparent;
-}
+    .actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.5rem;
+        flex-shrink: 0;
+        margin: 0;
+        width: 100%;
+        box-sizing: border-box;
+        background: transparent;
+    }
 
-  .primaryButton,
-  .button {
-    justify-content: flex-start;
-    padding-inline: 1.1rem;
-  }
+    .primaryButton,
+    .button {
+        justify-content: flex-start;
+        padding-inline: 1.1rem;
+    }
 
-  .secondaryButton {
-    justify-content: center;
-    padding-inline: 0.8rem;
-    flex: 1;
-  }
+    .secondaryButton {
+        justify-content: center;
+        padding-inline: 0.8rem;
+        flex: 1;
+    }
 
-  .thresholdKindling .sub,
-  .thresholdKindling .tagline,
-  .thresholdKindling .count {
-    margin-inline: 0;
-    text-align: left;
-  }
+    .thresholdKindling .sub,
+    .thresholdKindling .tagline,
+    .thresholdKindling .count {
+        margin-inline: 0;
+        text-align: left;
+    }
 
-  .thresholdKindling .count {
-    justify-content: flex-start;
-  }
+    .thresholdKindling .count {
+        justify-content: flex-start;
+    }
 
-  .thresholdKindling .actions {
-    order: 1;
-  }
+    .thresholdKindling .actions {
+        order: 1;
+    }
 
-  .thresholdKindling .primaryButton {
-    order: 2;
-    min-height: 54px;
-  }
+    .thresholdKindling .primaryButton {
+        order: 2;
+        min-height: 54px;
+    }
 }
 
 @media (hover: none) {
-  .primaryButton:hover {
-    background: var(--color-fire);
-  }
+    .primaryButton:hover {
+        background: var(--color-fire);
+    }
 
-  .button:hover {
-    background: transparent;
-    color: var(--color-text);
-  }
+    .button:hover {
+        background: transparent;
+        color: var(--color-text);
+    }
 
-  .secondaryButton:hover {
-    background: var(--color-bg);
-    border-color: var(--color-text-tertiary);
-    color: var(--color-text);
-  }
+    .secondaryButton:hover {
+        background: var(--color-bg);
+        border-color: var(--color-text-tertiary);
+        color: var(--color-text);
+    }
 
-  .settingsRow:hover {
-    background: none;
-  }
+    .settingsRow:hover {
+        background: none;
+    }
 
-  .settingsCloseBtn:hover {
-    color: var(--color-text-tertiary);
-    background: transparent;
-  }
+    .settingsCloseBtn:hover {
+        color: var(--color-text-tertiary);
+        background: transparent;
+    }
 }

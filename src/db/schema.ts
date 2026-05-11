@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export const MIGRATIONS: Record<number, string[]> = {
   1: [
@@ -129,9 +129,17 @@ CREATE TABLE IF NOT EXISTS reflections (
     );`,
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_blocks_scripture_ref_unique ON blocks(scripture_ref) WHERE type = 'scripture' AND scripture_ref IS NOT NULL;`,
   ],
+
+  /** Soft-archive support: trash instead of hard delete. */
+  6: [
+    `ALTER TABLE blocks ADD COLUMN archived_at TEXT;`,
+    `CREATE INDEX IF NOT EXISTS idx_blocks_archived_at ON blocks(archived_at);`,
+  ],
 };
 
 export function allMigrations(): string[] {
-  const versions = Object.keys(MIGRATIONS).map(Number).sort((a, b) => a - b);
+  const versions = Object.keys(MIGRATIONS)
+    .map(Number)
+    .sort((a, b) => a - b);
   return versions.flatMap((v) => MIGRATIONS[v]);
 }
