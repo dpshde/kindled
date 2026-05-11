@@ -1,6 +1,9 @@
 import type { Client } from "@libsql/client/web";
 import type { Session } from "@supabase/supabase-js";
-import { getSupabaseClient, isSupabaseConfigured } from "../auth/supabase-client";
+import {
+  getSupabaseClient,
+  isSupabaseConfigured,
+} from "../auth/supabase-client";
 import {
   getCurrentSession,
   initSessionStore,
@@ -10,8 +13,26 @@ import {
   verifyEmailOtp,
 } from "../auth/session-store";
 import { onLocalDatabaseChange } from "./local-change-bus";
-import { ensureRemoteSchema, createRemoteVaultClient, loadRemoteSnapshot, replaceRemoteSnapshot, type VaultSyncConfig } from "./remote-vault";
-import { applySnapshotToLocal, loadLocalSnapshot, mergeSnapshots, snapshotChecksum } from "./snapshot";
+import {
+  ensureRemoteSchema,
+  createRemoteVaultClient,
+  loadRemoteSnapshot,
+  replaceRemoteSnapshot,
+  type VaultSyncConfig,
+} from "./remote-vault";
+import {
+  applySnapshotToLocal,
+  loadLocalSnapshot,
+  mergeSnapshots,
+  snapshotChecksum,
+} from "./snapshot";
+
+// Temporarily disabled in favor of Solana memo-based sync.
+const HOSTED_SYNC_ENABLED = false;
+
+export function isHostedSyncEnabled(): boolean {
+  return HOSTED_SYNC_ENABLED;
+}
 
 export type SyncStatus =
   | "disabled"
@@ -104,7 +125,9 @@ function hasNetworkError(error: unknown): boolean {
 }
 
 function isOtpResendCooldownError(error: unknown): boolean {
-  return /only request this after|security purposes|rate limit|wait/i.test(errorMessage(error));
+  return /only request this after|security purposes|rate limit|wait/i.test(
+    errorMessage(error),
+  );
 }
 
 function resetSignedOutState(): void {
@@ -175,7 +198,7 @@ function scheduleSync(delayMs = 1500): void {
 
 export async function syncNow(): Promise<void> {
   const session = getCurrentSession();
-  if (!session || !isSupabaseConfigured()) return;
+  if (!HOSTED_SYNC_ENABLED || !session || !isSupabaseConfigured()) return;
   if (syncPromise) return syncPromise;
 
   syncPromise = (async () => {
@@ -213,7 +236,10 @@ export async function syncNow(): Promise<void> {
   })()
     .catch((error) => {
       emit({
-        status: hasNetworkError(error) || !navigator.onLine ? "offline-pending" : "error",
+        status:
+          hasNetworkError(error) || !navigator.onLine
+            ? "offline-pending"
+            : "error",
         email: currentEmail(session),
         syncing: false,
         dirty: true,
@@ -234,7 +260,10 @@ function bindWindowListeners(): void {
     if (getCurrentSession()) void syncNow();
   });
   window.addEventListener("focus", () => {
-    if (getCurrentSession() && (snapshot.dirty || snapshot.lastSyncedAt === null)) {
+    if (
+      getCurrentSession() &&
+      (snapshot.dirty || snapshot.lastSyncedAt === null)
+    ) {
       void syncNow();
     }
   });
@@ -269,17 +298,24 @@ async function handleSession(session: Session | null): Promise<void> {
   emit({
     email: currentEmail(session),
     error: null,
-    status: snapshot.status === "awaiting-code" || snapshot.status === "verifying"
-      ? "provisioning"
-      : snapshot.status,
+    status:
+      snapshot.status === "awaiting-code" || snapshot.status === "verifying"
+        ? "provisioning"
+        : snapshot.status,
   });
 
   await syncNow();
 }
 
 export async function initHostedSync(): Promise<void> {
-  if (!isSupabaseConfigured()) {
-    emit({ status: "disabled", error: null, email: null, syncing: false, dirty: false });
+  if (!HOSTED_SYNC_ENABLED || !isSupabaseConfigured()) {
+    emit({
+      status: "disabled",
+      error: null,
+      email: null,
+      syncing: false,
+      dirty: false,
+    });
     return;
   }
   if (!initPromise) {
@@ -328,7 +364,10 @@ export async function requestEmailCode(email: string): Promise<void> {
   }
 }
 
-export async function verifyEmailCode(code: string, emailOverride?: string): Promise<void> {
+export async function verifyEmailCode(
+  code: string,
+  emailOverride?: string,
+): Promise<void> {
   const email = emailOverride?.trim() || pendingEmail?.trim();
   if (!email) throw new Error("Enter your email first.");
   pendingEmail = email;
@@ -346,7 +385,9 @@ export function getSyncState(): SyncState {
   return { ...snapshot };
 }
 
-export function onSyncStateChange(listener: (state: SyncState) => void): () => void {
+export function onSyncStateChange(
+  listener: (state: SyncState) => void,
+): () => void {
   listeners.add(listener);
   listener({ ...snapshot });
   return () => listeners.delete(listener);

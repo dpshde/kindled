@@ -12,16 +12,25 @@ import {
   getLifeStage,
   searchBlocks,
   updateScripturePassageData,
+  getArchivedBlocks,
+  restoreBlock,
+  archiveBlock,
   type Block,
   type LifeStageRecord,
   type Verse,
 } from "../db";
-import { resolvePassage } from "../scripture/RouteBibleClient";
+import {
+  fetchAvailableTranslations,
+  resolvePassageFromHelloAO,
+  formatTranslationId,
+  type TranslationInfo,
+} from "../scripture/HelloAOBibleClient";
 import { parseInputToPassage } from "../capture/scripture-capture-helpers";
 import { nextReviewPresentation } from "../ui/helpers";
 import {
   IconArrowSquareUpRight,
   IconBookOpen,
+  IconCheck,
   IconCopy,
   IconDownload,
   IconFileCloud,
@@ -34,19 +43,31 @@ import {
   IconPlus,
   IconSun,
   IconMoon,
+  IconTrash,
   IconX,
 } from "../ui/icons/icons";
 import shell from "../ui/app-shell.module.css";
 import styles from "./HearthView.module.css";
-import { hapticLight, hapticMedium, hapticSave, hapticSelection } from "../haptics";
+import {
+  hapticLight,
+  hapticMedium,
+  hapticSave,
+  hapticSelection,
+  hapticWarning,
+} from "../haptics";
 import { hearthTypeIcon } from "./hearth-type-icon";
 import { downloadExport, exportAllData, type ExportFormat } from "../db/export";
-import { getSyncState, onSyncStateChange, onSyncDataApplied, type SyncState } from "../sync/hosted-sync";
-import { SyncSettingsView } from "../sync/SyncSettings";
+import {
+  getConnectedAddress,
+  connectWallet,
+  syncLocalDbWithMemoLog,
+  disconnectWallet,
+  waitForWallets,
+  WALLET_INSTALL_LINKS,
+  type WalletInfo,
+} from "../solana";
 import { toggleTheme, getCurrentTheme } from "../ui/theme";
 import { ICON_PX } from "../ui/icon-sizes";
-
-
 
 export function HearthView(props: {
   onCapture: () => void;
@@ -57,25 +78,117 @@ export function HearthView(props: {
   const [stages, setStages] = createSignal<Record<string, LifeStageRecord>>({});
   const [query, setQuery] = createSignal("");
   const [loading, setLoading] = createSignal(true);
-  const [showSync, setShowSync] = createSignal(false);
   const [showSettings, setShowSettings] = createSignal(false);
   const [showExportSubmenu, setShowExportSubmenu] = createSignal(false);
   const [showBookFilter, setShowBookFilter] = createSignal(false);
   const [selectedBook, setSelectedBook] = createSignal<string | null>(null);
   const [editingPassage, setEditingPassage] = createSignal<Block | null>(null);
-  const [syncState, setSyncState] = createSignal<SyncState>(getSyncState());
+  const [walletAddress, setWalletAddress] = createSignal(getConnectedAddress());
+  const [isConnecting, setIsConnecting] = createSignal(false);
+  const [connectError, setConnectError] = createSignal<string | null>(null);
+  const [isSyncing, setIsSyncing] = createSignal(false);
+  const [showWalletPicker, setShowWalletPicker] = createSignal(false);
+  const [availableWallets, setAvailableWallets] = createSignal<WalletInfo[]>(
+    [],
+  );
+  const [showTrash, setShowTrash] = createSignal(false);
+  const [archivedBlocks, setArchivedBlocks] = createSignal<Block[]>([]);
   const [theme, setTheme] = createSignal<"light" | "dark">(getCurrentTheme());
+  const [shiftHeld, setShiftHeld] = createSignal(false);
 
-  const unsub = onSyncStateChange((s) => {
-    setSyncState({ ...s });
-  });
-  const unsubDataApplied = onSyncDataApplied(() => {
+  // If a wallet was already trusted/cached, pull on-chain memos on mount.
+  if (walletAddress()) {
+    void (async () => {
+      try {
+        setIsSyncing(true);
+        const { added } = await syncLocalDbWithMemoLog();
+        if (added > 0) {
+          console.log(
+            `[SolanaSync] Restored ${added} passage(s) from on-chain backup`,
+          );
+        }
+        await bootstrapHearth();
+      } catch (err) {
+        console.error("[SolanaSync] Auto-sync on mount failed:", err);
+      } finally {
+        setIsSyncing(false);
+      }
+    })();
+  }
+
+  async function handleConnectWallet() {
+    setConnectError(null);
+    setIsConnecting(true);
+    const wallets = await waitForWallets(2500);
+    setIsConnecting(false);
+    if (wallets.length === 0) {
+      setAvailableWallets([]);
+      setShowWalletPicker(true);
+      return;
+    }
+    if (wallets.length === 1) {
+      await doConnect(wallets[0]);
+      return;
+    }
+    setAvailableWallets(wallets);
+    setShowWalletPicker(true);
+  }
+
+  async function doConnect(wallet: WalletInfo) {
+    setIsConnecting(true);
+    try {
+      const address = await connectWallet(wallet.provider);
+      setWalletAddress(address);
+      setIsSyncing(true);
+      const { added } = await syncLocalDbWithMemoLog();
+      if (added > 0) {
+        console.log(
+          `[SolanaSync] Restored ${added} passage(s) from on-chain backup`,
+        );
+      }
+      await bootstrapHearth();
+      setShowSettings(false);
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Wallet connection failed";
+      setConnectError(msg);
+      console.error("[SolanaSync] Wallet connect failed:", err);
+    } finally {
+      setIsConnecting(false);
+      setIsSyncing(false);
+      setShowWalletPicker(false);
+    }
+  }
+
+  async function handleDisconnectWallet() {
+    setConnectError(null);
+    try {
+      await disconnectWallet();
+      setWalletAddress(null);
+      setShowSettings(false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Disconnect failed";
+      setConnectError(msg);
+      console.error("[SolanaSync] Disconnect failed:", err);
+    }
+  }
+
+  async function loadArchivedBlocks() {
+    const blocks = await getArchivedBlocks();
+    setArchivedBlocks(blocks);
+  }
+
+  async function handleRestore(id: string) {
+    await restoreBlock(id);
+    setArchivedBlocks((prev) => prev.filter((b) => b.id !== id));
     void bootstrapHearth();
-  });
-  onCleanup(() => {
-    unsub();
-    unsubDataApplied();
-  });
+  }
+
+  async function handleArchive(id: string) {
+    hapticWarning();
+    await archiveBlock(id);
+    void bootstrapHearth();
+  }
 
   const uniqueBooks = () => {
     const bookSet = new Set<string>();
@@ -92,7 +205,8 @@ export function HearthView(props: {
   const chaptersForBook = (book: string): number[] => {
     const chapters = new Set<number>();
     for (const b of blocks()) {
-      if (!b.scripture_display_ref || !b.scripture_display_ref.startsWith(book)) continue;
+      if (!b.scripture_display_ref || !b.scripture_display_ref.startsWith(book))
+        continue;
       const rest = b.scripture_display_ref.slice(book.length).trim();
       const m = rest.match(/^(\d+)/);
       if (m) chapters.add(parseInt(m[1]!, 10));
@@ -118,8 +232,25 @@ export function HearthView(props: {
     void bootstrapHearth();
   });
 
+  createEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setShiftHeld(true);
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setShiftHeld(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keyup", onKeyUp);
+    onCleanup(() => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("keyup", onKeyUp);
+    });
+  });
+
   async function refreshVisibleBlocks(search = query().trim()) {
-    const nextBlocks = search ? await searchBlocks(search) : await getAllBlocks();
+    const nextBlocks = search
+      ? await searchBlocks(search)
+      : await getAllBlocks();
     setBlocks(nextBlocks);
     setStages(await loadStageMap(nextBlocks));
   }
@@ -132,7 +263,9 @@ export function HearthView(props: {
     }
   }
 
-  async function loadStageMap(bs: Block[]): Promise<Record<string, LifeStageRecord>> {
+  async function loadStageMap(
+    bs: Block[],
+  ): Promise<Record<string, LifeStageRecord>> {
     const stageMap: Record<string, LifeStageRecord> = {};
     for (const b of bs) {
       const ls = await getLifeStage(b.id);
@@ -221,6 +354,8 @@ export function HearthView(props: {
             stage={currentStages[block.id]}
             onSelect={props.onSelect}
             onEdit={(editable) => setEditingPassage(editable)}
+            shiftHeld={shiftHeld}
+            onArchive={handleArchive}
           />
         ))}
       </>
@@ -246,9 +381,6 @@ export function HearthView(props: {
           </div>
           <div class={styles.headerSpacer} />
           <div class={shell.headerActions}>
-            <Show when={syncState().status === "syncing" || syncState().status === "provisioning"}>
-              <div class={styles.syncDot} aria-label="Syncing" />
-            </Show>
             <button
               type="button"
               class={styles.headerBtnSecondary}
@@ -275,7 +407,14 @@ export function HearthView(props: {
         </header>
         <div class={shell.main}>
           <div class={`${shell.shellContent} ${styles.hearthContent}`}>
-            <Show when={!loading() && blocks().length === 0 && !query() && !selectedBook()}>
+            <Show
+              when={
+                !loading() &&
+                blocks().length === 0 &&
+                !query() &&
+                !selectedBook()
+              }
+            >
               <button
                 type="button"
                 class={styles.emptyStateCta}
@@ -359,24 +498,30 @@ export function HearthView(props: {
           }}
         />
       )}
-      {showSync() && (
-        <SyncSettingsView
-          onClose={() => setShowSync(false)}
-          onSynced={() => void bootstrapHearth()}
-        />
-      )}
       {showSettings() && (
         <HearthSettingsOverlay
           theme={theme()}
-          syncStatus={syncState().status}
+          walletAddress={walletAddress()}
+          isConnecting={isConnecting()}
+          connectError={connectError()}
+          isSyncing={isSyncing()}
           showExportSubmenu={showExportSubmenu()}
+          availableWallets={availableWallets()}
+          showWalletPicker={showWalletPicker()}
           onToggleTheme={() => {
             hapticLight();
             setTheme(toggleTheme());
           }}
-          onOpenSync={() => {
+          onConnectWallet={() => void handleConnectWallet()}
+          onSelectWallet={(w) => {
+            setShowWalletPicker(false);
+            void doConnect(w);
+          }}
+          onDisconnectWallet={() => void handleDisconnectWallet()}
+          onOpenTrash={() => {
             setShowSettings(false);
-            setShowSync(true);
+            setShowTrash(true);
+            void loadArchivedBlocks();
           }}
           onToggleExport={() => setShowExportSubmenu((v) => !v)}
           onExport={(fmt) => void handleExportFormat(fmt)}
@@ -384,8 +529,76 @@ export function HearthView(props: {
           onClose={() => {
             setShowSettings(false);
             setShowExportSubmenu(false);
+            setShowWalletPicker(false);
           }}
         />
+      )}
+      {showTrash() && (
+        <div class={styles.settingsOverlay} onClick={() => setShowTrash(false)}>
+          <div
+            class={styles.settingsPanel}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header class={styles.settingsHeader}>
+              <h2 class={styles.settingsTitle}>Trash</h2>
+              <button
+                type="button"
+                class={styles.settingsCloseBtn}
+                onClick={() => setShowTrash(false)}
+                aria-label="Close"
+              >
+                <IconX size={ICON_PX.inline} />
+              </button>
+            </header>
+            <div class={styles.settingsBody}>
+              <Show
+                when={archivedBlocks().length > 0}
+                fallback={
+                  <div class={styles.settingsRow}>
+                    <span class={styles.settingsRowLabel}>Trash is empty</span>
+                  </div>
+                }
+              >
+                <For each={archivedBlocks()}>
+                  {(block) => (
+                    <div
+                      class={styles.settingsRow}
+                      style={{
+                        display: "flex",
+                        "justify-content": "space-between",
+                        "align-items": "center",
+                      }}
+                    >
+                      <span class={styles.settingsRowLabel}>
+                        {block.scripture_display_ref ??
+                          block.entity_name ??
+                          "Note"}
+                      </span>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "0.5rem",
+                          "flex-shrink": 0,
+                        }}
+                      >
+                        <button
+                          type="button"
+                          style={{
+                            padding: "0.25rem 0.5rem",
+                            "font-size": "0.85rem",
+                          }}
+                          onClick={() => void handleRestore(block.id)}
+                        >
+                          Restore
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </For>
+              </Show>
+            </div>
+          </div>
+        </div>
       )}
       {editingPassage() && (
         <HearthPassageEditModal
@@ -463,10 +676,14 @@ function BookFilterSheet(props: {
                         type="button"
                         class={styles.bookSheetExpandBtn}
                         onClick={() => props.onToggleExpand(book)}
-                        aria-label={isExpanded() ? `Collapse ${book}` : `Expand ${book}`}
+                        aria-label={
+                          isExpanded() ? `Collapse ${book}` : `Expand ${book}`
+                        }
                         aria-expanded={isExpanded()}
                       >
-                        <span class={`${styles.bookSheetChevron}${isExpanded() ? ` ${styles.bookSheetChevronOpen}` : ""}`}>
+                        <span
+                          class={`${styles.bookSheetChevron}${isExpanded() ? ` ${styles.bookSheetChevronOpen}` : ""}`}
+                        >
                           ›
                         </span>
                       </button>
@@ -502,11 +719,23 @@ function HearthCard(props: {
   stage?: LifeStageRecord;
   onSelect: (id: string) => void;
   onEdit: (block: Block) => void;
+  shiftHeld: () => boolean;
+  onArchive: (id: string) => void;
 }): JSX.Element {
   const ls = () => props.stage;
-  const rhythm = () => (ls() ? nextReviewPresentation(ls()!.next_review_at) : null);
+  const rhythm = () =>
+    ls() ? nextReviewPresentation(ls()!.next_review_at) : null;
   const TypeIcon = hearthTypeIcon(props.block.type);
-  const title = props.block.scripture_display_ref ?? props.block.entity_name ?? "Note";
+  const title =
+    props.block.scripture_display_ref ?? props.block.entity_name ?? "Note";
+
+  const previewText = () => {
+    const verses = props.block.scripture_verses;
+    if (verses && verses.length > 0) {
+      return verses.map((v) => v.text).join(" ");
+    }
+    return props.block.content;
+  };
 
   const editable = props.block.type === "scripture";
 
@@ -521,7 +750,9 @@ function HearthCard(props: {
   };
 
   return (
-    <div class={`${styles.cardWrap}${editable ? ` ${styles.cardWrapEditable}` : ""}`}>
+    <div
+      class={`${styles.cardWrap}${editable ? ` ${styles.cardWrapEditable}` : ""}`}
+    >
       <button
         type="button"
         class={`${styles.card}${editable ? ` ${styles.cardEditable}` : ""}`}
@@ -530,9 +761,7 @@ function HearthCard(props: {
           props.onSelect(props.block.id);
         }}
       >
-        <div class={styles.cardIcon}>
-          {TypeIcon({ size: ICON_PX.inline })}
-        </div>
+        <div class={styles.cardIcon}>{TypeIcon({ size: ICON_PX.inline })}</div>
         <div class={styles.cardContent}>
           <span class={styles.cardTitle}>{title}</span>
           {rhythm() && (
@@ -540,23 +769,41 @@ function HearthCard(props: {
               {rhythm()!.dateMedium}
             </span>
           )}
-          <span class={styles.cardSub}>{props.block.content}</span>
+          <span class={styles.cardSub}>{previewText()}</span>
         </div>
       </button>
       {editable && (
-        <button
-          type="button"
-          class={styles.cardEditBtn}
-          aria-label={`Edit ${title}`}
-          title="Edit passage"
-          onClick={(e) => {
-            e.stopPropagation();
-            hapticLight();
-            props.onEdit(props.block);
-          }}
-        >
-          <IconPencilSimple size={ICON_PX.inline} />
-        </button>
+        <>
+          {props.shiftHeld() ? (
+            <button
+              type="button"
+              class={styles.cardArchiveBtn}
+              aria-label={`Archive ${title}`}
+              title="Archive passage"
+              onClick={(e) => {
+                e.stopPropagation();
+                hapticWarning();
+                props.onArchive(props.block.id);
+              }}
+            >
+              <IconTrash size={ICON_PX.inline} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              class={styles.cardEditBtn}
+              aria-label={`Edit ${title}`}
+              title="Edit passage"
+              onClick={(e) => {
+                e.stopPropagation();
+                hapticLight();
+                props.onEdit(props.block);
+              }}
+            >
+              <IconPencilSimple size={ICON_PX.inline} />
+            </button>
+          )}
+        </>
       )}
     </div>
   );
@@ -564,10 +811,18 @@ function HearthCard(props: {
 
 function HearthSettingsOverlay(props: {
   theme: "light" | "dark";
-  syncStatus: SyncState["status"];
+  walletAddress: string | null;
+  isConnecting: boolean;
+  connectError: string | null;
+  isSyncing: boolean;
   showExportSubmenu: boolean;
+  availableWallets: WalletInfo[];
+  showWalletPicker: boolean;
   onToggleTheme: () => void;
-  onOpenSync: () => void;
+  onConnectWallet: () => void;
+  onSelectWallet: (wallet: WalletInfo) => void;
+  onDisconnectWallet: () => void;
+  onOpenTrash: () => void;
   onToggleExport: () => void;
   onExport: (fmt: ExportFormat) => void;
   onCopyAllText: () => void;
@@ -602,7 +857,10 @@ function HearthSettingsOverlay(props: {
             onClick={props.onToggleTheme}
           >
             <span class={styles.settingsRowIcon}>
-              <Show when={props.theme === "dark"} fallback={<IconMoon size={ICON_PX.inline} />}>
+              <Show
+                when={props.theme === "dark"}
+                fallback={<IconMoon size={ICON_PX.inline} />}
+              >
                 <IconSun size={ICON_PX.inline} />
               </Show>
             </span>
@@ -610,30 +868,122 @@ function HearthSettingsOverlay(props: {
               {props.theme === "dark" ? "Light mode" : "Dark mode"}
             </span>
           </button>
+          <Show
+            when={props.walletAddress}
+            fallback={
+              <>
+                <Show
+                  when={props.showWalletPicker}
+                  fallback={
+                    <button
+                      type="button"
+                      class={styles.settingsRow}
+                      disabled={props.isConnecting}
+                      onClick={props.onConnectWallet}
+                    >
+                      <span class={styles.settingsRowIcon}>
+                        <IconFileCloud size={ICON_PX.inline} />
+                      </span>
+                      <span class={styles.settingsRowLabel}>
+                        {props.isConnecting
+                          ? "Looking for wallets…"
+                          : "Connect wallet"}
+                      </span>
+                    </button>
+                  }
+                >
+                  <div class={styles.settingsSubmenu}>
+                    <Show
+                      when={props.availableWallets.length > 0}
+                      fallback={
+                        <>
+                          <div class={styles.settingsRow}>
+                            <span
+                              class={styles.settingsRowLabel}
+                              style={{ color: "var(--color-text-tertiary)" }}
+                            >
+                              No wallets detected
+                            </span>
+                          </div>
+                          {WALLET_INSTALL_LINKS.map((w) => (
+                            <a
+                              href={w.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class={styles.settingsRow}
+                            >
+                              <span class={styles.settingsRowLabel}>
+                                {w.name}
+                              </span>
+                              <span class={styles.settingsRowHint}>
+                                Install →
+                              </span>
+                            </a>
+                          ))}
+                        </>
+                      }
+                    >
+                      {props.availableWallets.map((w) => (
+                        <button
+                          type="button"
+                          class={styles.settingsRow}
+                          onClick={() => props.onSelectWallet(w)}
+                        >
+                          <Show when={w.icon}>
+                            <img
+                              src={w.icon}
+                              alt=""
+                              class={styles.walletIcon}
+                            />
+                          </Show>
+                          <span class={styles.settingsRowLabel}>{w.name}</span>
+                        </button>
+                      ))}
+                    </Show>
+                  </div>
+                </Show>
+                <Show when={props.connectError}>
+                  <p
+                    class={styles.settingsRowLabel}
+                    style={{
+                      color: "var(--color-fire)",
+                      "padding-left": "2.25rem",
+                    }}
+                  >
+                    {props.connectError}
+                  </p>
+                </Show>
+              </>
+            }
+          >
+            <button
+              type="button"
+              class={styles.settingsRow}
+              onClick={props.onDisconnectWallet}
+            >
+              <span class={styles.settingsRowIcon}>
+                <IconCheck size={ICON_PX.inline} />
+              </span>
+              <span class={styles.settingsRowLabel}>
+                {props.isSyncing
+                  ? "Syncing…"
+                  : `Wallet: ${props.walletAddress!.slice(0, 4)}...${props.walletAddress!.slice(-4)}`}
+              </span>
+              <span class={styles.settingsRowHint}>Disconnect</span>
+            </button>
+          </Show>
           <button
             type="button"
             class={styles.settingsRow}
-            onClick={props.onOpenSync}
+            onClick={() => {
+              hapticLight();
+              props.onOpenTrash();
+            }}
           >
             <span class={styles.settingsRowIcon}>
-              <IconFileCloud size={ICON_PX.inline} />
+              <IconTrash size={ICON_PX.inline} />
             </span>
-            <span class={styles.settingsRowLabel}>Sync</span>
-            <Show when={props.syncStatus === "connected"}>
-              <span class={styles.settingsRowHint}>Connected</span>
-            </Show>
-            <Show when={props.syncStatus === "syncing" || props.syncStatus === "provisioning"}>
-              <span class={styles.settingsRowHint}>Syncing</span>
-            </Show>
-            <Show when={props.syncStatus === "offline-pending"}>
-              <span class={styles.settingsRowHint}>Changes waiting</span>
-            </Show>
-            <Show when={props.syncStatus === "awaiting-code"}>
-              <span class={styles.settingsRowHint}>Check email</span>
-            </Show>
-            <Show when={props.syncStatus === "error"}>
-              <span class={styles.settingsRowHint}>Needs attention</span>
-            </Show>
+            <span class={styles.settingsRowLabel}>Trash</span>
           </button>
           <button
             type="button"
@@ -650,29 +1000,59 @@ function HearthSettingsOverlay(props: {
           </button>
           <Show when={props.showExportSubmenu}>
             <div class={styles.settingsSubmenu}>
-              <button type="button" class={styles.settingsRow} onClick={() => props.onExport("json")}>
-                <span class={styles.settingsRowIcon}><IconFileText size={ICON_PX.inline} /></span>
+              <button
+                type="button"
+                class={styles.settingsRow}
+                onClick={() => props.onExport("json")}
+              >
+                <span class={styles.settingsRowIcon}>
+                  <IconFileText size={ICON_PX.inline} />
+                </span>
                 <span class={styles.settingsRowLabel}>JSON</span>
                 <span class={styles.settingsRowHint}>Full data</span>
               </button>
-              <button type="button" class={styles.settingsRow} onClick={() => props.onExport("csv")}>
-                <span class={styles.settingsRowIcon}><IconDownload size={ICON_PX.inline} /></span>
+              <button
+                type="button"
+                class={styles.settingsRow}
+                onClick={() => props.onExport("csv")}
+              >
+                <span class={styles.settingsRowIcon}>
+                  <IconDownload size={ICON_PX.inline} />
+                </span>
                 <span class={styles.settingsRowLabel}>CSV</span>
                 <span class={styles.settingsRowHint}>Spreadsheet</span>
               </button>
-              <button type="button" class={styles.settingsRow} onClick={() => props.onExport("markdown")}>
-                <span class={styles.settingsRowIcon}><IconFileText size={ICON_PX.inline} /></span>
+              <button
+                type="button"
+                class={styles.settingsRow}
+                onClick={() => props.onExport("markdown")}
+              >
+                <span class={styles.settingsRowIcon}>
+                  <IconFileText size={ICON_PX.inline} />
+                </span>
                 <span class={styles.settingsRowLabel}>Markdown</span>
                 <span class={styles.settingsRowHint}>Readable</span>
               </button>
-              <button type="button" class={styles.settingsRow} onClick={() => props.onExport("text")}>
-                <span class={styles.settingsRowIcon}><IconDownload size={ICON_PX.inline} /></span>
+              <button
+                type="button"
+                class={styles.settingsRow}
+                onClick={() => props.onExport("text")}
+              >
+                <span class={styles.settingsRowIcon}>
+                  <IconDownload size={ICON_PX.inline} />
+                </span>
                 <span class={styles.settingsRowLabel}>Plain text</span>
                 <span class={styles.settingsRowHint}>Simple list</span>
               </button>
               <div class={styles.settingsDivider} />
-              <button type="button" class={styles.settingsRow} onClick={props.onCopyAllText}>
-                <span class={styles.settingsRowIcon}><IconCopy size={ICON_PX.inline} /></span>
+              <button
+                type="button"
+                class={styles.settingsRow}
+                onClick={props.onCopyAllText}
+              >
+                <span class={styles.settingsRowIcon}>
+                  <IconCopy size={ICON_PX.inline} />
+                </span>
                 <span class={styles.settingsRowLabel}>Copy all text</span>
                 <span class={styles.settingsRowHint}>Clipboard</span>
               </button>
@@ -684,39 +1064,46 @@ function HearthSettingsOverlay(props: {
   );
 }
 
-function normalizePassageEditorText(text: string): string {
-  return text.trim().replace(/\s*\n+\s*/g, " ");
-}
-
 function HearthPassageEditModal(props: {
   block: Block;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }): JSX.Element {
   const initialVerses = props.block.scripture_verses ?? [];
-  const [canonicalRef, setCanonicalRef] = createSignal(props.block.scripture_ref ?? "");
+  const initialTranslation = props.block.scripture_translation || "BSB";
+  const [canonicalRef, setCanonicalRef] = createSignal(
+    props.block.scripture_ref ?? "",
+  );
   const [displayRef, setDisplayRef] = createSignal(
     props.block.scripture_display_ref ?? props.block.scripture_ref ?? "",
   );
-  const [translation, setTranslation] = createSignal(props.block.scripture_translation ?? "");
+  const [translation, setTranslation] = createSignal(initialTranslation);
   const [verses, setVerses] = createSignal<Verse[]>(initialVerses);
-  const [verseDrafts, setVerseDrafts] = createSignal(initialVerses.map((verse) => verse.text));
-  const [contentDraft, setContentDraft] = createSignal(props.block.content);
+  const [availableTranslations, setAvailableTranslations] = createSignal<
+    TranslationInfo[]
+  >([]);
   const [saving, setSaving] = createSignal(false);
   const [resolvingReference, setResolvingReference] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
+  const [lastResolvedKey, setLastResolvedKey] = createSignal(
+    props.block.scripture_ref
+      ? `${props.block.scripture_ref}|${initialTranslation}`
+      : "",
+  );
 
   function applyResolvedPassage(
-    resolved: { ref: string; displayRef: string; translation: string; verses: Verse[] } | null,
+    resolved: {
+      ref: string;
+      displayRef: string;
+      translation: string;
+      verses: Verse[];
+    } | null,
   ) {
     if (!resolved) return;
-    const nextDrafts = resolved.verses.map((verse: Verse) => verse.text);
     setCanonicalRef(resolved.ref);
     setDisplayRef(resolved.displayRef);
     setTranslation(resolved.translation);
     setVerses(resolved.verses);
-    setVerseDrafts(nextDrafts);
-    setContentDraft(nextDrafts.join(" "));
   }
 
   createEffect(() => {
@@ -732,20 +1119,29 @@ function HearthPassageEditModal(props: {
   });
 
   createEffect(() => {
+    void fetchAvailableTranslations().then(setAvailableTranslations);
+  });
+
+  createEffect(() => {
     const typedRef = displayRef().trim();
+    const tr = translation().trim() || "BSB";
     const parsed = parseInputToPassage(typedRef);
-    if (!typedRef || !parsed || parsed.canonical === canonicalRef()) return;
+    if (!typedRef || !parsed) return;
+
+    const key = `${parsed.canonical}|${tr}`;
+    if (key === lastResolvedKey()) return;
 
     let cancelled = false;
     const timer = window.setTimeout(async () => {
       setResolvingReference(true);
-      const resolved = await resolvePassage(parsed.canonical);
+      const resolved = await resolvePassageFromHelloAO(parsed.canonical, tr);
       if (cancelled) return;
       setResolvingReference(false);
       if (!resolved) {
         setError("Couldn't resolve that passage reference.");
         return;
       }
+      setLastResolvedKey(key);
       applyResolvedPassage(resolved);
       setError(null);
     }, 320);
@@ -769,14 +1165,21 @@ function HearthPassageEditModal(props: {
 
     try {
       let nextCanonical = canonicalRef();
-      let nextDisplayRef = displayRef().trim() || props.block.scripture_ref || "Passage";
+      let nextDisplayRef =
+        displayRef().trim() || props.block.scripture_ref || "Passage";
       let nextTranslation = translation().trim();
-      let nextVersesSource = verses();
-      let nextVerseDrafts = verseDrafts();
+      let nextVerses = verses();
 
-      if (parsed.canonical !== canonicalRef()) {
+      const currentKey = `${parsed.canonical}|${nextTranslation || "BSB"}`;
+      if (
+        parsed.canonical !== nextCanonical ||
+        currentKey !== lastResolvedKey()
+      ) {
         setResolvingReference(true);
-        const resolved = await resolvePassage(parsed.canonical);
+        const resolved = await resolvePassageFromHelloAO(
+          parsed.canonical,
+          nextTranslation || "BSB",
+        );
         setResolvingReference(false);
         if (!resolved) {
           setError("Couldn't resolve that passage reference.");
@@ -786,8 +1189,8 @@ function HearthPassageEditModal(props: {
         nextCanonical = resolved.ref;
         nextDisplayRef = resolved.displayRef;
         nextTranslation = resolved.translation;
-        nextVersesSource = resolved.verses;
-        nextVerseDrafts = resolved.verses.map((verse: Verse) => verse.text);
+        nextVerses = resolved.verses;
+        setLastResolvedKey(currentKey);
       }
 
       const duplicate = await findScriptureBlockByCanonicalRef(nextCanonical);
@@ -796,15 +1199,12 @@ function HearthPassageEditModal(props: {
         return;
       }
 
-      const nextVerses: Verse[] = nextVersesSource.length
-        ? nextVersesSource.map((verse, index) => ({
-            ...verse,
-            text: normalizePassageEditorText(nextVerseDrafts[index] ?? ""),
-          }))
-        : [];
       const nextContent = nextVerses.length
-        ? nextVerses.map((verse) => verse.text).filter(Boolean).join(" ")
-        : normalizePassageEditorText(contentDraft());
+        ? nextVerses
+            .map((verse) => verse.text)
+            .filter(Boolean)
+            .join(" ")
+        : "";
 
       if (!nextContent) {
         setError("Passage text can't be empty.");
@@ -828,12 +1228,19 @@ function HearthPassageEditModal(props: {
   }
 
   return (
-    <div class={styles.editOverlay} onClick={props.onClose} role="dialog" aria-modal="true">
+    <div
+      class={styles.editOverlay}
+      onClick={props.onClose}
+      role="dialog"
+      aria-modal="true"
+    >
       <div class={styles.editPanel} onClick={(e) => e.stopPropagation()}>
         <header class={styles.editHeader}>
           <div>
             <p class={styles.editEyebrow}>Passage editor</p>
-            <h2 class={styles.editTitle}>{displayRef().trim() || "Edit passage"}</h2>
+            <h2 class={styles.editTitle}>
+              {displayRef().trim() || "Edit passage"}
+            </h2>
           </div>
           <button
             type="button"
@@ -847,8 +1254,8 @@ function HearthPassageEditModal(props: {
 
         <div class={styles.editBody}>
           <p class={styles.editHint}>
-            Change the reference and Kindled will pull fresh passage text automatically before
-            you save.
+            Change the reference or translation and Kindled will pull fresh
+            passage text automatically before you save.
           </p>
 
           <div class={styles.editMetaGrid}>
@@ -866,12 +1273,33 @@ function HearthPassageEditModal(props: {
             </label>
             <label class={styles.editField}>
               <span class={styles.editLabel}>Translation</span>
-              <input
-                type="text"
+              <select
                 value={translation()}
-                onInput={(e) => setTranslation(e.currentTarget.value)}
-                placeholder="BSB"
-              />
+                onChange={(e) => setTranslation(e.currentTarget.value)}
+                class={styles.editSelect}
+              >
+                <option value={translation()}>
+                  {(() => {
+                    const found = availableTranslations().find(
+                      (t) => t.id === translation(),
+                    );
+                    return found
+                      ? formatTranslationId(found.id)
+                      : `${formatTranslationId(translation())} (loading…)`;
+                  })()}
+                </option>
+                <For
+                  each={availableTranslations().filter(
+                    (t) => t.id !== translation(),
+                  )}
+                >
+                  {(t) => (
+                    <option value={t.id}>
+                      {formatTranslationId(t.id)} ({t.englishName})
+                    </option>
+                  )}
+                </For>
+              </select>
             </label>
           </div>
 
@@ -880,40 +1308,31 @@ function HearthPassageEditModal(props: {
           )}
 
           {verses().length > 0 ? (
-            <div class={styles.editVerseList}>
-              {verses().map((verse, index) => (
-                <label class={styles.editVerseRow}>
-                  <span class={styles.editVerseNumber}>Verse {verse.number}</span>
-                  <textarea
-                    class={styles.editTextarea}
-                    rows={3}
-                    value={verseDrafts()[index] ?? ""}
-                    onInput={(e) => {
-                      const next = [...verseDrafts()];
-                      next[index] = e.currentTarget.value;
-                      setVerseDrafts(next);
-                    }}
-                  />
-                </label>
+            <div class={styles.editPassagePreview}>
+              {verses().map((verse) => (
+                <p class={styles.editPreviewVerse}>
+                  <sup class={styles.editPreviewNumber}>{verse.number}</sup>{" "}
+                  {verse.text}
+                </p>
               ))}
             </div>
           ) : (
-            <label class={styles.editField}>
-              <span class={styles.editLabel}>Passage text</span>
-              <textarea
-                class={styles.editTextarea}
-                rows={8}
-                value={contentDraft()}
-                onInput={(e) => setContentDraft(e.currentTarget.value)}
-              />
-            </label>
+            <p class={styles.editStatus}>
+              {resolvingReference()
+                ? "Loading passage text..."
+                : "Enter a reference to see passage text."}
+            </p>
           )}
 
           {error() && <p class={styles.editError}>{error()}</p>}
         </div>
 
         <footer class={styles.editFooter}>
-          <button type="button" class={styles.editSecondaryBtn} onClick={props.onClose}>
+          <button
+            type="button"
+            class={styles.editSecondaryBtn}
+            onClick={props.onClose}
+          >
             Cancel
           </button>
           <button
@@ -923,7 +1342,11 @@ function HearthPassageEditModal(props: {
             onClick={() => void handleSave()}
           >
             <IconFloppyDisk size={ICON_PX.inline} />
-            {saving() ? "Saving..." : resolvingReference() ? "Updating..." : "Save changes"}
+            {saving()
+              ? "Saving..."
+              : resolvingReference()
+                ? "Updating..."
+                : "Save changes"}
           </button>
         </footer>
       </div>

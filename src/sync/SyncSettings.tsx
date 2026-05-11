@@ -9,6 +9,7 @@ import {
   verifyEmailCode,
 } from "./hosted-sync";
 import { isSupabaseConfigured } from "../auth/supabase-client";
+import { isHostedSyncEnabled } from "./hosted-sync";
 import {
   IconArrowLeft,
   IconCheck,
@@ -276,10 +277,13 @@ export function SyncSettingsView(props: {
         </header>
 
         <div class={styles.body}>
-          {!isSupabaseConfigured() || sync().status === "disabled" ? (
+          {!isSupabaseConfigured() ||
+          !isHostedSyncEnabled() ||
+          sync().status === "disabled" ? (
             <p class={styles.hint}>
-              Hosted sync isn't configured in this build yet. Set the Supabase
-              public URL and publishable key to enable account sync.
+              {!isHostedSyncEnabled()
+                ? "Hosted sync is paused. Scripture captures are automatically backed up to the Solana blockchain for permanent recovery."
+                : "Hosted sync isn't configured in this build yet. Set the Supabase public URL and publishable key to enable account sync."}
             </p>
           ) : !isSignedIn(sync().status) ? (
             <>{phase() === "email" ? <EmailPhase /> : <CodePhase />}</>
