@@ -45,3 +45,7 @@ coverage/
 data/
 src-tauri/target/
 src-tauri/gen/apple/build/
+.zig-cache/
+zig-out/
+zig-pkg/
+bsb.jsonl

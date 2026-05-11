@@ -1,7 +1,7 @@
 import { getDb } from "./connection";
 import { SCHEMA_VERSION } from "./schema";
 import type { Block, Entity, LifeStageRecord, Link, Reflection } from "./types";
-import { isTauriRuntime } from "../platform/runtime";
+import { isNativeRuntime } from "../platform/runtime";
 
 export interface KindledExport {
   format: "kindled";
@@ -331,15 +331,13 @@ export async function downloadExport(payload: KindledExport, format: ExportForma
   const mime = mimeType(format);
   const filename = `kindled-export-${new Date().toISOString().slice(0, 10)}.${ext}`;
 
-  if (isTauriRuntime()) {
-    const { save } = await import("@tauri-apps/plugin-dialog");
-    const { writeTextFile } = await import("@tauri-apps/plugin-fs");
-    const path = await save({
+  if (isNativeRuntime()) {
+    const path = await window.zero!.dialogs.saveFile({
       defaultPath: filename,
       filters: [{ name: filterName(format), extensions: [ext] }],
     });
     if (!path) return; // user cancelled
-    await writeTextFile(path, content);
+    await window.zero!.invoke("fs.writeTextFile", { path, content });
     return;
   }
 

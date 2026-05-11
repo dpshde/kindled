@@ -1,0 +1,13 @@
+.{
+    .name = .kindled,
+    .fingerprint = 0xbaf8386c92fdd8a9,
+    .version = "0.1.0",
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .zero_native = .{
+            .url = "https://github.com/vercel-labs/zero-native/archive/refs/heads/main.tar.gz",
+            .hash = "zero_native-0.1.0-qoHd4_lBIQDiF7K-pg_05JhIuzLTGmGbdnThDB7C4eLs",
+        },
+    },
+    .paths = .{ "build.zig", "build.zig.zon", "native", "app.zon" },
+}

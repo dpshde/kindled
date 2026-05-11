@@ -1,0 +1,48 @@
+.{
+    .id = "dev.kindled.app",
+    .name = "kindled",
+    .display_name = "Kindled",
+    .version = "0.1.0",
+    .icons = .{ "assets/icon.icns" },
+    .platforms = .{ "macos", "linux" },
+    .permissions = .{ "window" },
+    .capabilities = .{ "webview", "js_bridge" },
+    .bridge = .{
+        .commands = .{
+            .{ .name = "share.url", .origins = .{ "zero://app", "zero://inline" } },
+            .{ .name = "share.text", .origins = .{ "zero://app", "zero://inline" } },
+            .{ .name = "shell.open", .origins = .{ "zero://app", "zero://inline" } },
+            .{ .name = "fs.writeTextFile", .origins = .{ "zero://app", "zero://inline" } },
+            .{ .name = "os.platform", .origins = .{ "zero://app", "zero://inline" } },
+            .{ .name = "haptics.impact", .origins = .{ "zero://app", "zero://inline" } },
+            .{ .name = "haptics.notification", .origins = .{ "zero://app", "zero://inline" } },
+            .{ .name = "haptics.macos", .origins = .{ "zero://app", "zero://inline" } },
+            .{ .name = "zero-native.window.list", .permissions = .{ "window" }, .origins = .{ "zero://app", "zero://inline" } },
+            .{ .name = "zero-native.window.create", .permissions = .{ "window" }, .origins = .{ "zero://app", "zero://inline" } },
+            .{ .name = "zero-native.window.focus", .permissions = .{ "window" }, .origins = .{ "zero://app", "zero://inline" } },
+            .{ .name = "zero-native.window.close", .permissions = .{ "window" }, .origins = .{ "zero://app", "zero://inline" } },
+        },
+    },
+    .frontend = .{
+        .dist = "dist",
+        .entry = "index.html",
+        .spa_fallback = true,
+        .dev = .{
+            .url = "http://127.0.0.1:3001/",
+            .command = .{ "pnpm", "dev" },
+            .ready_path = "/",
+            .timeout_ms = 30000,
+        },
+    },
+    .security = .{
+        .navigation = .{
+            .allowed_origins = .{ "zero://app", "zero://inline", "http://127.0.0.1:3001" },
+            .external_links = .{ .action = "deny" },
+        },
+    },
+    .web_engine = "system",
+    .cef = .{ .dir = "third_party/cef/macos", .auto_install = false },
+    .windows = .{
+        .{ .label = "main", .title = "Kindled", .width = 1280, .height = 900, .restore_state = true },
+    },
+}

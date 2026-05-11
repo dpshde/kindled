@@ -1,21 +1,14 @@
-export function isTauriRuntime(): boolean {
-  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+export function isNativeRuntime(): boolean {
+  return typeof window !== "undefined" && window.zero !== undefined;
 }
 
-/**
- * Open an external URL in the system browser.
- *
- * Uses the Tauri shell plugin when available, falls back to `window.open`.
- * Works reliably on macOS Tauri, iOS Tauri, and plain web.
- */
 export async function openExternalUrl(url: string): Promise<void> {
-  if (isTauriRuntime()) {
+  if (isNativeRuntime()) {
     try {
-      const { open } = await import("@tauri-apps/plugin-shell");
-      await open(url);
+      await window.zero!.invoke("shell.open", { url });
       return;
     } catch {
-      // shell.open may fail on some mobile runtimes; fall through
+      // May fail on some runtimes; fall through to web
     }
   }
   window.open(url, "_blank", "noopener,noreferrer");

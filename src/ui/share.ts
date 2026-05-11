@@ -1,19 +1,18 @@
 /**
  * Native share helpers.
  *
- * Tauri (macOS/iOS): invokes Rust `share_url` / `share_text` commands that
- * present the OS-native share sheet (NSSharingServicePicker / UIActivityViewController).
+ * Native (macOS/iOS): invokes zero-native `share.url` / `share.text` commands
+ * that present the OS-native share sheet.
  *
  * Browser: falls back to the Web Share API (`navigator.share`) when available,
  * otherwise copies to clipboard.
  */
 
-import { isTauriRuntime } from "../platform/runtime";
+import { isNativeRuntime } from "../platform/runtime";
 
 export async function shareUrl(url: string): Promise<void> {
-  if (isTauriRuntime()) {
-    const { invoke } = await import("@tauri-apps/api/core");
-    await invoke("share_url", { url });
+  if (isNativeRuntime()) {
+    await window.zero!.invoke("share.url", { url });
     return;
   }
 
@@ -27,9 +26,8 @@ export async function shareUrl(url: string): Promise<void> {
 }
 
 export async function shareText(text: string): Promise<void> {
-  if (isTauriRuntime()) {
-    const { invoke } = await import("@tauri-apps/api/core");
-    await invoke("share_text", { text });
+  if (isNativeRuntime()) {
+    await window.zero!.invoke("share.text", { text });
     return;
   }
 

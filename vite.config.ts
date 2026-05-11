@@ -1,12 +1,12 @@
 import { defineConfig } from "vite";
 import solidPlugin from "vite-plugin-solid";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 
-const tauriHost = process.env.TAURI_DEV_HOST;
 const isReplit = !!process.env.REPLIT_DEV_DOMAIN;
 const devPort = isReplit ? 5000 : 3001;
 
 export default defineConfig({
-  plugins: [solidPlugin()],
+  plugins: [solidPlugin(), nodePolyfills({ include: ["buffer", "crypto"] })],
   resolve: {
     dedupe: ["react", "react-dom"],
   },
@@ -16,25 +16,17 @@ export default defineConfig({
   clearScreen: false,
   build: {
     target: "esnext",
-    minify: process.env.TAURI_ENV_DEBUG === "true" ? false : "esbuild",
-    sourcemap: process.env.TAURI_ENV_DEBUG === "true",
+    minify: "esbuild",
     outDir: process.env.VERCEL ? ".vercel/output/static" : "dist",
   },
-  envPrefix: ["VITE_", "TAURI_ENV_"],
+  envPrefix: ["VITE_"],
   server: {
-    host: isReplit ? "0.0.0.0" : tauriHost || false,
+    host: isReplit ? "0.0.0.0" : "127.0.0.1",
     allowedHosts: isReplit ? true : undefined,
-    hmr: tauriHost
-      ? {
-          protocol: "ws",
-          host: tauriHost,
-          port: devPort + 1,
-        }
-      : undefined,
     port: devPort,
     strictPort: true,
     watch: {
-      ignored: ["**/src-tauri/**"],
+      ignored: ["**/native/**"],
     },
   },
 });

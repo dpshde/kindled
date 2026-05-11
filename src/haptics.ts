@@ -2,8 +2,8 @@
  * Haptic feedback — unified across web, iOS, macOS.
  *
  * Web    → web-haptics (Vibration API + debug audio on non-touch devices)
- * iOS    → @tauri-apps/plugin-haptics
- * macOS  → tauri-plugin-macos-haptics + web-haptics debug audio
+ * iOS    → zero-native bridge: haptics.impact / haptics.notification
+ * macOS  → zero-native bridge: haptics.macos + web-haptics debug audio
  */
 
 import {
@@ -11,7 +11,6 @@ import {
   type HapticInput,
   type TriggerOptions,
 } from "web-haptics";
-import { isTauri } from "@tauri-apps/api/core";
 
 export type HapticStyle = "light" | "medium" | "heavy" | "selection" | "warning";
 
@@ -22,15 +21,15 @@ let cachedPlatform: Platform | null = null;
 let platformPromise: Promise<Platform> | null = null;
 let instance: WebHaptics | null = null;
 
-function isTauriEnvironment(): boolean {
-  return typeof window !== "undefined" && (isTauri() || "__TAURI_INTERNALS__" in window);
+function isNativeEnvironment(): boolean {
+  return typeof window !== "undefined" && window.zero !== undefined;
 }
 
 function shouldUseDebugAudio(): boolean {
   return (
     typeof document !== "undefined" &&
     typeof window !== "undefined" &&
-    (isTauriEnvironment() || !("ontouchstart" in window))
+    (isNativeEnvironment() || !("ontouchstart" in window))
   );
 }
 
@@ -55,14 +54,13 @@ async function detectPlatform(): Promise<Platform> {
   if (platformPromise) return platformPromise;
 
   platformPromise = (async () => {
-    if (!isTauriEnvironment()) {
+    if (!isNativeEnvironment()) {
       cachedPlatform = "web";
       return "web";
     }
 
     try {
-      const { platform } = await import("@tauri-apps/plugin-os");
-      const os = await platform();
+      const os = await window.zero!.invoke<string>("os.platform");
       if (os === "ios") {
         cachedPlatform = "ios";
       } else if (os === "macos") {
@@ -94,38 +92,15 @@ export function initHaptics(): void {
 }
 
 async function triggerIosImpact(style: "light" | "medium" | "heavy"): Promise<void> {
-  const { impactFeedback } = await import("@tauri-apps/plugin-haptics");
-  await impactFeedback(style);
+  await window.zero!.invoke("haptics.impact", { style });
 }
 
 async function triggerIosNotification(kind: "success" | "warning"): Promise<void> {
-  const { notificationFeedback } = await import("@tauri-apps/plugin-haptics");
-  await notificationFeedback(kind);
+  await window.zero!.invoke("haptics.notification", { kind });
 }
 
 async function triggerMacosHaptic(style: HapticStyle | "success"): Promise<void> {
-  const {
-    perform,
-    HapticFeedbackPattern,
-    PerformanceTime,
-    isSupported,
-  } = await import("tauri-plugin-macos-haptics-api");
-
-  const supported = await isSupported();
-  if (!supported) return;
-
-  switch (style) {
-    case "light":
-    case "selection":
-      await perform(HapticFeedbackPattern.Generic, PerformanceTime.Now);
-      break;
-    case "medium":
-    case "heavy":
-    case "warning":
-    case "success":
-      await perform(HapticFeedbackPattern.LevelChange, PerformanceTime.Now);
-      break;
-  }
+  await window.zero!.invoke("haptics.macos", { style });
 }
 
 function mapStyleToWebPreset(style: HapticStyle | "success"): HapticInput {
@@ -147,7 +122,7 @@ function mapStyleToWebPreset(style: HapticStyle | "success"): HapticInput {
 
 async function triggerFeedback(style: HapticStyle | "success"): Promise<void> {
   // Fire the web-haptics path *immediately* (synchronous) so it lands inside
-  // the browser's user-activation window.  The native Tauri path is async and
+  // the browser's user-activation window.  The native path is async and
   // runs in parallel — if the platform hasn't been detected yet we fire the
   // web fallback first and let the native path catch up on the next call.
   const preset = mapStyleToWebPreset(style);
