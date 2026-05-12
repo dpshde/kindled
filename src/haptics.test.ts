@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const webHapticsTriggerMock = vi.fn(() => Promise.resolve(undefined));
-const zeroInvokeMock = vi.fn((_cmd: string, _payload?: Record<string, unknown>) => Promise.resolve(undefined));
+const zeroInvokeMock = vi.fn<(_cmd: string, _payload?: Record<string, unknown>) => Promise<unknown>>(
+  (_cmd, _payload) => Promise.resolve(undefined),
+);
 
 vi.mock("web-haptics", () => ({
   WebHaptics: vi.fn(function (this: { trigger: typeof webHapticsTriggerMock }) {
@@ -24,8 +26,8 @@ describe("haptics", () => {
   });
 
   function setNativeWindow(platform: string = "web") {
-    zeroInvokeMock.mockImplementation((cmd: string) => {
-      if (cmd === "os.platform") return Promise.resolve(platform);
+    zeroInvokeMock.mockImplementation((_cmd: string, _payload?: Record<string, unknown>) => {
+      if (_cmd === "os.platform") return Promise.resolve(platform);
       return Promise.resolve(undefined);
     });
     globalThis.window = {
